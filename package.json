@@ -2,6 +2,10 @@
   "name": "rdb",
   "version": "0.1.0",
   "description": "A simple db client that aims to take out most of the complexity of connecting and querying data.",
+  "repository": {
+		"type": "git",
+		"url": "git://github.com/jmike/node-rdb.git"
+	},
   "main": "src/rdb.js",
   "engines": {
     "node": "0.10.x",
@@ -13,6 +17,11 @@
   "devDependencies": {
     "mocha": "~1.17.1",
     "chai": "~1.9.1"
+  },
+  "author": {
+    "name": "Dimitrios C. Michalakos",
+    "email": "dimitris@jmike.gr",
+    "url": "http://jmike.gr"
   },
   "license": "MIT"
 }
