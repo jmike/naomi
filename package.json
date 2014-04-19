@@ -1,0 +1,17 @@
+{
+  "name": "rdb",
+  "version": "0.1.0",
+  "description": "A simple db client that aims to take out most of the complexity of connecting and querying data.",
+  "main": "src/rdb.js",
+  "engines": {
+    "node": "0.10.x",
+    "npm": "1.2.x"
+  },
+  "dependencies": {
+    "mysql": "~2.1.1"
+  },
+  "devDependencies": {
+    "mocha": "~1.17.1",
+    "chai": "~1.9.1"
+  }
+}
