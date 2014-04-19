@@ -6,7 +6,7 @@ var mysql = require('mysql');
  * @see https://github.com/felixge/node-mysql#connection-options for a list of connection properties.
  * @constructor
  */
-function MySQLDatabase(connectionProperties) {
+function Database(connectionProperties) {
   this.connectionProperties = connectionProperties;
   this.connected = false;
 }
@@ -14,7 +14,7 @@ function MySQLDatabase(connectionProperties) {
 /**
  * Attempts to connect to database, using the connection properties given at construction time.
  */
-MySQLDatabase.prototype.connect = function () {
+Database.prototype.connect = function () {
   if (!this.connected) {
     this.pool = mysql.createPool(properties);
     this.connected = true;
@@ -25,7 +25,7 @@ MySQLDatabase.prototype.connect = function () {
  * Gracefully closes all database connections.
  * The instance will become practically useless after calling this method.
  */
-MySQLDatabase.prototype.disconnect = function () {
+Database.prototype.disconnect = function () {
   if (this.connected) {
     this.pool.end();
     this.connected = false;
@@ -39,7 +39,7 @@ MySQLDatabase.prototype.disconnect = function () {
  * @param {Object} [options] query options, i.e. {nestTables: true} to handle overlapping column names.
  * @param {Function} callback i.e. function(error, data).
  */
-MySQLDatabase.prototype.query = function (sql, params, options, callback) {
+Database.prototype.query = function (sql, params, options, callback) {
   // handle optional "params"
   if (! Array.isArray(params)) {
     if (typeof params === 'function') {
@@ -75,8 +75,8 @@ MySQLDatabase.prototype.query = function (sql, params, options, callback) {
  * @param {String} table the name of an existing table in database.
  * Please note that this function will not create a table on database.
  */
-MySQLDatabase.prototype.expand = function (table) {
+Database.prototype.expand = function (table) {
 
 };
 
-module.exports = MySQLDatabase;
+module.exports = Database;

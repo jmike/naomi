@@ -1,4 +1,4 @@
-var MySQLDatabase = require('./MySQLDatabase'),
+var MySQLDatabase = require('./mysql/Database'),
   rdb;
 
 rdb = {
