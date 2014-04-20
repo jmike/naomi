@@ -1,7 +1,11 @@
 language: node_js
 node_js:
+  - 0.8
   - 0.10
+  - 0.11
 services:
   - mysql
 before_script:
   - mysql -e 'CREATE DATABASE rdb_test;'
+env:
+  - MYSQL_HOST=localhost MYSQL_DATABASE=rdb_test MYSQL_USER=root MYSQL_PASSWORD=

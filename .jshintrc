@@ -16,6 +16,8 @@
     "strict": false,
     "globals": {
       "define": false,
-      "it": false
+      "it": false,
+      "after": false,
+      "before": false
     }
 }

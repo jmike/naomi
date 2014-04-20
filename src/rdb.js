@@ -1,7 +1,6 @@
-var MySQLDatabase = require('./mysql/Database'),
-  rdb;
+var MySQLDatabase = require('./mysql/Database');
 
-rdb = {
+module.exports = {
 
   // db type constants
   MYSQL: 'MYSQL',
@@ -25,5 +24,3 @@ rdb = {
     }
   }
 };
-
-module.exports = rdb;

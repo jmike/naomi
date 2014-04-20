@@ -1,4 +1,6 @@
-var mysql = require('mysql');
+var mysql = require('mysql'),
+  _ = require('lodash'),
+  Model = require('./Model');
 
 /**
  * Constructs a new MySQL database.
@@ -13,23 +15,35 @@ function Database(connectionProperties) {
 
 /**
  * Attempts to connect to database, using the connection properties given at construction time.
+ * @param {Function} [callback] a callback function to execute when connection has been established, i.e. function (error) {}.
+ * @returns {Database} this to enable method chaining.
  */
-Database.prototype.connect = function () {
+Database.prototype.connect = function (callback) {
   if (!this.connected) {
-    this.pool = mysql.createPool(properties);
+    this.pool = mysql.createPool(this.connectionProperties);
     this.connected = true;
   }
+
+  if (callback) callback();
+
+  return this;
 };
 
 /**
  * Gracefully closes all database connections.
- * The instance will become practically useless after calling this method.
+ * The instance will become practically useless after calling this method, unless calling connect() again.
+ * @param {Function} [callback] a callback function to execute when connection has been closed, i.e. function (error) {}.
+ * @returns {Database} this to enable method chaining.
  */
-Database.prototype.disconnect = function () {
+Database.prototype.disconnect = function (callback) {
   if (this.connected) {
-    this.pool.end();
+    this.pool.end(callback);
     this.connected = false;
+  } else if (callback) {
+    callback();
   }
+
+  return this;
 };
 
 /**
@@ -37,7 +51,7 @@ Database.prototype.disconnect = function () {
  * @param {String} sql a parameterized SQL statement.
  * @param {Array} [params] an array of parameter values.
  * @param {Object} [options] query options, i.e. {nestTables: true} to handle overlapping column names.
- * @param {Function} callback i.e. function(error, data).
+ * @param {Function} callback a callback function i.e. function(error, data).
  */
 Database.prototype.query = function (sql, params, options, callback) {
   // handle optional "params"
@@ -73,10 +87,12 @@ Database.prototype.query = function (sql, params, options, callback) {
 /**
  * Creates and returns a new database model.
  * @param {String} table the name of an existing table in database.
- * Please note that this function will not create a table on database.
+ * @param {Object} properties the model's properties, e.g. public functions.
+ * Please note that this function will not create a new table on database.
  */
-Database.prototype.expand = function (table) {
-
+Database.prototype.extend = function (table, properties) {
+  var model = new Model(this, table);
+  return _.extend(model, properties);
 };
 
 module.exports = Database;
