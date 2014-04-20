@@ -87,12 +87,17 @@ Database.prototype.query = function (sql, params, options, callback) {
 /**
  * Creates and returns a new database model.
  * @param {String} table the name of an existing table in database.
- * @param {Object} properties the model's properties, e.g. public functions.
+ * @param {Object} [customProperties] the model's custom properties.
  * Please note that this function will not create a new table on database.
  */
-Database.prototype.extend = function (table, properties) {
+Database.prototype.extend = function (table, customProperties) {
   var model = new Model(this, table);
-  return _.extend(model, properties);
+
+  if (_.isPlainObject(customProperties)) {
+    return _.extend(model, customProperties);
+  }
+
+  return model;
 };
 
 module.exports = Database;

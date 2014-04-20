@@ -1,7 +1,7 @@
 {
   "name": "rdb",
   "version": "0.1.0",
-  "description": "A simple db client that aims to take out most of the complexity of querying data.",
+  "description": "A simple, unopinionated, relational db client that aims to take out most of the complexity of querying and managing data.",
   "repository": {
     "type": "git",
     "url": "git://github.com/jmike/node-rdb.git"

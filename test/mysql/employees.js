@@ -39,12 +39,10 @@ describe('employees model', function () {
   });
 
   it('should be able to count all records', function (done) {
-    employees.count(function (error, records) {
+    employees.count(function (error, count) {
       if (error) return done(error);
 
-      assert.isArray(records);
-      assert.lengthOf(records, 1);
-      assert.isNumber(records[0].count);
+      assert.isNumber(count);
       done();
     });
   });

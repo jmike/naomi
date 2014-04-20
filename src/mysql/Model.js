@@ -107,7 +107,14 @@ Model.prototype.count = function (selector, callback) {
 
   sql += ';';
 
-  this.db.query(sql, params, callback);
+  this.db.query(sql, params, function (error, records) {
+    var count;
+
+    if (error) return callback(error);
+    count = records[0].count;
+    
+    callback(null, count);
+  });
 };
 
 /**
