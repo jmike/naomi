@@ -1,18 +1,23 @@
 {
   "name": "rdb",
   "version": "0.1.0",
-  "description": "A simple db client that aims to take out most of the complexity of connecting and querying data.",
+  "description": "A simple db client that aims to take out most of the complexity of querying data.",
   "repository": {
-		"type": "git",
-		"url": "git://github.com/jmike/node-rdb.git"
-	},
+    "type": "git",
+    "url": "git://github.com/jmike/node-rdb.git"
+  },
   "main": "src/rdb.js",
+  "scripts": {
+    "test": "node test/index.js"
+  },
   "engines": {
     "node": "0.10.x",
     "npm": "1.2.x"
   },
   "dependencies": {
-    "mysql": "~2.1.1"
+    "mysql": "~2.1.1",
+    "dotenv": "~0.2.8",
+    "lodash": "~2.4.1"
   },
   "devDependencies": {
     "mocha": "~1.17.1",
