@@ -18,9 +18,9 @@ module.exports = {
     case this.MYSQL:
       return new MySQLDatabase(connectionProperties);
     case this.POSTGRES:
-      throw new Error('rdb: Postgres database not yet supported');
+      throw new Error('Naomi: Postgres database not yet supported');
     default:
-      throw new Error('rdb: Invalid or unspecified database type');
+      throw new Error('Naomi: Invalid or unspecified database type');
     }
   }
 };

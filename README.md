@@ -1,33 +1,33 @@
-# Relational db
+# Naomi
 
 A simple, unopinionated, relational db client that provides handy methods for handling repetitive tasks and an easy way to run custom queries.
 
 ## Installation
 
 ```
-$ npm install rdb
+$ npm install naomi
 ```
 
 ## Quick start
 
 ### Creating a database
 
-Call `rdb.create()` with the following parameters:
+Call `naomi.create()` with the following parameters:
 
 1. Database type (i.e. MYSQL) - POSTGRES is on the way;
 2. Connection properties.
 
 ```
-var rdb = require('rdb'),
+var naomi = require('naomi'),
   db;
 
 // create db
-db = rdb.create('MYSQL', {
+db = naomi.create('MYSQL', {
   host: 'host',
   port: 3306,
   user: 'user',
   password: 'password',
-  database: 'rdb_test',
+  database: 'naomi_test',
 });
 ```
 
