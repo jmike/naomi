@@ -15,7 +15,7 @@
     "unused": true,
     "strict": false,
     "globals": {
-      "define": false,
+      "describe": false,
       "it": false,
       "after": false,
       "before": false
