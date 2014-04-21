@@ -2,7 +2,7 @@
 
 # Naomi
 
-A simple, unopinionated, relational db client that provides handy methods for handling repetitive tasks and an easy way to run custom queries.
+A simple, unopinionated, relational db client that manages repetitive CRUD tasks, while providing an easy interface for custom queries.
 
 ## Installation
 
@@ -12,9 +12,9 @@ $ npm install naomi
 
 ## Quick start
 
-### Creating a database
+### How to create a database?
 
-Call `naomi.create()` with the following parameters:
+Use `naomi.create()` with the following parameters:
 
 1. Database type (i.e. MYSQL) - POSTGRES is on the way;
 2. Connection properties.
@@ -33,9 +33,9 @@ db = naomi.create('MYSQL', {
 });
 ```
 
-### Creating a model
+### How to create a model?
 
-Call `db.extend()` with the name of an existing table in database.
+After creating a database, you can call `db.extend()` with the name of an existing table.
 
 ```
 var employees = db.extend('employees');
@@ -51,11 +51,11 @@ Call `db.extend()` with the following parameters:
 ```
 var employees = db.extend('employees', {
 
-  getByFirstName: function (firstName, callback) {
+  getAboveAge30: function (age, callback) {
     var sql, params;
 
-    sql = 'SELECT * FROM employees WHERE firstName = ?;';
-    params = [firstName]
+    sql = 'SELECT * FROM employees WHERE age > ?;';
+    params = [age]
 
     db.query(sql, params, callback);
   }
@@ -63,9 +63,9 @@ var employees = db.extend('employees', {
 });
 ```
 
-### Putting the model to use
+### How to user a model?
 
-Creating a model gives you access to handy methods for handling repetitive tasks, such as simple CRUD function.
+Creating a model gives you access to handy methods for managing repetitive CRUD tasks + counting records.
 
 ##### Creating/updating records
 
@@ -80,9 +80,17 @@ employees.set({
     return;
   }
 
-  // Thomas Anderson has been created in db
+  // Thomas Anderson is created in db
 });
 ```
+
+This will result to the following SQL, run under the hood:
+
+```
+INSERT INTO `employees` SET `firstName` = 'Thomas', `lastName` = 'Anderson', `age` = 30 ON DUPLICATE KEY UPDATE `firstName` = VALUES(`firstName`), `lastName` = VALUES(`lastName`), `age` = VALUES(`age`);
+```
+
+So if you need to update a record, you should simply specify an ID or create a unique index in the table.
 
 ##### Retrieving data with ID
 
@@ -95,6 +103,12 @@ employees.get(1, function (error, records) {
 
   // do something with records
 });
+```
+
+This will result to the following SQL, run under the hood:
+
+```
+SELECT * FROM `employees` WHERE `id` = 1;
 ```
 
 ##### Retrieving data with custom properties
@@ -110,17 +124,59 @@ employees.get({age: 30}, function (error, records) {
 });
 ```
 
-##### Counting records
+This will result to the following SQL, run under the hood:
 
 ```
-employees.count(function (error, count) {
+SELECT * FROM `employees` WHERE `age` = 30;
+```
+
+##### Retrieving data with multiple custom properties
+
+```
+employees.get({
+  lastName: 'Anderson',
+  age: 30
+}, function (error, records) {
   if (error) {
     console.error(error);
     return;
   }
 
-  // do something with count
+  // do something with records
 });
+```
+
+This will result to the following SQL, run under the hood:
+
+```
+SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` = 30;
+```
+
+##### Retrieving data with range of custom properties
+
+```
+employees.get([
+  {
+    lastName: 'Anderson',
+    age: 30
+  },
+  {
+    id: 1
+  }
+], function (error, records) {
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  // do something with records
+});
+```
+
+This will result to the following SQL, run under the hood:
+
+```
+SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` = 30 OR `id` = 1;
 ```
 
 ##### Deleting records
@@ -136,6 +192,34 @@ employees.del(1, function (error) {
 });
 ```
 
+This will result to the following SQL, run under the hood:
+
+```
+DELETE FROM `employees` WHERE id = 1;
+```
+
+##### Counting records
+
+```
+employees.count(function (error, count) {
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  // do something with count
+});
+```
+
+This will result to the following SQL, run under the hood:
+
+```
+SELECT COUNT(*) AS 'count' FROM `employees`;
+```
+
 ## Philosophy
 
-Repetitive data queries can be compiled by machines. Complex data queries should be written by humans. Because (a) it's fun and (b) it requires creativity.
+Repetitive data queries can be compiled by machines. Complex data queries should be written by humans, because:
+
+1. it requires creativity and imagination, that machines lack;
+2. it's fun.
