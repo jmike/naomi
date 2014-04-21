@@ -13,7 +13,13 @@ describe('employees model', function () {
   var employees = db.extend('employees');
 
   before(function (done) {
-    db.connect(done);
+    db.connect(function (error) {
+      var sql = 'CREATE TABLE IF NOT EXISTS `employees` (`id` int(10) unsigned NOT NULL AUTO_INCREMENT, `firstName` varchar(45) NOT NULL, `lastName` varchar(45) NOT NULL, `age` tinyint(3) unsigned DEFAULT NULL, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+
+      if (error) return done(error);
+
+      db.query(sql, done);
+    });
   });
 
   after(function (done) {
