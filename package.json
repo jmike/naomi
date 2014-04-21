@@ -28,5 +28,14 @@
     "email": "dimitris@jmike.gr",
     "url": "http://jmike.gr"
   },
+  "keywords": [
+    "database",
+    "relational",
+    "db",
+    "sql",
+    "query",
+    "client",
+    "model"
+  ],
   "license": "MIT"
 }
