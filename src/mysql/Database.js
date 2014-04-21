@@ -54,23 +54,29 @@ Database.prototype.disconnect = function (callback) {
  * @param {Function} callback a callback function i.e. function(error, data).
  */
 Database.prototype.query = function (sql, params, options, callback) {
-  // handle optional "params"
-  if (! Array.isArray(params)) {
-    if (typeof params === 'function') {
+  // handle optional parameters
+  if (!_.isArray(params)) {
+
+    if (_.isFunction(params)) {
       callback = params;
-    } else { // is object
+    } else if (_.isPlainObject(params)) {
       options = params;
+    } else { // null or something unexpected
+      throw new Error('MySQL Database: Invalid or unspecified parameters');
     }
+
     params = [];
   }
 
-  // handle optional "options"
-  if (typeof options === 'function') {
+  if (_.isPlainObject(options)) {
+    sql = _.extend(options, {sql: sql});
+  } else if (_.isFunction(options)) {
     callback = options;
     options = null;
-  } else { // is object
-    options.sql = sql;
-    sql = options;
+  }
+
+  if (!_.isFunction(callback)) {
+    throw new Error('MySQL Database: You must specify a proper callback function');
   }
 
   // query the db
