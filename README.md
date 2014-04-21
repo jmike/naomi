@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/jmike/naomi.png?branch=master)](https://travis-ci.org/jmike/naomi) [![Dependency Status](https://gemnasium.com/jmike/naomi.png)](https://gemnasium.com/jmike/naomi)
+
 # Naomi
 
 A simple, unopinionated, relational db client that provides handy methods for handling repetitive tasks and an easy way to run custom queries.
