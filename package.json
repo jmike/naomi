@@ -1,7 +1,7 @@
 {
   "name": "naomi",
   "version": "0.2.3",
-  "description": "A simple, unopinionated, relational db client that manages repetitive CRUD tasks, while providing an easy inteface for custom queries.",
+  "description": "The model (as in MVC) library for relational databases, e.g. MySQL, Postgres.",
   "repository": {
     "type": "git",
     "url": "git://github.com/jmike/naomi.git"
@@ -31,12 +31,13 @@
   },
   "keywords": [
     "database",
-    "relational",
     "db",
+    "relational",
     "sql",
     "query",
     "client",
-    "model"
+    "model",
+    "mysql"
   ],
   "license": "MIT"
 }
