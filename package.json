@@ -1,7 +1,7 @@
 {
   "name": "naomi",
   "version": "0.2.1",
-  "description": "A simple, unopinionated, relational db client that manages repetitive CRUD tasks, while providing an easy way to run custom queries.",
+  "description": "A simple, unopinionated, relational db client that manages repetitive CRUD tasks, while providing an easy inteface for custom queries.",
   "repository": {
     "type": "git",
     "url": "git://github.com/jmike/naomi.git"
