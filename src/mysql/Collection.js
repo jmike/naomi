@@ -21,7 +21,8 @@ Model.prototype._parseSelector = function (selector) {
   var self = this, sql, params;
 
   if (_.isArray(selector)) {
-    sql = []; params = [];
+    sql = [];
+    params = [];
 
     selector.forEach(function (e) {
       var result = self._parseSelector(e);
@@ -33,7 +34,8 @@ Model.prototype._parseSelector = function (selector) {
     return {sql: sql.join(' OR '), params: params};
 
   } else if (_.isPlainObject(selector)) {
-    sql = []; params = [];
+    sql = [];
+    params = [];
 
     _.forOwn(selector, function (v, k) {
       sql.push('`' + k + '` = ?');
@@ -63,8 +65,8 @@ Model.prototype.get = function (selector, callback) {
     selector = null;
   }
 
-  sql = 'SELECT * FROM `' + this.table + '`';
-  params = [];
+  sql = 'SELECT * FROM ??';
+  params = [this.table];
 
   if (selector) {
     result = this._parseSelector(selector);
@@ -93,8 +95,8 @@ Model.prototype.count = function (selector, callback) {
     selector = null;
   }
 
-  sql = 'SELECT COUNT(*) AS `count` FROM `' + this.table + '`';
-  params = [];
+  sql = 'SELECT COUNT(*) AS `count` FROM ??';
+  params = [this.table];
 
   if (selector) {
     result = this._parseSelector(selector);
@@ -112,7 +114,7 @@ Model.prototype.count = function (selector, callback) {
 
     if (error) return callback(error);
     count = records[0].count;
-    
+
     callback(null, count);
   });
 };
@@ -125,13 +127,14 @@ Model.prototype.count = function (selector, callback) {
 Model.prototype.set = function (properties, callback) {
   var sql, params;
 
-  sql = 'INSERT INTO `' + this.table + '` SET ?';
-  params = [properties];
+  sql = 'INSERT INTO ?? SET ?';
+  params = [this.table, properties];
 
   sql += ' ON DUPLICATE KEY UPDATE ' +
     _.without(Object.getOwnPropertyNames(properties), 'id')
     .map(function (k) {
-      return '`' + k + '` = VALUES(`' + k + '`)';
+      params.push(k, k);
+      return '?? = VALUES(??)';
     })
     .join(', ');
 
@@ -148,8 +151,8 @@ Model.prototype.set = function (properties, callback) {
 Model.prototype.del = function (selector, callback) {
   var sql, params, result;
 
-  sql = 'DELETE FROM `' + this.table + '`';
-  params = [];
+  sql = 'DELETE FROM ??';
+  params = [this.table];
 
   result = this._parseSelector(selector);
   if (! _.isEmpty(result.sql)) {

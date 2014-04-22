@@ -8,12 +8,12 @@ var assert = require('chai').assert,
     database: process.env.DATABASE_SCHEMA
   });
 
-describe('MySQL Model', function () {
+describe('MySQL Collection', function () {
 
-  var model = db.extend('table');
+  var collection = db.extend('table');
 
   it('should accept a Number as selector', function () {
-    var result = model._parseSelector(1);
+    var result = collection._parseSelector(1);
 
     assert.strictEqual(result.sql, '`id` = ?');
     assert.isArray(result.params);
@@ -21,7 +21,7 @@ describe('MySQL Model', function () {
   });
 
   it('should accept a String as selector', function () {
-    var result = model._parseSelector('foo');
+    var result = collection._parseSelector('foo');
 
     assert.strictEqual(result.sql, '`id` = ?');
     assert.isArray(result.params);
@@ -30,7 +30,7 @@ describe('MySQL Model', function () {
 
   it('should accept a Date as selector', function () {
     var d = new Date(),
-      result = model._parseSelector(d);
+      result = collection._parseSelector(d);
 
     assert.strictEqual(result.sql, '`id` = ?');
     assert.isArray(result.params);
@@ -38,7 +38,7 @@ describe('MySQL Model', function () {
   });
 
   it('should accept a Boolean as selector', function () {
-    var result = model._parseSelector(true);
+    var result = collection._parseSelector(true);
 
     assert.strictEqual(result.sql, '`id` = ?');
     assert.isArray(result.params);
@@ -46,7 +46,7 @@ describe('MySQL Model', function () {
   });
 
   it('should accept an Object as selector', function () {
-    var result = model._parseSelector({a: 1, b: 'test'});
+    var result = collection._parseSelector({a: 1, b: 'test'});
 
     assert.strictEqual(result.sql, '`a` = ? AND `b` = ?');
     assert.isArray(result.params);
@@ -55,7 +55,7 @@ describe('MySQL Model', function () {
   });
 
   it('should accept an Array<Number> as selector', function () {
-    var result = model._parseSelector([1, 2, 3]);
+    var result = collection._parseSelector([1, 2, 3]);
 
     assert.strictEqual(result.sql, '`id` = ? OR `id` = ? OR `id` = ?');
     assert.isArray(result.params);
@@ -65,7 +65,7 @@ describe('MySQL Model', function () {
   });
 
   it('should accept an Array<Object> as selector', function () {
-    var result = model._parseSelector([{a: 1, b: 2}, {c: 3, d: 4}]);
+    var result = collection._parseSelector([{a: 1, b: 2}, {c: 3, d: 4}]);
 
     assert.strictEqual(result.sql, '`a` = ? AND `b` = ? OR `c` = ? AND `d` = ?');
     assert.isArray(result.params);

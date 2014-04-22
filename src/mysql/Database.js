@@ -1,6 +1,6 @@
 var mysql = require('mysql'),
   _ = require('lodash'),
-  Model = require('./Model');
+  Collection = require('./Collection');
 
 /**
  * Constructs a new MySQL database.
@@ -91,19 +91,19 @@ Database.prototype.query = function (sql, params, options, callback) {
 };
 
 /**
- * Creates and returns a new database model.
+ * Creates and returns a new data collection representing the designated table.
  * @param {String} table the name of an existing table in database.
- * @param {Object} [customProperties] the model's custom properties.
+ * @param {Object} [customProperties] the collection's custom properties.
  * Please note that this function will not create a new table on database.
  */
 Database.prototype.extend = function (table, customProperties) {
-  var model = new Model(this, table);
+  var collection = new Collection(this, table);
 
   if (_.isPlainObject(customProperties)) {
-    return _.extend(model, customProperties);
+    return _.extend(collection, customProperties);
   }
 
-  return model;
+  return collection;
 };
 
 module.exports = Database;
