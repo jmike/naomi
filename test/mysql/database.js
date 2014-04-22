@@ -26,21 +26,25 @@ describe('MySQL Database::query', function () {
     assert.throws(db.query.bind(db, true));
     assert.throws(db.query.bind(db, {}));
     assert.throws(db.query.bind(db, []));
+    assert.throws(db.query.bind(db, null));
 
     assert.throws(db.query.bind(db, 'SELECT 1;', 1));
     assert.throws(db.query.bind(db, 'SELECT 1;', true));
     assert.throws(db.query.bind(db, 'SELECT 1;', 'foo'));
     assert.throws(db.query.bind(db, 'SELECT 1;', {}));
+    assert.throws(db.query.bind(db, 'SELECT 1;', null));
 
     assert.throws(db.query.bind(db, 'SELECT 1;', [], 1));
     assert.throws(db.query.bind(db, 'SELECT 1;', [], true));
     assert.throws(db.query.bind(db, 'SELECT 1;', [], 'foo'));
     assert.throws(db.query.bind(db, 'SELECT 1;', [], []));
+    assert.throws(db.query.bind(db, 'SELECT 1;', [], null));
 
     assert.throws(db.query.bind(db, 'SELECT 1;', [], {}, 1));
     assert.throws(db.query.bind(db, 'SELECT 1;', [], {}, true));
     assert.throws(db.query.bind(db, 'SELECT 1;', [], {}, 'foo'));
     assert.throws(db.query.bind(db, 'SELECT 1;', [], {}, []));
+    assert.throws(db.query.bind(db, 'SELECT 1;', [], {}, null));
   });
 
 });
