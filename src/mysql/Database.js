@@ -10,7 +10,7 @@ var mysql = require('mysql'),
  */
 function Database(connectionProperties) {
   this.connectionProperties = connectionProperties;
-  this.connected = false;
+  this.isConnected = false;
 }
 
 /**
@@ -19,9 +19,9 @@ function Database(connectionProperties) {
  * @returns {Database} this to enable method chaining.
  */
 Database.prototype.connect = function (callback) {
-  if (!this.connected) {
+  if (!this.isConnected) {
     this.pool = mysql.createPool(this.connectionProperties);
-    this.connected = true;
+    this.isConnected = true;
   }
 
   if (callback) callback();
@@ -36,9 +36,9 @@ Database.prototype.connect = function (callback) {
  * @returns {Database} this to enable method chaining.
  */
 Database.prototype.disconnect = function (callback) {
-  if (this.connected) {
+  if (this.isConnected) {
     this.pool.end(callback);
-    this.connected = false;
+    this.isConnected = false;
   } else if (callback) {
     callback();
   }
@@ -51,32 +51,57 @@ Database.prototype.disconnect = function (callback) {
  * @param {String} sql a parameterized SQL statement.
  * @param {Array} [params] an array of parameter values.
  * @param {Object} [options] query options, i.e. {nestTables: true} to handle overlapping column names.
- * @param {Function} callback a callback function i.e. function(error, data).
+ * @param {Function} [callback] a callback function i.e. function(error, data).
  */
 Database.prototype.query = function (sql, params, options, callback) {
-  // handle optional parameters
+  if (!_.isString(sql)) {
+    throw new Error('You must specify a SQL statement');
+  }
+
   if (!_.isArray(params)) {
 
     if (_.isFunction(params)) {
       callback = params;
     } else if (_.isPlainObject(params)) {
       options = params;
-    } else { // null or something unexpected
-      throw new Error('MySQL Database: Invalid or unspecified parameters');
+    } else if (!_.isUndefined(params)) {
+      throw new Error('Invalid query parameters - expected array, received ' + typeof(callback));
     }
 
-    params = [];
+    params = []; // default
   }
 
-  if (_.isPlainObject(options)) {
-    sql = _.extend(options, {sql: sql});
-  } else if (_.isFunction(options)) {
-    callback = options;
-    options = null;
+  if (!_.isPlainObject(options)) {
+
+    if (_.isFunction(options)) {
+      callback = options;
+    } else if (!_.isUndefined(options)) {
+      throw new Error('Invalid query options - expected object, received ' + typeof(callback));
+    }
+
+    options = null; // default
   }
 
   if (!_.isFunction(callback)) {
-    throw new Error('MySQL Database: You must specify a proper callback function');
+
+    if (!_.isUndefined(callback)) {
+      throw new Error('You must specify a proper callback function');
+    }
+
+    // default
+    callback = function (error) {
+      if (error) throw error;
+    };
+  }
+
+  // make sure db is isConnected
+  if (!this.isConnected) {
+    return callback(new Error('Connection is closed - did you forget to call db.connect()?'));
+  }
+
+  // use options
+  if (options) {
+    sql = _.extend(options, {sql: sql});
   }
 
   // query the db
@@ -101,6 +126,8 @@ Database.prototype.extend = function (table, customProperties) {
 
   if (_.isPlainObject(customProperties)) {
     return _.extend(collection, customProperties);
+  } else if (!_.isUndefined(customProperties)) {
+    throw new Error('Invalid custom properties - expected object, received ' + typeof(customProperties));
   }
 
   return collection;

@@ -8,7 +8,7 @@ var assert = require('chai').assert,
     database: process.env.DATABASE_SCHEMA
   });
 
-describe('employees model', function () {
+describe('employees collection', function () {
 
   var employees = db.extend('employees');
 
@@ -16,9 +16,11 @@ describe('employees model', function () {
     db.connect(function (error) {
       var sql = 'CREATE TABLE IF NOT EXISTS `employees` (`id` int(10) unsigned NOT NULL AUTO_INCREMENT, `firstName` varchar(45) NOT NULL, `lastName` varchar(45) NOT NULL, `age` tinyint(3) unsigned DEFAULT NULL, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
 
-      if (error) return done(error);
-
-      db.query(sql, done);
+      if (error) {
+        done(error);
+      } else {
+        db.query(sql, done);
+      }
     });
   });
 
