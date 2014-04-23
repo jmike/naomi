@@ -54,44 +54,54 @@ Database.prototype.disconnect = function (callback) {
  * @param {Function} [callback] a callback function i.e. function(error, data).
  */
 Database.prototype.query = function (sql, params, options, callback) {
-  if (!_.isString(sql)) {
-    throw new Error('You must specify a SQL statement');
+  if (typeof sql !== 'string') {
+    throw new Error('You must specify a valid SQL statement');
   }
 
-  if (!_.isArray(params)) {
-
-    if (_.isFunction(params)) {
-      callback = params;
-    } else if (_.isPlainObject(params)) {
+  switch (typeof params) {
+  case 'object':
+    if (!Array.isArray(params)) { // plain object
       options = params;
-    } else if (!_.isUndefined(params)) {
-      throw new Error('Invalid query parameters - expected array, received ' + typeof(callback));
+      params = [];
     }
-
-    params = []; // default
+    break;
+  case 'function':
+    callback = params;
+    params = [];
+    break;
+  case 'undefined':
+    params = [];
+    break;
+  default: // not Array, nor Object, nor Function, nor undefined
+    throw new Error('Invalid query parameters - expected array, received ' + typeof(callback));
   }
 
-  if (!_.isPlainObject(options)) {
-
-    if (_.isFunction(options)) {
-      callback = options;
-    } else if (!_.isUndefined(options)) {
-      throw new Error('Invalid query options - expected object, received ' + typeof(callback));
-    }
-
-    options = null; // default
+  switch (typeof options) {
+  case 'object':
+    // as expected
+    break;
+  case 'function':
+    callback = options;
+    options = null;
+    break;
+  case 'undefined':
+    options = null;
+    break;
+  default: // not Object, nor Function, mpr undefined
+    throw new Error('Invalid query options - expected object, received ' + typeof(callback));
   }
 
-  if (!_.isFunction(callback)) {
-
-    if (!_.isUndefined(callback)) {
-      throw new Error('You must specify a proper callback function');
-    }
-
-    // default
+  switch (typeof callback) {
+  case 'function':
+    // as expected
+    break;
+  case 'undefined':
     callback = function (error) {
       if (error) throw error;
     };
+    break;
+  default: // not Function, nor undefined
+    throw new Error('You must specify a proper callback function');
   }
 
   // make sure db is isConnected
