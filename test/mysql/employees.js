@@ -11,7 +11,7 @@ var assert = require('chai').assert,
 
 describe('Employees collection', function () {
 
-  var employees = db.extend('employees');
+  var employees;
 
   before(function (done) {
     db.connect(function (error) {
@@ -27,7 +27,12 @@ describe('Employees collection', function () {
 
       if (error) return done(error);
 
-      db.query(sql, done);
+      db.query(sql, function (error) {
+        if (error) return done(error);
+
+        employees = db.extend('employees');
+        done();
+      });
     });
   });
 
