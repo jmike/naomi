@@ -1,21 +1,13 @@
 var assert = require('chai').assert,
   naomi = require('../../src/naomi'),
-  db = naomi.create('MYSQL', {
-    host: process.env.DATABASE_HOST,
-    port: parseInt(process.env.DATABASE_PORT, 10) || 3306,
-    user: process.env.DATABASE_USERNAME,
-    password: process.env.DATABASE_PASSWORD,
-    database: process.env.DATABASE_SCHEMA
-  });
+  Collection = require('../../src/mysql/Collection');
 
 describe('MySQL Collection', function () {
-
-  var collection = db.extend('table');
 
   describe('#_parseSelector()', function () {
 
     it('should accept a Number as input', function () {
-      var result = collection._parseSelector(1);
+      var result = Collection.prototype._parseSelector(1);
 
       assert.strictEqual(result.sql, '`id` = ?');
       assert.isArray(result.params);
@@ -23,7 +15,7 @@ describe('MySQL Collection', function () {
     });
 
     it('should accept a String as input', function () {
-      var result = collection._parseSelector('foo');
+      var result = Collection.prototype._parseSelector('foo');
 
       assert.strictEqual(result.sql, '`id` = ?');
       assert.isArray(result.params);
@@ -32,7 +24,7 @@ describe('MySQL Collection', function () {
 
     it('should accept a Date as input', function () {
       var d = new Date(),
-        result = collection._parseSelector(d);
+        result = Collection.prototype._parseSelector(d);
 
       assert.strictEqual(result.sql, '`id` = ?');
       assert.isArray(result.params);
@@ -40,7 +32,7 @@ describe('MySQL Collection', function () {
     });
 
     it('should accept a Boolean as input', function () {
-      var result = collection._parseSelector(true);
+      var result = Collection.prototype._parseSelector(true);
 
       assert.strictEqual(result.sql, '`id` = ?');
       assert.isArray(result.params);
@@ -48,7 +40,7 @@ describe('MySQL Collection', function () {
     });
 
     it('should accept an Object as input', function () {
-      var result = collection._parseSelector({a: 1, b: 'test'});
+      var result = Collection.prototype._parseSelector({a: 1, b: 'test'});
 
       assert.strictEqual(result.sql, '`a` = ? AND `b` = ?');
       assert.isArray(result.params);
@@ -57,7 +49,7 @@ describe('MySQL Collection', function () {
     });
 
     it('should accept an Array<Number> as input', function () {
-      var result = collection._parseSelector([1, 2, 3]);
+      var result = Collection.prototype._parseSelector([1, 2, 3]);
 
       assert.strictEqual(result.sql, '`id` = ? OR `id` = ? OR `id` = ?');
       assert.isArray(result.params);
@@ -67,7 +59,10 @@ describe('MySQL Collection', function () {
     });
 
     it('should accept Array<Object> as input', function () {
-      var result = collection._parseSelector([{a: 1, b: 2}, {c: 3, d: 4}]);
+      var result = Collection.prototype._parseSelector([
+        {a: 1, b: 2},
+        {c: 3, d: 4}
+      ]);
 
       assert.strictEqual(result.sql, '`a` = ? AND `b` = ? OR `c` = ? AND `d` = ?');
       assert.isArray(result.params);
