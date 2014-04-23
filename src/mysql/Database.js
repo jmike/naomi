@@ -1,4 +1,6 @@
-var mysql = require('mysql'),
+var events = require('events'),
+  util = require('util'),
+  mysql = require('mysql'),
   _ = require('lodash'),
   Collection = require('./Collection');
 
@@ -20,7 +22,12 @@ function defaultCallback(error) {
 function Database(connectionProperties) {
   this.connectionProperties = connectionProperties;
   this.isConnected = false;
+
+  events.EventEmitter.call(this);
 }
+
+// Database extends the EventEmitter class
+util.inherits(Database, events.EventEmitter);
 
 /**
  * Attempts to connect to database, using the connection properties given at construction time.
@@ -33,16 +40,14 @@ Database.prototype.connect = function (callback) {
     callback = defaultCallback;
   }
 
-  // check if already connected
-  if (this.isConnected) {
-    callback();
-
-  } else {
+  if (!this.isConnected) {
     this._pool = mysql.createPool(this.connectionProperties);
     this.isConnected = true;
 
-    callback();
+    this.emit('connected');
   }
+
+  callback();
 
   return this;
 };
@@ -59,10 +64,11 @@ Database.prototype.disconnect = function (callback) {
     callback = defaultCallback;
   }
 
-  // check if already connected
   if (this.isConnected) {
     this._pool.end(callback);
     this.isConnected = false;
+
+    this.emit('disconnected');
 
   } else {
     callback();
@@ -84,7 +90,7 @@ Database.prototype.query = function (sql, params, options, callback) {
     throw new Error('You must specify a valid SQL statement');
   }
 
-  // make sure "params" parameter is valid or undefined
+  // make sure "params" parameter is valid
   switch (typeof params) {
   case 'object':
     if (!Array.isArray(params)) { // plain object
@@ -103,7 +109,7 @@ Database.prototype.query = function (sql, params, options, callback) {
     throw new Error('Invalid query parameters - expected array, received ' + typeof(callback));
   }
 
-  // make sure "options" parameter is valid or undefined
+  // make sure "options" parameter is valid
   switch (typeof options) {
   case 'object':
     // as expected
@@ -115,11 +121,11 @@ Database.prototype.query = function (sql, params, options, callback) {
   case 'undefined':
     options = null;
     break;
-  default: // not Object, nor Function, mpr undefined
+  default: // not Object, nor Function, nor undefined
     throw new Error('Invalid query options - expected object, received ' + typeof(callback));
   }
 
-  // make sure "callback" parameter is valid or undefined
+  // make sure "callback" parameter is valid
   switch (typeof callback) {
   case 'function':
     // as expected
@@ -133,7 +139,7 @@ Database.prototype.query = function (sql, params, options, callback) {
 
   // check if connected
   if (!this.isConnected) {
-    return callback(new Error('Connection is closed - did you forget to call db.connect()?'));
+    return callback(new Error('Connection is closed - did you forget to call #connect()?'));
   }
 
   // use the options, Luke
