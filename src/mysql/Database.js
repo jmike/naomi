@@ -152,19 +152,26 @@ Database.prototype.query = function (sql, params, options, callback) {
     if (error) return callback(error);
 
     connection.query(sql, params, function(error, records, fields) {
-      var meta = {};
+      var meta;
 
-      connection.release(); // no longer needed
+      if (error) {
+        callback(error);
 
-      if (Array.isArray(records)) { // SELECT statement
-        meta.fields = fields;
-        callback(error, records, meta);
+      } else if (Array.isArray(records)) { // SELECT statement
+        meta = {fields: fields};
+
+        callback(null, records, meta);
 
       } else { // DML statement
-        meta.insertId = records.insertId;
-        meta.affectedRows = records.affectedRows;
-        callback(error, meta);
+        meta = {
+          insertId: records.insertId,
+          affectedRows: records.affectedRows
+        };
+
+        callback(null, meta);
       }
+
+      connection.release();
     });
   });
 };
