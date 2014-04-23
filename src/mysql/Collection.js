@@ -7,9 +7,63 @@ var _ = require('lodash');
  * @constructor
  */
 function Collection(db, table) {
+  var self = this;
+
   this.db = db;
   this.table = table;
+
+  db.on('connected', function () {
+    self._getIndexInfo(function (error, info) {
+      if (error) throw error;
+
+      self.primaryKey = info.primaryKey;
+      self.uniqueKeys = info.uniqueKeys;
+      self.indexKeys = info.indexKeys;
+    });
+  });
 }
+
+Collection.prototype._getIndexInfo = function (callback) {
+  var sql, params;
+
+  sql = 'SHOW INDEX FROM ??;';
+  params = [this.table];
+
+  this.db.query(sql, params, function (error, records) {
+    var info = {
+      primaryKey: [],
+      uniqueKeys: {},
+      indexKeys: {},
+    };
+
+    if (error) return callback(error);
+
+    records.forEach(function (record) {
+      var key, column, isUnique, stack;
+
+      key = record.Key_name;
+      column = record.Column_name;
+      isUnique = record.Non_unique === 0;
+
+      if (key === 'PRIMARY') {
+        stack = info.primaryKey;
+
+      } else if (isUnique) {
+        info.uniqueKeys[key] = info.uniqueKeys[key] || [];
+        stack = info.uniqueKeys[key];
+
+      } else {
+        info.indexKeys[key] = info.indexKeys[key] || [];
+        stack = info.indexKeys[key];
+
+      }
+
+      stack.push(column);
+    });
+
+    callback(null, info);
+  });
+};
 
 /**
  * Parses the given selector and returns a parameterized where clause.
