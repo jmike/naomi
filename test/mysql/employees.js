@@ -15,7 +15,15 @@ describe('Employees collection', function () {
 
   before(function (done) {
     db.connect(function (error) {
-      var sql = 'CREATE TABLE IF NOT EXISTS `employees` (`id` int(10) unsigned NOT NULL AUTO_INCREMENT, `firstName` varchar(45) NOT NULL, `lastName` varchar(45) NOT NULL, `age` tinyint(3) unsigned DEFAULT NULL, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+      var sql = 'CREATE TABLE IF NOT EXISTS `employees` (' +
+        '`id` int(10) unsigned NOT NULL AUTO_INCREMENT, ' +
+        '`firstName` varchar(45) NOT NULL, ' +
+        '`lastName` varchar(45) NOT NULL, ' +
+        '`age` tinyint(3) unsigned DEFAULT NULL, ' +
+        'PRIMARY KEY (`id`), ' +
+        'UNIQUE KEY `unique_idx` (`firstName`,`lastName`), ' +
+        'KEY `age_idx` (`age`)' +
+        ') ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;';
 
       if (error) return done(error);
 
