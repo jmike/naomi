@@ -3,9 +3,18 @@ var mysql = require('mysql'),
   Collection = require('./Collection');
 
 /**
+ * A default callback function that throws an error when necessary.
+ * @param {Error} error.
+ * @private
+ */
+function defaultCallback(error) {
+  if (error) throw error;
+}
+
+/**
  * Constructs a new MySQL database.
  * @param {Object} connectionProperties connection properties.
- * @see https://github.com/felixge/node-mysql#connection-options for a list of connection properties.
+ * @see https://github.com/felixge/node-mysql#connection-options for a list of connection properties to use.
  * @constructor
  */
 function Database(connectionProperties) {
@@ -15,16 +24,25 @@ function Database(connectionProperties) {
 
 /**
  * Attempts to connect to database, using the connection properties given at construction time.
- * @param {Function} [callback] a callback function to execute when connection has been established, i.e. function (error) {}.
- * @returns {Database} this to enable method chaining.
+ * @param {Function} [callback] a callback function to execute when connection has been established, i.e. function (error).
+ * @returns {Database} this instance, to enable method chaining.
  */
 Database.prototype.connect = function (callback) {
-  if (!this.isConnected) {
-    this.pool = mysql.createPool(this.connectionProperties);
-    this.isConnected = true;
+  // handle optional "callback" param
+  if (typeof callback !== 'function') {
+    callback = defaultCallback;
   }
 
-  if (callback) callback();
+  // check if already connected
+  if (this.isConnected) {
+    callback();
+
+  } else {
+    this._pool = mysql.createPool(this.connectionProperties);
+    this.isConnected = true;
+
+    callback();
+  }
 
   return this;
 };
@@ -32,14 +50,21 @@ Database.prototype.connect = function (callback) {
 /**
  * Gracefully closes all database connections.
  * The instance will become practically useless after calling this method, unless calling connect() again.
- * @param {Function} [callback] a callback function to execute when connection has been closed, i.e. function (error) {}.
+ * @param {Function} [callback] a callback function to execute when connection has been closed, i.e. function (error).
  * @returns {Database} this to enable method chaining.
  */
 Database.prototype.disconnect = function (callback) {
+  // handle optional "callback" param
+  if (typeof callback !== 'function') {
+    callback = defaultCallback;
+  }
+
+  // check if already connected
   if (this.isConnected) {
-    this.pool.end(callback);
+    this._pool.end(callback);
     this.isConnected = false;
-  } else if (callback) {
+
+  } else {
     callback();
   }
 
@@ -51,14 +76,15 @@ Database.prototype.disconnect = function (callback) {
  * @param {String} sql a parameterized SQL statement.
  * @param {Array} [params] an array of parameter values.
  * @param {Object} [options] query options, i.e. {nestTables: true} to handle overlapping column names.
- * @param {Function} [callback] a callback function i.e. function(error, data).
+ * @param {Function} [callback] a callback function, i.e. function(error, records, meta) for SELECT statements and function(error, meta) for DML statements.
  */
 Database.prototype.query = function (sql, params, options, callback) {
-  // make sure parameters are valid
+  // make sure "sql" parameter is valid
   if (typeof sql !== 'string') {
     throw new Error('You must specify a valid SQL statement');
   }
 
+  // make sure "params" parameter is valid or undefined
   switch (typeof params) {
   case 'object':
     if (!Array.isArray(params)) { // plain object
@@ -77,6 +103,7 @@ Database.prototype.query = function (sql, params, options, callback) {
     throw new Error('Invalid query parameters - expected array, received ' + typeof(callback));
   }
 
+  // make sure "options" parameter is valid or undefined
   switch (typeof options) {
   case 'object':
     // as expected
@@ -92,36 +119,46 @@ Database.prototype.query = function (sql, params, options, callback) {
     throw new Error('Invalid query options - expected object, received ' + typeof(callback));
   }
 
+  // make sure "callback" parameter is valid or undefined
   switch (typeof callback) {
   case 'function':
     // as expected
     break;
   case 'undefined':
-    callback = function (error) {
-      if (error) throw error;
-    };
+    callback = defaultCallback;
     break;
   default: // not Function, nor undefined
     throw new Error('You must specify a proper callback function');
   }
 
-  // make sure db is connected
+  // check if connected
   if (!this.isConnected) {
     return callback(new Error('Connection is closed - did you forget to call db.connect()?'));
   }
 
-  // use the options Luke
+  // use the options, Luke
   if (options) {
     sql = _.extend(options, {sql: sql});
   }
 
   // query the db
-  this.pool.getConnection(function (error, connection) {
+  this._pool.getConnection(function (error, connection) {
     if (error) return callback(error);
 
-    connection.query(sql, params, function(error, data) {
+    connection.query(sql, params, function(error, records, fields) {
+      var meta = {};
+
       connection.release(); // no longer needed
-      callback(error, data);
+
+      if (Array.isArray(records)) { // SELECT statement
+        meta.fields = fields;
+        callback(error, records, meta);
+
+      } else { // DML statement
+        meta.insertId = records.insertId;
+        meta.affectedRows = records.affectedRows;
+        callback(error, meta);
+      }
     });
   });
 };
@@ -133,14 +170,19 @@ Database.prototype.query = function (sql, params, options, callback) {
  * Please note that this function will not create a new table on database.
  */
 Database.prototype.extend = function (table, customProperties) {
-  var collection = new Collection(this, table);
+  var collection;
 
-  if (typeof customProperties === 'object') {
-    return _.extend(collection, customProperties);
+  // make sure "table" parameter is valid
+  if (typeof table !== 'string') {
+    throw new Error('Invalid table name');
   }
 
-  if (customProperties !== undefined) {
-    throw new Error('Invalid custom properties - expected object, received ' + typeof(customProperties));
+  // create new collection
+  collection = new Collection(this, table);
+
+  // assign custom properties
+  if (_.isPlainObject(customProperties)) {
+    collection = _.extend(collection, customProperties);
   }
 
   return collection;
