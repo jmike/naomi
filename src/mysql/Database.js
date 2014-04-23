@@ -54,6 +54,7 @@ Database.prototype.disconnect = function (callback) {
  * @param {Function} [callback] a callback function i.e. function(error, data).
  */
 Database.prototype.query = function (sql, params, options, callback) {
+  // make sure parameters are valid
   if (typeof sql !== 'string') {
     throw new Error('You must specify a valid SQL statement');
   }
@@ -104,12 +105,12 @@ Database.prototype.query = function (sql, params, options, callback) {
     throw new Error('You must specify a proper callback function');
   }
 
-  // make sure db is isConnected
+  // make sure db is connected
   if (!this.isConnected) {
     return callback(new Error('Connection is closed - did you forget to call db.connect()?'));
   }
 
-  // use options
+  // use the options Luke
   if (options) {
     sql = _.extend(options, {sql: sql});
   }
@@ -134,9 +135,11 @@ Database.prototype.query = function (sql, params, options, callback) {
 Database.prototype.extend = function (table, customProperties) {
   var collection = new Collection(this, table);
 
-  if (_.isPlainObject(customProperties)) {
+  if (typeof customProperties === 'object') {
     return _.extend(collection, customProperties);
-  } else if (!_.isUndefined(customProperties)) {
+  }
+
+  if (customProperties !== undefined) {
     throw new Error('Invalid custom properties - expected object, received ' + typeof(customProperties));
   }
 
