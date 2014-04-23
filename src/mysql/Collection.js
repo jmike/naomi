@@ -23,6 +23,11 @@ function Collection(db, table) {
   });
 }
 
+/**
+ * Retrieves the index information for the table of the collection.
+ * @param {Function} callback a callback function i.e. function(error, info).
+ * @private
+ */
 Collection.prototype._getIndexInfo = function (callback) {
   var sql, params;
 
