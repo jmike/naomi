@@ -1,12 +1,12 @@
 var _ = require('lodash');
 
 /**
- * Constructs a new MySQL model, i.e. a class representing a table.
+ * Constructs a new MySQL collection, i.e. a class representing the data of a table.
  * @param {Database} db a mysql database instance.
  * @param {String} table the name of the table on database.
  * @constructor
  */
-function Model(db, table) {
+function Collection(db, table) {
   this.db = db;
   this.table = table;
 }
@@ -17,7 +17,7 @@ function Model(db, table) {
  * @returns {Object} with two properties: "sql" and "params".
  * @private
  */
-Model.prototype._parseSelector = function (selector) {
+Collection.prototype._parseSelector = function (selector) {
   var self = this, sql, params;
 
   if (_.isArray(selector)) {
@@ -57,7 +57,7 @@ Model.prototype._parseSelector = function (selector) {
  * @param {Boolean|Number|String|Date|Object|Array} selector a selector to match the record(s) in database.
  * @param {Function} callback a callback function i.e. function(error, data).
  */
-Model.prototype.get = function (selector, callback) {
+Collection.prototype.get = function (selector, callback) {
   var sql, params, result;
 
   if (typeof selector === 'function') {
@@ -87,7 +87,7 @@ Model.prototype.get = function (selector, callback) {
  * @param {Boolean|Number|String|Date|Object|Array} [selector] a selector to match the record(s) in database.
  * @param {Function} callback a callback function i.e. function(error, data).
  */
-Model.prototype.count = function (selector, callback) {
+Collection.prototype.count = function (selector, callback) {
   var sql, params, result;
 
   if (typeof selector === 'function') {
@@ -124,7 +124,7 @@ Model.prototype.count = function (selector, callback) {
  * @param {Object} properties the record's properties to be set in the database.
  * @param {Function} callback a callback function i.e. function(error, data).
  */
-Model.prototype.set = function (properties, callback) {
+Collection.prototype.set = function (properties, callback) {
   var sql, params;
 
   sql = 'INSERT INTO ?? SET ?';
@@ -133,8 +133,7 @@ Model.prototype.set = function (properties, callback) {
   sql += ' ON DUPLICATE KEY UPDATE ' +
     _.without(Object.getOwnPropertyNames(properties), 'id')
     .map(function (k) {
-      params.push(k, k);
-      return '?? = VALUES(??)';
+      return '`' + k + '` = VALUES(`' + k + '`)';
     })
     .join(', ');
 
@@ -148,7 +147,7 @@ Model.prototype.set = function (properties, callback) {
  * @param {Boolean|Number|String|Date|Object|Array} selector a selector to match the record(s) in database.
  * @param {Function} callback a callback function i.e. function(error, data).
  */
-Model.prototype.del = function (selector, callback) {
+Collection.prototype.del = function (selector, callback) {
   var sql, params, result;
 
   sql = 'DELETE FROM ??';
@@ -165,4 +164,4 @@ Model.prototype.del = function (selector, callback) {
   this.db.query(sql, params, callback);
 };
 
-module.exports = Model;
+module.exports = Collection;
