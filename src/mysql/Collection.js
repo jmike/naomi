@@ -12,63 +12,10 @@ function Collection(db, table) {
   this.db = db;
   this.table = table;
 
-  db.on('connected', function () {
-    self._getIndexInfo(function (error, info) {
-      if (error) throw error;
-
-      self.primaryKey = info.primaryKey;
-      self.uniqueKeys = info.uniqueKeys;
-      self.indexKeys = info.indexKeys;
-    });
+  db.once('ready', function () {
+    console.log(db.tables);
   });
 }
-
-/**
- * Retrieves the index information for the table of the collection.
- * @param {Function} callback a callback function i.e. function(error, info).
- * @private
- */
-Collection.prototype._getIndexInfo = function (callback) {
-  var sql, params;
-
-  sql = 'SHOW INDEX FROM ??;';
-  params = [this.table];
-
-  this.db.query(sql, params, function (error, records) {
-    var info = {
-      primaryKey: [],
-      uniqueKeys: {},
-      indexKeys: {},
-    };
-
-    if (error) return callback(error);
-
-    records.forEach(function (record) {
-      var key, column, isUnique, stack;
-
-      key = record.Key_name;
-      column = record.Column_name;
-      isUnique = record.Non_unique === 0;
-
-      if (key === 'PRIMARY') {
-        stack = info.primaryKey;
-
-      } else if (isUnique) {
-        info.uniqueKeys[key] = info.uniqueKeys[key] || [];
-        stack = info.uniqueKeys[key];
-
-      } else {
-        info.indexKeys[key] = info.indexKeys[key] || [];
-        stack = info.indexKeys[key];
-
-      }
-
-      stack.push(column);
-    });
-
-    callback(null, info);
-  });
-};
 
 /**
  * Parses the given selector and returns a parameterized where clause.

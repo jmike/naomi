@@ -2,6 +2,7 @@ var events = require('events'),
   util = require('util'),
   mysql = require('mysql'),
   _ = require('lodash'),
+  async = require('async'),
   Collection = require('./Collection');
 
 /**
@@ -21,7 +22,9 @@ function defaultCallback(error) {
  */
 function Database(connectionProperties) {
   this.connectionProperties = connectionProperties;
+  this.tables = {};
   this.isConnected = false;
+  this.isReady = false;
 
   events.EventEmitter.call(this);
 }
@@ -31,7 +34,7 @@ util.inherits(Database, events.EventEmitter);
 
 /**
  * Attempts to connect to database, using the connection properties given at construction time.
- * @param {Function} [callback] a callback function to execute when connection has been established, i.e. function (error).
+ * @param {Function} [callback] a callback function to execute when connection has been established, i.e. function (err).
  * @returns {Database} this instance, to enable method chaining.
  */
 Database.prototype.connect = function (callback) {
@@ -44,7 +47,15 @@ Database.prototype.connect = function (callback) {
     this._pool = mysql.createPool(this.connectionProperties);
     this.isConnected = true;
 
-    this.emit('connected');
+    this.emit('connect');
+  }
+
+  if (!this.isReady) {
+    this._bootstrap(function (err) {
+      if (err) throw err;
+
+      this.emit('ready');
+    });
   }
 
   callback();
@@ -55,7 +66,7 @@ Database.prototype.connect = function (callback) {
 /**
  * Gracefully closes all database connections.
  * The instance will become practically useless after calling this method, unless calling connect() again.
- * @param {Function} [callback] a callback function to execute when connection has been closed, i.e. function (error).
+ * @param {Function} [callback] a callback function to execute when connection has been closed, i.e. function (err).
  * @returns {Database} this to enable method chaining.
  */
 Database.prototype.disconnect = function (callback) {
@@ -68,13 +79,109 @@ Database.prototype.disconnect = function (callback) {
     this._pool.end(callback);
     this.isConnected = false;
 
-    this.emit('disconnected');
+    this.emit('disconnect');
 
   } else {
     callback();
   }
 
   return this;
+};
+
+/**
+ * Retrieves table information.
+ * @param {Function} callback a callback function i.e. function(err, info).
+ * @private
+ */
+Database.prototype._getTableInfo = function (callback) {
+  var sql = 'SHOW FULL TABLES;';
+
+  this.query(sql, function (err, records, meta) {
+    var k, tables;
+
+    if (err) return callback(err);
+
+    k = meta.fields[0].name;
+    tables = records
+      .filter(function (record) {
+        return record.Table_type === 'BASE TABLE';
+      })
+      .map(function (record) {
+        return record[k];
+      });
+
+    callback(null, tables);
+  });
+};
+
+/**
+ * Retrieves index information for the designated table.
+ * @param {Function} callback a callback function i.e. function(err, info).
+ * @private
+ */
+Database.prototype._getIndexInfo = function (table, callback) {
+  var sql, params;
+
+  sql = 'SHOW INDEX FROM ??;';
+  params = [table];
+
+  this.query(sql, params, function (err, records) {
+    var info = {
+      primaryKey: [],
+      uniqueKeys: {},
+      indexKeys: {},
+    };
+
+    if (err) return callback(err);
+
+    records.forEach(function (record) {
+      var key, column, isUnique, stack;
+
+      key = record.Key_name;
+      column = record.Column_name;
+      isUnique = record.Non_unique === 0;
+
+      if (key === 'PRIMARY') {
+        stack = info.primaryKey;
+
+      } else if (isUnique) {
+        info.uniqueKeys[key] = info.uniqueKeys[key] || [];
+        stack = info.uniqueKeys[key];
+
+      } else {
+        info.indexKeys[key] = info.indexKeys[key] || [];
+        stack = info.indexKeys[key];
+      }
+
+      stack.push(column);
+    });
+
+    callback(null, info);
+  });
+};
+
+/**
+ * Retrieves table and index information from database.
+ * @param {Function} callback a callback function i.e. function(err).
+ * @private
+ */
+Database.prototype._bootstrap = function (callback) {
+  var self = this;
+
+  this._getTableInfo(function (err, tables) {
+
+    if (err) return callback(err);
+
+    async.each(tables, function (table, callback) {
+
+      self._getIndexInfo(table, function(err, info) {
+        if (err) return callback(err);
+
+        self.tables[table] = info;
+      });
+
+    }, callback);
+  });
 };
 
 /**
