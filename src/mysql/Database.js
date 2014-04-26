@@ -3,7 +3,7 @@ var events = require('events'),
   mysql = require('mysql'),
   _ = require('lodash'),
   async = require('async'),
-  defaultCallback = require('./utils/defaultCallback'),
+  defaultCallback = require('../utils/defaultCallback'),
   Collection = require('./Collection');
 
 /**
@@ -30,6 +30,8 @@ util.inherits(Database, events.EventEmitter);
  * @returns {Database} this instance, to enable method chaining.
  */
 Database.prototype.connect = function (callback) {
+  var self = this;
+
   // handle optional "callback" param
   if (typeof callback !== 'function') {
     callback = defaultCallback;
@@ -43,10 +45,11 @@ Database.prototype.connect = function (callback) {
   }
 
   if (!this.isReady) {
-    this._bootstrap(function (err) {
+    this._getMetaInfo(function (err) {
       if (err) throw err;
 
-      this.emit('ready');
+      self.isReady = true;
+      self.emit('ready');
     });
   }
 
@@ -81,7 +84,7 @@ Database.prototype.disconnect = function (callback) {
 };
 
 /**
- * Retrieves table information.
+ * Retrieves table meta-information.
  * @param {Function} callback a callback function i.e. function(err, info).
  * @private
  */
@@ -107,7 +110,7 @@ Database.prototype._getTableInfo = function (callback) {
 };
 
 /**
- * Retrieves index information for the designated table.
+ * Retrieves index meta-information for the designated table.
  * @param {Function} callback a callback function i.e. function(err, info).
  * @private
  */
@@ -153,11 +156,11 @@ Database.prototype._getIndexInfo = function (table, callback) {
 };
 
 /**
- * Retrieves table and index information from database.
+ * Retrieves meta-information from database.
  * @param {Function} callback a callback function i.e. function(err).
  * @private
  */
-Database.prototype._bootstrap = function (callback) {
+Database.prototype._getMetaInfo = function (callback) {
   var self = this;
 
   this._getTableInfo(function (err, tables) {
@@ -170,6 +173,7 @@ Database.prototype._bootstrap = function (callback) {
         if (err) return callback(err);
 
         self.tables[table] = info;
+        callback();
       });
 
     }, callback);

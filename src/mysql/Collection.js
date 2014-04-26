@@ -2,8 +2,8 @@ var _ = require('lodash');
 
 /**
  * Constructs a new MySQL collection, i.e. a class representing the data of a table.
- * @param {Database} db a mysql database instance.
- * @param {String} table the name of the table on database.
+ * @param {Database} db mysql database instance.
+ * @param {String} table the name of the table in db - should be an existing table.
  * @constructor
  */
 function Collection(db, table) {
@@ -12,10 +12,29 @@ function Collection(db, table) {
   this.db = db;
   this.table = table;
 
-  db.once('ready', function () {
-    console.log(db.tables);
-  });
+  if (db.isReady) {
+    this._getMetaInfo(db, table);
+  } else {
+    db.once('ready', function () {
+      self._getMetaInfo(db, table);
+    });
+  }
 }
+
+/**
+ * Retrieves meta-information from database.
+ * @param {Database} db mysql database instance.
+ * @param {String} table the name of the table in db.
+ * @param {Function} callback a callback function i.e. function(err, info).
+ * @private
+ */
+Collection.prototype._getMetaInfo = function (db, table) {
+  if (!db.tables.hasOwnProperty(table)) {
+    throw new Error('Table "' + table + '" does not exist in database');
+  }
+
+  _.extend(this, db.tables[table]);
+};
 
 /**
  * Parses the given selector and returns a parameterized where clause.
