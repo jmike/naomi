@@ -3,16 +3,8 @@ var events = require('events'),
   mysql = require('mysql'),
   _ = require('lodash'),
   async = require('async'),
+  defaultCallback = require('./utils/defaultCallback'),
   Collection = require('./Collection');
-
-/**
- * A default callback function that throws an error when necessary.
- * @param {Error} error.
- * @private
- */
-function defaultCallback(error) {
-  if (error) throw error;
-}
 
 /**
  * Constructs a new MySQL database.
