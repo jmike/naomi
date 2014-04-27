@@ -90,27 +90,42 @@ describe('MySQL collection', function () {
 
   });
 
-  describe('invalid table', function () {
-
-    it('should throw an error on #extend', function (done) {
-      if (db.isReady) {
-        assert.throws(function () {
-          db.extend('invalid_table');
-        });
-
-        done();
-      } else {
-        db.once('ready', function () {
-          assert.throws(function () {
-            db.extend('invalid_table');
-          });
-
-          done();
-        });
-      }
-    });
-
-  });
+  // describe('invalid table', function () {
+  //
+  //   var invalid;
+  //
+  //   // before(function (done) {
+  //   //
+  //   //   invalid = db.extend('invalid_table');
+  //   //   done();
+  //   // });
+  //   //
+  //   // it('should return null on #_getTableInfo()', function (done) {
+  //   //   invalid._getTableInfo(function (err, info) {
+  //   //     if (err) return done(err);
+  //   //
+  //   //     assert.isNull(info);
+  //   //     done();
+  //   //   });
+  //   // });
+  //
+  //   it('should throw an error on #extend', function (done) {
+  //     if (db.isConnected) {
+  //       console.log('connected');
+  //       assert.throws(function () {
+  //         db.extend('invalid_table');
+  //       });
+  //
+  //     } else {
+  //       db.once('connect', function () {
+  //         assert.throws(function () {
+  //           db.extend('invalid_table');
+  //         });
+  //       });
+  //     }
+  //   });
+  //
+  // });
 
   describe('employees table', function () {
 
@@ -131,6 +146,15 @@ describe('MySQL collection', function () {
         if (error) return done(error);
 
         employees = db.extend('employees');
+        done();
+      });
+    });
+
+    it('should return generic information on #_getTableInfo()', function (done) {
+      employees._getTableInfo(function (err, info) {
+        if (err) return done(err);
+
+        assert.isObject(info);
         done();
       });
     });

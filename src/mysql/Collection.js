@@ -1,4 +1,5 @@
-var _ = require('lodash');
+var _ = require('lodash'),
+  async = require('async');
 
 /**
  * Constructs a new MySQL collection, i.e. a class representing the data of a table.
@@ -7,33 +8,149 @@ var _ = require('lodash');
  * @constructor
  */
 function Collection(db, table) {
-  var self = this;
+  var self = this,
+    queue;
 
   this.db = db;
   this.table = table;
+  this.isReady = false;
 
-  if (db.isReady) {
-    this._getMetaInfo(db, table);
-  } else {
-    db.once('ready', function () {
-      self._getMetaInfo(db, table);
+  queue = async.queue(function (task, callback) {
+    task();
+    callback();
+  }, 1);
+  queue.pause();
+
+  this.queue = queue;
+
+  if (db.isConnected) { // already connected
+    this._loadMetaData(function (err) {
+      if (err) throw err;
+
+      self.isReady = true;
+      queue.resume();
+    });
+  } else { // wait for the signal
+    db.once('connect', function () {
+      self._loadMetaData(function (err) {
+        if (err) throw err;
+
+        self.isReady = true;
+        queue.resume();
+      });
     });
   }
 }
 
 /**
- * Retrieves meta-information from database.
- * @param {Database} db mysql database instance.
- * @param {String} table the name of the table in db.
+ * Retrieves generic meta-information about this table.
  * @param {Function} callback a callback function i.e. function(err, info).
  * @private
  */
-Collection.prototype._getMetaInfo = function (db, table) {
-  if (!db.tables.hasOwnProperty(table)) {
-    throw new Error('Table "' + table + '" does not exist in database');
-  }
+Collection.prototype._getTableInfo = function (callback) {
+  var sql, params;
 
-  _.extend(this, db.tables[table]);
+  // compile parameterized SQL statement
+  sql = 'SELECT * FROM information_schema.TABLES' +
+    ' WHERE `TABLE_NAME` = ? AND `TABLE_SCHEMA` = ?;';
+
+  params = [this.table, this.db.connectionProperties.database];
+
+  // run Forrest, run
+  this.db.query(sql, params, function (err, records) {
+    if (err) return callback(err);
+
+    callback(null, records[0]);
+  });
+};
+
+/**
+ * Retrieves index meta-information about this table.
+ * @param {Function} callback a callback function i.e. function(err, info).
+ * @private
+ */
+Collection.prototype._getIndexInfo = function (callback) {
+  var sql, params;
+
+  // compile a parameterized SQL statement
+  sql = 'SHOW INDEX FROM ??;';
+  params = [this.table];
+
+  // run Forrest, run
+  this.db.query(sql, params, function (err, records) {
+    var info = {
+      primaryKey: [],
+      uniqueKeys: {},
+      indexKeys: {}
+    };
+
+    if (err) return callback(err);
+
+    // parse records
+    records.forEach(function (record) {
+      var key, column, isUnique, stack;
+
+      key = record.Key_name;
+      column = record.Column_name;
+      isUnique = record.Non_unique === 0;
+
+      if (key === 'PRIMARY') {
+        stack = info.primaryKey;
+
+      } else if (isUnique) {
+        info.uniqueKeys[key] = info.uniqueKeys[key] || [];
+        stack = info.uniqueKeys[key];
+
+      } else {
+        info.indexKeys[key] = info.indexKeys[key] || [];
+        stack = info.indexKeys[key];
+      }
+
+      stack.push(column);
+    });
+
+    callback(null, info);
+  });
+};
+
+/**
+ * Loads meta-data from database.
+ * @param {Function} callback a callback function i.e. function(err).
+ * @private
+ */
+Collection.prototype._loadMetaData = function (callback) {
+  var self = this;
+
+  async.series({
+
+    tableInfo: function(callback) {
+      self._getTableInfo(function (err, info) {
+
+        if (err) return callback(err);
+
+        if (info === undefined) {
+          return callback(
+            new Error('Table "' + self.table + '" cannot be found in database')
+          );
+        }
+
+        callback(null, info);
+      });
+    },
+
+    indexInfo: function(callback) {
+      self._getIndexInfo(callback);
+    }
+
+  }, function (err, result) {
+    if (err) return callback(err);
+
+    self.primaryKey = result.indexInfo.primaryKey;
+    self.uniqueKeys = result.indexInfo.uniqueKeys;
+    self.indexKeys = result.indexInfo.indexKeys;
+
+    callback();
+  });
 };
 
 /**
@@ -79,17 +196,25 @@ Collection.prototype._parseSelector = function (selector) {
 
 /**
  * Retrieves the designated record(s) from database.
- * @param {Boolean|Number|String|Date|Object|Array} selector a selector to match the record(s) in database.
+ * @param {Boolean|Number|String|Date|Object|Array} [selector] a selector to match the record(s) in database.
  * @param {Function} callback a callback function i.e. function(error, data).
  */
 Collection.prototype.get = function (selector, callback) {
   var sql, params, result;
 
+  // handle optional "selector" param
   if (typeof selector === 'function') {
     callback = selector;
     selector = null;
   }
 
+  // postpone if not ready
+  if (!this.isReady) {
+    this.queue.push(this.get.bind(this, selector, callback));
+    return;
+  }
+
+  // compile a parameterized SELECT statement
   sql = 'SELECT * FROM ??';
   params = [this.table];
 
@@ -104,6 +229,7 @@ Collection.prototype.get = function (selector, callback) {
 
   sql += ';';
 
+  // run Forrest, run
   this.db.query(sql, params, callback);
 };
 
@@ -115,11 +241,19 @@ Collection.prototype.get = function (selector, callback) {
 Collection.prototype.count = function (selector, callback) {
   var sql, params, result;
 
+  // handle optional "selector" param
   if (typeof selector === 'function') {
     callback = selector;
     selector = null;
   }
 
+  // postpone if not ready
+  if (!this.isReady) {
+    this.queue.push(this.count.bind(this, selector, callback));
+    return;
+  }
+
+  // compile a parameterized SELECT COUNT statement
   sql = 'SELECT COUNT(*) AS `count` FROM ??';
   params = [this.table];
 
@@ -134,11 +268,12 @@ Collection.prototype.count = function (selector, callback) {
 
   sql += ';';
 
+  // run Forrest, run
   this.db.query(sql, params, function (error, records) {
     var count;
 
     if (error) return callback(error);
-    count = records[0].count;
+    count = records[0].count; // we need only the number
 
     callback(null, count);
   });
@@ -152,6 +287,13 @@ Collection.prototype.count = function (selector, callback) {
 Collection.prototype.set = function (properties, callback) {
   var sql, params;
 
+  // postpone if not ready
+  if (!this.isReady) {
+    this.queue.push(this.set.bind(this, properties, callback));
+    return;
+  }
+
+  // compile a parameterized INSERT [ON DUPLICATE KEY UPDATE] statement
   sql = 'INSERT INTO ?? SET ?';
   params = [this.table, properties];
 
@@ -164,6 +306,7 @@ Collection.prototype.set = function (properties, callback) {
 
   sql += ';';
 
+  // run Forrest, run
   this.db.query(sql, params, callback);
 };
 
@@ -175,6 +318,13 @@ Collection.prototype.set = function (properties, callback) {
 Collection.prototype.del = function (selector, callback) {
   var sql, params, result;
 
+  // postpone if not ready
+  if (!this.isReady) {
+    this.queue.push(this.del.bind(this, selector, callback));
+    return;
+  }
+
+  // compile a parameterized DELETE statement
   sql = 'DELETE FROM ??';
   params = [this.table];
 
@@ -186,6 +336,7 @@ Collection.prototype.del = function (selector, callback) {
 
   sql += ';';
 
+  // run Forrest, run
   this.db.query(sql, params, callback);
 };
 
