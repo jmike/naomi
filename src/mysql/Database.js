@@ -100,7 +100,7 @@ Database.prototype.query = function (sql, params, options, callback) {
     params = [];
     break;
   default: // not Array, nor Object, nor Function, nor undefined
-    throw new Error('Invalid query parameters - expected array, received ' + typeof(callback));
+    throw new Error('Invalid query parameters - expected array, received ' + typeof(params));
   }
 
   // make sure "options" parameter is valid
@@ -116,7 +116,7 @@ Database.prototype.query = function (sql, params, options, callback) {
     options = null;
     break;
   default: // not Object, nor Function, nor undefined
-    throw new Error('Invalid query options - expected object, received ' + typeof(callback));
+    throw new Error('Invalid query options - expected object, received ' + typeof(options));
   }
 
   // make sure "callback" parameter is valid
@@ -128,7 +128,7 @@ Database.prototype.query = function (sql, params, options, callback) {
     callback = defaultCallback;
     break;
   default: // not Function, nor undefined
-    throw new Error('You must specify a proper callback function');
+    throw new Error('Invalid callback - expected function, received ' + typeof(callback));
   }
 
   // check if connected
@@ -137,8 +137,11 @@ Database.prototype.query = function (sql, params, options, callback) {
   }
 
   // use the options, Luke
-  if (options) {
-    sql = _.extend(options, {sql: sql});
+  if (options && options.nestTables) {
+    sql = {
+      sql: sql,
+      nestTables: options.nestTables
+    };
   }
 
   // query the db
