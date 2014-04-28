@@ -110,10 +110,10 @@ Database.prototype.query = function (sql, params, options, callback) {
     break;
   case 'function':
     callback = options;
-    options = null;
+    options = {};
     break;
   case 'undefined':
-    options = null;
+    options = {};
     break;
   default: // not Object, nor Function, nor undefined
     throw new Error('Invalid query options - expected object, received ' + typeof(options));
@@ -136,34 +136,31 @@ Database.prototype.query = function (sql, params, options, callback) {
     return callback(new Error('Connection is closed - did you forget to call #connect()?'));
   }
 
-  // use the options, Luke
-  if (options && options.nestTables) {
-    sql = {
-      sql: sql,
-      nestTables: options.nestTables
-    };
-  }
-
-  // query the db
+  // get an available db connection
   this._pool.getConnection(function (error, connection) {
     if (error) return callback(error);
 
-    connection.query(sql, params, function(error, records, fields) {
-      var meta;
+    // use the "nestTables" option, Luke
+    if (options.nestTables) {
+      sql = {
+        sql: sql,
+        nestTables: options.nestTables
+      };
+    }
+
+    // run Forrest, run
+    connection.query(sql, params, function(error, records) {
+      var meta = {};
 
       if (error) {
         callback(error);
 
       } else if (Array.isArray(records)) { // SELECT statement
-        meta = {fields: fields};
-
-        callback(null, records, meta);
+        callback(null, records);
 
       } else { // DML statement
-        meta = {
-          insertId: records.insertId,
-          affectedRows: records.affectedRows
-        };
+        meta.insertId = records.insertId;
+        meta.affectedRows = records.affectedRows;
 
         callback(null, meta);
       }

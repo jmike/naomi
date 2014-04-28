@@ -169,21 +169,15 @@ describe('MySQL collection', function () {
             firstName: 'James',
             lastName: 'Bond',
             age: 36
-          }, function (error, meta) {
-            callback(error, {meta: meta});
-          });
+          }, callback);
         },
 
         read: function (callback) {
-          employees.get(1, function (error, records, meta) {
-            callback(error, {records: records, meta: meta});
-          });
+          employees.get(1, callback);
         },
 
         count: function (callback) {
-          employees.count(function (error, count) {
-            callback(error, {count: count});
-          });
+          employees.count(callback);
         },
 
         update: function (callback) {
@@ -192,34 +186,27 @@ describe('MySQL collection', function () {
             firstName: 'James',
             lastName: 'Bond',
             age: 36
-          }, function (error, meta) {
-            callback(error, {meta: meta});
-          });
+          }, callback);
         },
 
         delete: function (callback) {
-          employees.del(1, function (error, meta) {
-            callback(error, {meta: meta});
-          });
+          employees.del(1, callback);
         }
 
       }, function (error, result) {
         if (error) return done(error);
 
-        assert.isObject(result.create.meta);
-        assert.strictEqual(result.create.meta.insertId, 1);
+        assert.isObject(result.create);
+        assert.strictEqual(result.create.insertId, 1);
 
-        assert.isArray(result.read.records);
-        assert.lengthOf(result.read.records, 1);
-        assert.isObject(result.read.meta);
-        assert.isArray(result.read.meta.fields);
+        assert.isArray(result.read);
+        assert.lengthOf(result.read, 1);
 
-        assert.isNumber(result.count.count);
-        assert.strictEqual(result.count.count, 1);
+        assert.strictEqual(result.count, 1);
 
-        assert.isObject(result.update.meta);
+        assert.isObject(result.update);
 
-        assert.isObject(result.delete.meta);
+        assert.isObject(result.delete);
 
         done();
       });
