@@ -17,6 +17,7 @@ function Database(connectionProperties) {
   this.isConnected = false;
 
   events.EventEmitter.call(this);
+  this.setMaxListeners(99);
 }
 
 // Database extends the EventEmitter class
