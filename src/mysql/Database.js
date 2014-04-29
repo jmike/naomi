@@ -79,59 +79,55 @@ Database.prototype.disconnect = function (callback) {
  * @param {Function} [callback] a callback function, i.e. function(error, records, meta) for SELECT statements and function(error, meta) for DML statements.
  */
 Database.prototype.query = function (sql, params, options, callback) {
+  var type;
+
   // make sure "sql" parameter is valid
-  if (typeof sql !== 'string') {
+  type = typeof(sql);
+
+  if (type !== 'string') {
     throw new Error('You must specify a valid SQL statement');
   }
 
   // make sure "params" parameter is valid
-  switch (typeof params) {
-  case 'object':
-    if (!Array.isArray(params)) { // plain object
+  if (!_.isArray(params)) {
+    type = typeof(params);
+
+    if (_.isPlainObject(params)) {
       options = params;
-      params = [];
+    } else if (type === 'function') {
+      callback = params;
+    } else if (type !== 'undefined') { // not Array, nor Object, nor Function, nor undefined
+      throw new Error('Invalid query parameters - expected array, received ' + type);
     }
-    break;
-  case 'function':
-    callback = params;
+
     params = [];
-    break;
-  case 'undefined':
-    params = [];
-    break;
-  default: // not Array, nor Object, nor Function, nor undefined
-    throw new Error('Invalid query parameters - expected array, received ' + typeof(params));
   }
 
   // make sure "options" parameter is valid
-  switch (typeof options) {
-  case 'object':
-    // as expected
-    break;
-  case 'function':
-    callback = options;
+  if (!_.isPlainObject(options)) {
+    type = typeof(options);
+
+    if (type === 'function') {
+      callback = options;
+    } else if (type !== 'undefined') { // not Object, nor Function, nor undefined
+      throw new Error('Invalid query options - expected object, received ' + type);
+    }
+
     options = {};
-    break;
-  case 'undefined':
-    options = {};
-    break;
-  default: // not Object, nor Function, nor undefined
-    throw new Error('Invalid query options - expected object, received ' + typeof(options));
   }
 
   // make sure "callback" parameter is valid
-  switch (typeof callback) {
-  case 'function':
-    // as expected
-    break;
-  case 'undefined':
-    callback = defaultCallback;
-    break;
-  default: // not Function, nor undefined
-    throw new Error('Invalid callback - expected function, received ' + typeof(callback));
+  type = typeof(callback);
+
+  if (type !== 'function') {
+    if (type === 'undefined') {
+      callback = defaultCallback;
+    } else {
+      throw new Error('Invalid callback - expected function, received ' + type);
+    }
   }
 
-  // check if connected
+  // check if db connected
   if (!this.isConnected) {
     return callback(new Error('Connection is closed - did you forget to call #connect()?'));
   }
@@ -140,7 +136,7 @@ Database.prototype.query = function (sql, params, options, callback) {
   this._pool.getConnection(function (error, connection) {
     if (error) return callback(error);
 
-    // use the "nestTables" option, Luke
+    // use the "nestTables" option Luke
     if (options.nestTables) {
       sql = {
         sql: sql,
