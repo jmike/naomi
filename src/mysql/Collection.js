@@ -16,13 +16,13 @@ function Collection(db, table) {
   this.table = table;
   this.isReady = false;
 
-  queue = async.queue(function (task, callback) {
+  queue = async._queue(function (task, callback) {
     task();
     callback();
   }, 1);
   queue.pause();
 
-  this.queue = queue;
+  this._queue = queue;
 
   if (db.isConnected) { // already connected
     this._bootstrap(defaultCallback);
@@ -175,7 +175,7 @@ Collection.prototype._bootstrap = function (callback) {
     self.indexKeys = result.indexInfo.indexKeys;
 
     self.isReady = true;
-    self.queue.resume();
+    self._queue.resume();
 
     callback();
   });
@@ -323,7 +323,7 @@ Collection.prototype.get = function (selector, callback) {
 
   // postpone if not ready
   if (!this.isReady) {
-    this.queue.push(this.get.bind(this, selector, callback));
+    this._queue.push(this.get.bind(this, selector, callback));
     return;
   }
 
@@ -362,7 +362,7 @@ Collection.prototype.count = function (selector, callback) {
 
   // postpone if not ready
   if (!this.isReady) {
-    this.queue.push(this.count.bind(this, selector, callback));
+    this._queue.push(this.count.bind(this, selector, callback));
     return;
   }
 
@@ -402,7 +402,7 @@ Collection.prototype.set = function (properties, callback) {
 
   // postpone if not ready
   if (!this.isReady) {
-    this.queue.push(this.set.bind(this, properties, callback));
+    this._queue.push(this.set.bind(this, properties, callback));
     return;
   }
 
@@ -433,7 +433,7 @@ Collection.prototype.del = function (selector, callback) {
 
   // postpone if not ready
   if (!this.isReady) {
-    this.queue.push(this.del.bind(this, selector, callback));
+    this._queue.push(this.del.bind(this, selector, callback));
     return;
   }
 
