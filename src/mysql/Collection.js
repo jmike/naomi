@@ -198,7 +198,7 @@ Collection.prototype._existsColumn = function (column) {
 
 /**
  * Indicates whether the designated column(s) represents a primary key.
- * Primary keys may be composite, i.e. composed of multiple columns, hence the acceptance of Array<String>.
+ * Primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params.
  * Please note: this method is meant to be called after collection is ready.
  * @param {...String} columns the name of the column(s).
  * @returns {Boolean}
@@ -217,7 +217,7 @@ Collection.prototype._isPrimaryKey = function () {
 
 /**
  * Indicates whether the designated column(s) represents a unique key.
- * Unique keys may be composite, i.e. composed of multiple columns, hence the acceptance of Array<String>.
+ * Unique keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params.
  * Please note: this method is meant to be called after collection is ready.
  * @param {...String} columns the name of the column(s).
  * @returns {Boolean}
@@ -240,7 +240,7 @@ Collection.prototype._isUniqueKey = function () {
 
 /**
  * Indicates whether the designated column(s) represents an index key.
- * Index keys may be composite, i.e. composed of multiple columns, hence the acceptance of Array<String>.
+ * Index keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params.
  * Please note: this method is meant to be called after collection is ready.
  * @param {...String} columns the name of the column(s).
  * @returns {Boolean}
@@ -290,8 +290,8 @@ Collection.prototype._parseSelector = function (selector) {
       obj[this.primaryKey[0]] = selector;
       return self._parseSelector(obj);
 
-    } else { // primary key is composite
-      throw new Error('Primary key is composite, thus Boolean, Number, String and Date selectors are useless');
+    } else { // primary key is compound
+      throw new Error('Primary key is compound, thus Boolean, Number, String and Date selectors are useless');
     }
 
   } else if (_.isPlainObject(selector)) {
