@@ -16,7 +16,7 @@ function Collection(db, table) {
   this.table = table;
   this.isReady = false;
 
-  queue = async._queue(function (task, callback) {
+  queue = async.queue(function (task, callback) {
     task();
     callback();
   }, 1);
@@ -271,7 +271,9 @@ Collection.prototype._isIndexKey = function () {
 Collection.prototype._parseSelector = function (selector) {
   var self = this,
     sql = [],
-    params = [];
+    params = [],
+    obj = {},
+    keys;
 
   if (_.isArray(selector)) {
     selector.forEach(function (e) {
@@ -284,26 +286,44 @@ Collection.prototype._parseSelector = function (selector) {
     return {sql: sql.join(' OR '), params: params};
 
   } else if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) {
-    return self._parseSelector({id: selector});
+    if (this.primaryKey.length === 1) { // primary key is simple
+      obj[this.primaryKey[0]] = selector;
+      return self._parseSelector(obj);
+
+    } else { // primary key is composite
+      throw new Error('Primary key is composite, thus Boolean, Number, String and Date selectors are useless');
+    }
 
   } else if (_.isPlainObject(selector)) {
 
-    // make sure selector keys are actual columns
-    // _.forOwn(selector, function (v, k) {
-    //   if (!self.isColumn(k)) {
-    //     throw new Error('Column "' + k + '" cannot be found in table "' + self.table + '"');
-    //   }
-    // });
+    keys = Object.keys(selector);
 
-    _.forOwn(selector, function (v, k) {
+    // make sure selector keys are actual columns
+    keys.forEach(function (k) {
+      if (!self._existsColumn(k)) {
+        throw new Error('Column "' + k + '" could not be found in table "' + self.table + '"');
+      }
+    });
+
+    // make sure selector keys are indexed
+    if (
+      !this._isPrimaryKey.apply(this, keys) &&
+      !this._isUniqueKey.apply(this, keys) &&
+      !this._isIndexKey.apply(this, keys)
+    ) {
+      console.warn('Selector key(s): ' + keys.join(', ') + ' are not indexed - this may result to poor db performance');
+    }
+
+    // set SQL and params
+    keys.forEach(function (k) {
       sql.push('`' + k + '` = ?');
-      params.push(v);
+      params.push(selector[k]);
     });
 
     return {sql: sql.join(' AND '), params: params};
 
   } else {
-    throw new Error('Invalid selector parameter');
+    throw new Error('Invalid ' + typeof(selector) + ' selector');
   }
 };
 
@@ -331,13 +351,20 @@ Collection.prototype.get = function (selector, callback) {
   sql = 'SELECT * FROM ??';
   params = [this.table];
 
+  // append a WHERE clause if selector is specified
   if (selector) {
-    result = this._parseSelector(selector);
+
+    try {
+      result = this._parseSelector(selector);
+    } catch (err) {
+      return callback(err);
+    }
 
     if (! _.isEmpty(result.sql)) {
       sql += ' WHERE ' + result.sql;
       params.push.apply(params, result.params);
     }
+
   }
 
   sql += ';';
@@ -370,8 +397,14 @@ Collection.prototype.count = function (selector, callback) {
   sql = 'SELECT COUNT(*) AS `count` FROM ??';
   params = [this.table];
 
+  // append a WHERE clause if selector is specified
   if (selector) {
-    result = this._parseSelector(selector);
+
+    try {
+      result = this._parseSelector(selector);
+    } catch (err) {
+      return callback(err);
+    }
 
     if (! _.isEmpty(result.sql)) {
       sql += ' WHERE ' + result.sql;
@@ -441,7 +474,13 @@ Collection.prototype.del = function (selector, callback) {
   sql = 'DELETE FROM ??';
   params = [this.table];
 
-  result = this._parseSelector(selector);
+  // append a WHERE clause
+  try {
+    result = this._parseSelector(selector);
+  } catch (err) {
+    return callback(err);
+  }
+
   if (! _.isEmpty(result.sql)) {
     sql += ' WHERE ' + result.sql;
     params.push.apply(params, result.params);

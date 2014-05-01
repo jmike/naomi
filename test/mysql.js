@@ -348,6 +348,30 @@ describe('MySQL Database', function () {
         });
       });
 
+      it('should return error on #get() when selector key is not column ', function (done) {
+        employees.get({foo: 'bar'}, function (err) {
+          assert.instanceOf(err, Error);
+          assert.equal(err.message, 'Column "foo" could not be found in table "employees"');
+          done();
+        });
+      });
+
+      it('should return error on #count() when selector key is not column ', function (done) {
+        employees.count({foo: 'bar'}, function (err) {
+          assert.instanceOf(err, Error);
+          assert.equal(err.message, 'Column "foo" could not be found in table "employees"');
+          done();
+        });
+      });
+
+      it('should return error on #del() when selector key is not column ', function (done) {
+        employees.del({foo: 'bar'}, function (err) {
+          assert.instanceOf(err, Error);
+          assert.equal(err.message, 'Column "foo" could not be found in table "employees"');
+          done();
+        });
+      });
+
     });
 
   });
