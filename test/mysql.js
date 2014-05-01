@@ -201,11 +201,11 @@ describe('MySQL Database', function () {
         });
       });
 
-      it('should return table information on #_getTableInfo()', function (done) {
-        employees._getTableInfo(function (err, info) {
+      it('should return true on #_existsTable()', function (done) {
+        employees._existsTable(function (err, exists) {
           if (err) return done(err);
 
-          assert.isObject(info);
+          assert.isTrue(exists);
           done();
         });
       });
@@ -239,7 +239,63 @@ describe('MySQL Database', function () {
         });
       });
 
-      it('should be able run a CRUD + Count operation successfully', function (done) {
+      it('should return column information on #_getColumnInfo()', function (done) {
+        employees._getColumnInfo(function (err, info) {
+          if (err) return done(err);
+
+          assert.isObject(info);
+
+          assert.property(info, 'id');
+          assert.isObject(info.id);
+          assert.isFalse(info.id.isNullable);
+          assert.isNull(info.id.comment);
+          assert.strictEqual(info.id.position, 0);
+
+          assert.property(info, 'firstName');
+          assert.isObject(info.firstName);
+          assert.isFalse(info.firstName.isNullable);
+          assert.strictEqual(info.firstName.collation, 'utf8_general_ci');
+          assert.isNull(info.firstName.comment);
+          assert.strictEqual(info.firstName.position, 1);
+
+          assert.property(info, 'lastName');
+          assert.isObject(info.lastName);
+          assert.isFalse(info.lastName.isNullable);
+          assert.strictEqual(info.lastName.collation, 'utf8_general_ci');
+          assert.isNull(info.lastName.comment);
+          assert.strictEqual(info.lastName.position, 2);
+
+          assert.property(info, 'age');
+          assert.isObject(info.age);
+          assert.isTrue(info.age.isNullable);
+          assert.isNull(info.age.default);
+          assert.isNull(info.age.comment);
+          assert.strictEqual(info.age.position, 3);
+
+          done();
+        });
+      });
+
+      it('should return true on #_isPrimaryKey("id")', function () {
+        assert.isTrue(employees._isPrimaryKey('id'));
+        assert.isFalse(employees._isPrimaryKey('age'));
+        assert.isFalse(employees._isPrimaryKey('invalid-column'));
+        assert.isFalse(employees._isPrimaryKey());
+      });
+
+      it('should return true on #_isUniqueKey("firstName", "lastName")', function () {
+        assert.isTrue(employees._isUniqueKey('firstName', 'lastName'));
+        assert.isFalse(employees._isUniqueKey('age'));
+        assert.isFalse(employees._isUniqueKey('invalid-column'));
+      });
+
+      it('should return true on #_isIndexKey("age")', function () {
+        assert.isTrue(employees._isIndexKey('age'));
+        assert.isFalse(employees._isIndexKey('age', 'firstName'));
+        assert.isFalse(employees._isIndexKey('invalid-column'));
+      });
+
+      it('should be able run a CRUD [+ Count] operation', function (done) {
 
         async.series({
 
