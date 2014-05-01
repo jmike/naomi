@@ -15,10 +15,10 @@
     "npm": "1.2.x"
   },
   "dependencies": {
-    "mysql": "~2.1.1",
+    "mysql": "~2.2.0",
     "dotenv": "~0.2.8",
     "lodash": "~2.4.1",
-    "async": "~0.7.0"
+    "async": "~0.8.0"
   },
   "devDependencies": {
     "mocha": "~1.18.2",
