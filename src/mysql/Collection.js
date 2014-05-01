@@ -1,5 +1,6 @@
 var _ = require('lodash'),
-  async = require('async');
+  async = require('async'),
+  defaultCallback = require('../utils/defaultCallback');
 
 /**
  * Constructs a new MySQL collection, i.e. a class representing the data of a table.
@@ -24,43 +25,72 @@ function Collection(db, table) {
   this.queue = queue;
 
   if (db.isConnected) { // already connected
-    this._loadMetaData(function (err) {
-      if (err) throw err;
-
-      self.isReady = true;
-      queue.resume();
-    });
+    this._bootstrap(defaultCallback);
   } else { // wait for the signal
     db.once('connect', function () {
-      self._loadMetaData(function (err) {
-        if (err) throw err;
-
-        self.isReady = true;
-        queue.resume();
-      });
+      self._bootstrap(defaultCallback);
     });
   }
 }
 
 /**
- * Retrieves generic meta-information about this table.
+ * Indicates whether the designated table exists in database.
  * @param {Function} callback a callback function i.e. function(err, info).
  * @private
  */
-Collection.prototype._getTableInfo = function (callback) {
-  var sql, params;
+Collection.prototype._existsTable = function (callback) {
+  var schema = this.db.connectionProperties.database,
+    sql, params;
 
   // compile parameterized SQL statement
-  sql = 'SELECT * FROM information_schema.TABLES' +
-    ' WHERE `TABLE_NAME` = ? AND `TABLE_SCHEMA` = ?;';
-
-  params = [this.table, this.db.connectionProperties.database];
+  sql = 'SHOW FULL TABLES FROM ??' +
+    ' WHERE ?? = ? AND Table_type = \'BASE TABLE\';';
+  params = [schema, 'Tables_in_' + schema, this.table];
 
   // run Forrest, run
   this.db.query(sql, params, function (err, records) {
     if (err) return callback(err);
 
-    callback(null, records[0]);
+    callback(null, records.length !== 0);
+  });
+};
+
+/**
+ * Retrieves column meta-information about this table.
+ * @param {Function} callback a callback function i.e. function(err, info).
+ * @private
+ */
+Collection.prototype._getColumnInfo = function (callback) {
+  var self = this,
+    sql, params;
+
+  // compile parameterized SQL statement
+  sql = 'SHOW FULL COLUMNS FROM ??;';
+  params = [this.table];
+
+  // query the db
+  this.db.query(sql, params, function (err, records) {
+    var info = {};
+
+    if (err) return callback(err);
+
+    if (records.length === 0) {
+      err = new Error('Table "' + self.table + '" cannot be found in database');
+      return callback(err);
+    }
+
+    records.forEach(function (record, i) {
+      info[record.Field] = {
+        type: record.Type,
+        isNullable: record.Null === 'YES',
+        default: record.Default,
+        collation: record.Collation,
+        comment: _.isEmpty(record.Comment) ? null : record.Comment,
+        position: i
+      };
+    });
+
+    callback(null, info);
   });
 };
 
@@ -114,28 +144,22 @@ Collection.prototype._getIndexInfo = function (callback) {
 };
 
 /**
- * Loads meta-data from database.
+ * Bootstraps the collection, loading meta-data from database.
  * @param {Function} callback a callback function i.e. function(err).
  * @private
  */
-Collection.prototype._loadMetaData = function (callback) {
+Collection.prototype._bootstrap = function (callback) {
   var self = this;
+
+  // make sure the bootstrap runs only once
+  if (this.isReady) {
+    return callback();
+  }
 
   async.series({
 
-    tableInfo: function(callback) {
-      self._getTableInfo(function (err, info) {
-
-        if (err) return callback(err);
-
-        if (info === undefined) {
-          return callback(
-            new Error('Table "' + self.table + '" cannot be found in database')
-          );
-        }
-
-        callback(null, info);
-      });
+    columnInfo: function(callback) {
+      self._getColumnInfo(callback);
     },
 
     indexInfo: function(callback) {
@@ -145,27 +169,111 @@ Collection.prototype._loadMetaData = function (callback) {
   }, function (err, result) {
     if (err) return callback(err);
 
+    self.columns = result.columnInfo;
     self.primaryKey = result.indexInfo.primaryKey;
     self.uniqueKeys = result.indexInfo.uniqueKeys;
     self.indexKeys = result.indexInfo.indexKeys;
+
+    self.isReady = true;
+    self.queue.resume();
 
     callback();
   });
 };
 
 /**
+ * Indicates whether the designated column exists in this table.
+ * Please note: this method is meant to be called after collection is ready.
+ * @param {String} column the name of the column.
+ * @returns {Boolean}
+ * @private
+ */
+Collection.prototype._existsColumn = function (column) {
+  if (this.isReady) {
+    return this.columns.hasOwnProperty(column);
+  }
+
+  return false;
+};
+
+/**
+ * Indicates whether the designated column(s) represents a primary key.
+ * Primary keys may be composite, i.e. composed of multiple columns, hence the acceptance of Array<String>.
+ * Please note: this method is meant to be called after collection is ready.
+ * @param {...String} columns the name of the column(s).
+ * @returns {Boolean}
+ */
+Collection.prototype._isPrimaryKey = function () {
+  var verdict = false,
+    args = Array.prototype.slice.call(arguments, 0);
+
+  if (this.isReady) {
+    verdict = this.primaryKey.length === args.length &&
+      _.xor(this.primaryKey, args).length === 0;
+  }
+
+  return verdict;
+};
+
+/**
+ * Indicates whether the designated column(s) represents a unique key.
+ * Unique keys may be composite, i.e. composed of multiple columns, hence the acceptance of Array<String>.
+ * Please note: this method is meant to be called after collection is ready.
+ * @param {...String} columns the name of the column(s).
+ * @returns {Boolean}
+ */
+Collection.prototype._isUniqueKey = function () {
+  var verdict = false,
+    args = Array.prototype.slice.call(arguments, 0);
+
+  if (this.isReady) {
+    _.forOwn(this.uniqueKeys, function (v) {
+      verdict = v.length === args.length &&
+        _.xor(v, args).length === 0;
+
+      return !verdict; // exit forOwn() if verdict is true
+    });
+  }
+
+  return verdict;
+};
+
+/**
+ * Indicates whether the designated column(s) represents an index key.
+ * Index keys may be composite, i.e. composed of multiple columns, hence the acceptance of Array<String>.
+ * Please note: this method is meant to be called after collection is ready.
+ * @param {...String} columns the name of the column(s).
+ * @returns {Boolean}
+ */
+Collection.prototype._isIndexKey = function () {
+  var verdict = false,
+    args = Array.prototype.slice.call(arguments, 0);
+
+  if (this.isReady) {
+    _.forOwn(this.indexKeys, function (v) {
+      verdict = v.length === args.length &&
+        _.xor(v, args).length === 0;
+
+      return !verdict; // exit forOwn() if verdict is true
+    });
+  }
+
+  return verdict;
+};
+
+/**
  * Parses the given selector and returns a parameterized where clause.
  * @param {Boolean|Number|String|Date|Object|Array} selector the selector.
  * @returns {Object} with two properties: "sql" and "params".
+ * @throws {Error} if selector is unspecified or invalid.
  * @private
  */
 Collection.prototype._parseSelector = function (selector) {
-  var self = this, sql, params;
-
-  if (_.isArray(selector)) {
-    sql = [];
+  var self = this,
+    sql = [],
     params = [];
 
+  if (_.isArray(selector)) {
     selector.forEach(function (e) {
       var result = self._parseSelector(e);
 
@@ -175,9 +283,17 @@ Collection.prototype._parseSelector = function (selector) {
 
     return {sql: sql.join(' OR '), params: params};
 
+  } else if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) {
+    return self._parseSelector({id: selector});
+
   } else if (_.isPlainObject(selector)) {
-    sql = [];
-    params = [];
+
+    // make sure selector keys are actual columns
+    // _.forOwn(selector, function (v, k) {
+    //   if (!self.isColumn(k)) {
+    //     throw new Error('Column "' + k + '" cannot be found in table "' + self.table + '"');
+    //   }
+    // });
 
     _.forOwn(selector, function (v, k) {
       sql.push('`' + k + '` = ?');
@@ -186,17 +302,14 @@ Collection.prototype._parseSelector = function (selector) {
 
     return {sql: sql.join(' AND '), params: params};
 
-  } else { // boolean, number, string, date
-    sql = '`id` = ?';
-    params = [selector];
-
-    return {sql: sql, params: params};
+  } else {
+    throw new Error('Invalid selector parameter');
   }
 };
 
 /**
  * Retrieves the designated record(s) from database.
- * @param {Boolean|Number|String|Date|Object|Array} [selector] a selector to match the record(s) in database.
+ * @param {Boolean|Number|String|Date|Object|Array.<Object>} [selector] a selector to match the record(s) in database.
  * @param {Function} callback a callback function i.e. function(error, data).
  */
 Collection.prototype.get = function (selector, callback) {
@@ -235,7 +348,7 @@ Collection.prototype.get = function (selector, callback) {
 
 /**
  * Counts the designated record(s) in database.
- * @param {Boolean|Number|String|Date|Object|Array} [selector] a selector to match the record(s) in database.
+ * @param {Boolean|Number|String|Date|Object|Array.<Object>} [selector] a selector to match the record(s) in database.
  * @param {Function} callback a callback function i.e. function(error, data).
  */
 Collection.prototype.count = function (selector, callback) {
@@ -312,7 +425,7 @@ Collection.prototype.set = function (properties, callback) {
 
 /**
  * Deletes the designated record(s) from database.
- * @param {Boolean|Number|String|Date|Object|Array} selector a selector to match the record(s) in database.
+ * @param {Boolean|Number|String|Date|Object|Array.<Object>} selector a selector to match the record(s) in database.
  * @param {Function} callback a callback function i.e. function(error, data).
  */
 Collection.prototype.del = function (selector, callback) {
