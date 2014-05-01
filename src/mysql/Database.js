@@ -177,7 +177,7 @@ Database.prototype.extend = function (table, customProperties) {
 
   // make sure "table" parameter is valid
   if (typeof table !== 'string') {
-    throw new Error('Invalid table name');
+    throw new Error('Invalid table name - expected string, received ' + typeof(table));
   }
 
   // create new collection
