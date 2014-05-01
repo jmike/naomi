@@ -34,28 +34,6 @@ function Collection(db, table) {
 }
 
 /**
- * Indicates whether the designated table exists in database.
- * @param {Function} callback a callback function i.e. function(err, info).
- * @private
- */
-Collection.prototype._existsTable = function (callback) {
-  var schema = this.db.connectionProperties.database,
-    sql, params;
-
-  // compile parameterized SQL statement
-  sql = 'SHOW FULL TABLES FROM ??' +
-    ' WHERE ?? = ? AND Table_type = \'BASE TABLE\';';
-  params = [schema, 'Tables_in_' + schema, this.table];
-
-  // run Forrest, run
-  this.db.query(sql, params, function (err, records) {
-    if (err) return callback(err);
-
-    callback(null, records.length !== 0);
-  });
-};
-
-/**
  * Retrieves column meta-information about this table.
  * @param {Function} callback a callback function i.e. function(err, info).
  * @private

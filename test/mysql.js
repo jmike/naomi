@@ -201,15 +201,6 @@ describe('MySQL Database', function () {
         });
       });
 
-      it('should return true on #_existsTable()', function (done) {
-        employees._existsTable(function (err, exists) {
-          if (err) return done(err);
-
-          assert.isTrue(exists);
-          done();
-        });
-      });
-
       it('should return index information on #_getIndexInfo()', function (done) {
         employees._getIndexInfo(function (err, info) {
           if (err) return done(err);
@@ -276,23 +267,35 @@ describe('MySQL Database', function () {
         });
       });
 
-      it('should return true on #_isPrimaryKey("id")', function () {
-        assert.isTrue(employees._isPrimaryKey('id'));
-        assert.isFalse(employees._isPrimaryKey('age'));
-        assert.isFalse(employees._isPrimaryKey('invalid-column'));
-        assert.isFalse(employees._isPrimaryKey());
+      it('should return true on #_isPrimaryKey("id")', function (done) {
+        setTimeout(function () {
+          assert.isTrue(employees._isPrimaryKey('id'));
+          assert.isFalse(employees._isPrimaryKey('age'));
+          assert.isFalse(employees._isPrimaryKey('invalid-column'));
+          assert.isFalse(employees._isPrimaryKey());
+
+          done();
+        }, 500);
       });
 
-      it('should return true on #_isUniqueKey("firstName", "lastName")', function () {
-        assert.isTrue(employees._isUniqueKey('firstName', 'lastName'));
-        assert.isFalse(employees._isUniqueKey('age'));
-        assert.isFalse(employees._isUniqueKey('invalid-column'));
+      it('should return true on #_isUniqueKey("firstName", "lastName")', function (done) {
+        setTimeout(function () {
+          assert.isTrue(employees._isUniqueKey('firstName', 'lastName'));
+          assert.isFalse(employees._isUniqueKey('age'));
+          assert.isFalse(employees._isUniqueKey('invalid-column'));
+
+          done();
+        }, 500);
       });
 
-      it('should return true on #_isIndexKey("age")', function () {
-        assert.isTrue(employees._isIndexKey('age'));
-        assert.isFalse(employees._isIndexKey('age', 'firstName'));
-        assert.isFalse(employees._isIndexKey('invalid-column'));
+      it('should return true on #_isIndexKey("age")', function (done) {
+        setTimeout(function () {
+          assert.isTrue(employees._isIndexKey('age'));
+          assert.isFalse(employees._isIndexKey('age', 'firstName'));
+          assert.isFalse(employees._isIndexKey('invalid-column'));
+
+          done();
+        }, 500);
       });
 
       it('should be able run a CRUD [+ Count] operation', function (done) {
@@ -334,14 +337,10 @@ describe('MySQL Database', function () {
 
           assert.isObject(result.create);
           assert.strictEqual(result.create.insertId, 1);
-
           assert.isArray(result.read);
           assert.lengthOf(result.read, 1);
-
           assert.strictEqual(result.count, 1);
-
           assert.isObject(result.update);
-
           assert.isObject(result.delete);
 
           done();
@@ -352,6 +351,7 @@ describe('MySQL Database', function () {
         employees.get({foo: 'bar'}, function (err) {
           assert.instanceOf(err, Error);
           assert.equal(err.message, 'Column "foo" could not be found in table "employees"');
+
           done();
         });
       });
@@ -360,6 +360,7 @@ describe('MySQL Database', function () {
         employees.count({foo: 'bar'}, function (err) {
           assert.instanceOf(err, Error);
           assert.equal(err.message, 'Column "foo" could not be found in table "employees"');
+
           done();
         });
       });
@@ -368,6 +369,7 @@ describe('MySQL Database', function () {
         employees.del({foo: 'bar'}, function (err) {
           assert.instanceOf(err, Error);
           assert.equal(err.message, 'Column "foo" could not be found in table "employees"');
+
           done();
         });
       });
