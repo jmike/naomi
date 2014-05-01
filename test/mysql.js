@@ -201,8 +201,8 @@ describe('MySQL Database', function () {
         });
       });
 
-      it('should return index information on #_getIndexInfo()', function (done) {
-        employees._getIndexInfo(function (err, info) {
+      it('should return index information on #_getIndices()', function (done) {
+        employees._getIndices(function (err, info) {
           if (err) return done(err);
 
           assert.isObject(info);
@@ -230,8 +230,8 @@ describe('MySQL Database', function () {
         });
       });
 
-      it('should return column information on #_getColumnInfo()', function (done) {
-        employees._getColumnInfo(function (err, info) {
+      it('should return column information on #_getColumns()', function (done) {
+        employees._getColumns(function (err, info) {
           if (err) return done(err);
 
           assert.isObject(info);

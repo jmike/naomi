@@ -34,11 +34,11 @@ function Collection(db, table) {
 }
 
 /**
- * Retrieves column meta-information about this table.
- * @param {Function} callback a callback function i.e. function(err, info).
+ * Retrieves column meta-information from database.
+ * @param {Function} callback a callback function i.e. function(err, columns).
  * @private
  */
-Collection.prototype._getColumnInfo = function (callback) {
+Collection.prototype._getColumns = function (callback) {
   var self = this,
     sql, params;
 
@@ -48,7 +48,7 @@ Collection.prototype._getColumnInfo = function (callback) {
 
   // query the db
   this.db.query(sql, params, function (err, records) {
-    var info = {};
+    var columns = {};
 
     if (err) return callback(err);
 
@@ -58,7 +58,7 @@ Collection.prototype._getColumnInfo = function (callback) {
     }
 
     records.forEach(function (record, i) {
-      info[record.Field] = {
+      columns[record.Field] = {
         type: record.Type,
         isNullable: record.Null === 'YES',
         default: record.Default,
@@ -68,16 +68,16 @@ Collection.prototype._getColumnInfo = function (callback) {
       };
     });
 
-    callback(null, info);
+    callback(null, columns);
   });
 };
 
 /**
- * Retrieves index meta-information about this table.
- * @param {Function} callback a callback function i.e. function(err, info).
+ * Retrieves indices meta-information from database, i.e. primary keys, unique keys and index keys.
+ * @param {Function} callback a callback function i.e. function(err, indices).
  * @private
  */
-Collection.prototype._getIndexInfo = function (callback) {
+Collection.prototype._getIndices = function (callback) {
   var sql, params;
 
   // compile a parameterized SQL statement
@@ -86,7 +86,7 @@ Collection.prototype._getIndexInfo = function (callback) {
 
   // run Forrest, run
   this.db.query(sql, params, function (err, records) {
-    var info = {
+    var indices = {
       primaryKey: [],
       uniqueKeys: {},
       indexKeys: {}
@@ -103,21 +103,70 @@ Collection.prototype._getIndexInfo = function (callback) {
       isUnique = record.Non_unique === 0;
 
       if (key === 'PRIMARY') {
-        stack = info.primaryKey;
+        stack = indices.primaryKey;
 
       } else if (isUnique) {
-        info.uniqueKeys[key] = info.uniqueKeys[key] || [];
-        stack = info.uniqueKeys[key];
+        indices.uniqueKeys[key] = indices.uniqueKeys[key] || [];
+        stack = indices.uniqueKeys[key];
 
       } else {
-        info.indexKeys[key] = info.indexKeys[key] || [];
-        stack = info.indexKeys[key];
+        indices.indexKeys[key] = indices.indexKeys[key] || [];
+        stack = indices.indexKeys[key];
       }
 
       stack.push(column);
     });
 
-    callback(null, info);
+    callback(null, indices);
+  });
+};
+
+/**
+ * Retrieves foreign keys information from database.
+ * @param {Function} callback a callback function i.e. function(err, foreignKeys).
+ * @private
+ */
+Collection.prototype._getForeignKeys = function (callback) {
+  var self = this,
+    schema = this.db.connectionProperties.database,
+    sql, params;
+
+  // compile a parameterized SQL statement
+  sql = 'SELECT *' +
+    ' FROM information_schema.KEY_COLUMN_USAGE' +
+    ' WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ? AND REFERENCED_TABLE_NAME = ?' +
+    ' OR TABLE_SCHEMA = ? AND TABLE_NAME = ? AND REFERENCED_TABLE_SCHEMA = ?;';
+  params = [schema, schema, this.table, schema, this.table, schema];
+
+  // run Forrest, run
+  this.db.query(sql, params, function (err, records) {
+    var foreignKeys = {};
+
+    if (err) return callback(err);
+
+    records.forEach(function (record) {
+      var column = {},
+        key, table;
+
+      key = record.CONSTRAINT_NAME;
+
+      if (record.TABLE_NAME === self.table) {
+        table = record.REFERENCED_TABLE_NAME;
+        column[record.COLUMN_NAME] = record.REFERENCED_COLUMN_NAME;
+      } else {
+        table = record.TABLE_NAME;
+        column[record.REFERENCED_COLUMN_NAME] = record.COLUMN_NAME;
+      }
+
+      foreignKeys[key] = foreignKeys[key] || {
+        table: table,
+        columns: []
+      };
+
+      foreignKeys[key].columns.push(column);
+    });
+
+    callback(null, foreignKeys);
   });
 };
 
@@ -137,11 +186,11 @@ Collection.prototype._bootstrap = function (callback) {
   async.series({
 
     columnInfo: function(callback) {
-      self._getColumnInfo(callback);
+      self._getColumns(callback);
     },
 
     indexInfo: function(callback) {
-      self._getIndexInfo(callback);
+      self._getIndices(callback);
     }
 
   }, function (err, result) {
