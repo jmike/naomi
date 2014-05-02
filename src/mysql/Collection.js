@@ -159,11 +159,11 @@ Collection.prototype._getForeignKeys = function (callback) {
       }
 
       foreignKeys[key] = foreignKeys[key] || {
-        table: table,
-        columns: []
+        referencedTable: table,
+        associatedColumns: []
       };
 
-      foreignKeys[key].columns.push(column);
+      foreignKeys[key].associatedColumns.push(column);
     });
 
     callback(null, foreignKeys);
