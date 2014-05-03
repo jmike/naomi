@@ -299,8 +299,7 @@ Collection.prototype._parseSelector = function (selector) {
   var self = this,
     sql = [],
     params = [],
-    obj = {},
-    keys;
+    obj = {};
 
   if (_.isArray(selector)) {
     selector.forEach(function (e) {
@@ -323,28 +322,13 @@ Collection.prototype._parseSelector = function (selector) {
 
   } else if (_.isPlainObject(selector)) {
 
-    keys = Object.keys(selector);
-
-    // make sure selector keys are actual columns
-    keys.forEach(function (k) {
-      if (!self._existsColumn(k)) {
+    _.forOwn(selector, function (v, k) {
+      if (self._existsColumn(k)) {
+        sql.push('`' + k + '` = ?');
+        params.push(v);
+      } else {
         throw new Error('Column "' + k + '" could not be found in table "' + self.table + '"');
       }
-    });
-
-    // make sure selector keys are indexed
-    if (
-      !this._isPrimaryKey.apply(this, keys) &&
-      !this._isUniqueKey.apply(this, keys) &&
-      !this._isIndexKey.apply(this, keys)
-    ) {
-      console.warn('Selector key(s): ' + keys.join(', ') + ' are not indexed - this may result to poor db performance');
-    }
-
-    // set SQL and params
-    keys.forEach(function (k) {
-      sql.push('`' + k + '` = ?');
-      params.push(selector[k]);
     });
 
     return {sql: sql.join(' AND '), params: params};
