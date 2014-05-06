@@ -1,6 +1,6 @@
 {
   "name": "naomi",
-  "version": "0.3.1",
+  "version": "0.3.2-alpha1",
   "description": "The model (as in MVC) library for relational databases, e.g. MySQL, Postgres.",
   "repository": {
     "type": "git",
