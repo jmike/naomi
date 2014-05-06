@@ -127,14 +127,15 @@ Database.prototype.query = function (sql, params, options, callback) {
     }
   }
 
-  // check if db connected
+  // make sure db is connected
   if (!this.isConnected) {
     return callback(new Error('Connection is closed - did you forget to call #connect()?'));
   }
 
   // get an available db connection
-  this._pool.getConnection(function (error, connection) {
-    if (error) return callback(error);
+  console.log('Attempting to get connection from pool (closed: ' + this._pool._closed + ')');
+  this._pool.getConnection(function (err, connection) {
+    if (err) return callback(err);
 
     // use the "nestTables" option Luke
     if (options.nestTables) {

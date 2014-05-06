@@ -178,10 +178,8 @@ Collection.prototype._getForeignKeys = function (callback) {
 Collection.prototype._bootstrap = function (callback) {
   var self = this;
 
-  // make sure the bootstrap runs only once
-  if (this.isReady) {
-    return callback();
-  }
+  // #_bootstrap() runs only once in a collection lifetime
+  if (this.isReady) return callback();
 
   async.series({
 

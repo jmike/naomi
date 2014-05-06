@@ -378,11 +378,6 @@ describe('MySQL Database', function () {
 
   });
 
-
-
-
-
-
   // describe('#_parseSelector()', function () {
   //
   //   it('should accept a Number as input', function () {
