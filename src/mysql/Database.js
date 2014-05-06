@@ -133,7 +133,6 @@ Database.prototype.query = function (sql, params, options, callback) {
   }
 
   // get an available db connection
-  console.log('Attempting to get connection from pool (closed: ' + this._pool._closed + ')');
   this._pool.getConnection(function (err, connection) {
     if (err) return callback(err);
 
