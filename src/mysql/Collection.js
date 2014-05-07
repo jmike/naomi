@@ -19,8 +19,8 @@ function Collection(db, table) {
   this.primaryKey = [];
   this.uniqueKeys = {};
   this.indexKeys = {};
-  this._loadMetadata();
 
+  // setup queue to stack queries until db is ready
   queue = async.queue(function (task, callback) {
     task();
     callback();
@@ -36,6 +36,10 @@ function Collection(db, table) {
   db.on('disconnect', function () {
     self._queue.pause();
   });
+
+  if (db.isReady) {
+    this._loadMetadata();
+  }
 }
 
 /**
