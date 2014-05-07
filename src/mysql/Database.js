@@ -184,8 +184,6 @@ Database.prototype._getIndices = function (cb) {
 Database.prototype._bootstrap = function (callback) {
   var self = this;
 
-  if (this.isReady) return callback(); // already bootstrapped
-
   async.parallel({
 
     tables: function(callback) {
