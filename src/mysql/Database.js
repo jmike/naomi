@@ -154,7 +154,8 @@ Database.prototype._getIndices = function (cb) {
     sql, params;
 
   // compile a parameterized SQL statement
-  sql = 'SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE table_schema = ?;';
+  sql = 'SELECT * FROM INFORMATION_SCHEMA.STATISTICS' +
+    ' WHERE table_schema = ?;';
   params = [schema];
 
   // run Forrest, run
@@ -173,6 +174,40 @@ Database.prototype._getIndices = function (cb) {
     });
 
     cb(null, indices);
+  });
+};
+
+/**
+ * Retrieves foreign key metadata from database.
+ * @param {Function} callback a callback function i.e. function(err, constraints).
+ * @private
+ */
+Database.prototype._getForeignKeys = function (callback) {
+  var schema = this.connectionProperties.database,
+    sql, params;
+
+  // compile a parameterized SQL statement
+  sql = 'SELECT * FROM information_schema.KEY_COLUMN_USAGE' +
+    ' WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ?;';
+  params = [schema, schema];
+
+  // run Forrest, run
+  this.query(sql, params, function (err, records) {
+    var foreignKeys;
+
+    if (err) return callback(err);
+
+    foreignKeys = records.map(function (record) {
+      return {
+        key: record.CONSTRAINT_NAME,
+        table: record.TABLE_NAME,
+        column: record.COLUMN_NAME,
+        refTable: record.REFERENCED_TABLE_NAME,
+        refColumn: record.REFERENCED_COLUMN_NAME
+      };
+    });
+
+    callback(null, foreignKeys);
   });
 };
 
@@ -196,6 +231,10 @@ Database.prototype._bootstrap = function (callback) {
 
     indices: function(callback) {
       self._getIndices(callback);
+    },
+
+    foreignKeys: function(callback) {
+      self._getForeignKeys(callback);
     }
 
   }, function (err, result) {
@@ -207,7 +246,8 @@ Database.prototype._bootstrap = function (callback) {
         columns: {},
         primaryKey: [],
         uniqueKeys: {},
-        indexKeys: {}
+        indexKeys: {},
+        related: {}
       };
     });
 
@@ -242,59 +282,32 @@ Database.prototype._bootstrap = function (callback) {
       }
     });
 
+    // load foreign keys
+    result.foreignKeys.forEach(function (foreignKey) {
+      var stack;
+
+      stack = self.tables[foreignKey.table];
+      if (stack) {
+        stack.related[foreignKey.refTable] = stack.related[foreignKey.refTable] || {};
+        stack = stack.related[foreignKey.refTable];
+        stack[foreignKey.column] = foreignKey.refColumn;
+      }
+
+      // do the other side of the relation
+      stack = self.tables[foreignKey.refTable];
+      if (stack) {
+        stack.related[foreignKey.table] = stack.related[foreignKey.table] || {};
+        stack = stack.related[foreignKey.table];
+        stack[foreignKey.refColumn] = foreignKey.column;
+      }
+    });
+
     self.isReady = true;
     self.emit('ready');
 
     callback();
   });
 };
-
-/**
- * Retrieves foreign key meta-data from database.
- * @param {Function} callback a callback function i.e. function(err, foreignKeys).
- * @private
- */
-//Database.prototype._getForeignKeys = function (callback) {
-//  var schema = this.connectionProperties.database,
-//    sql, params;
-//
-//  // compile a parameterized SQL statement
-//  sql = 'SELECT *' +
-//    ' FROM information_schema.KEY_COLUMN_USAGE' +
-//    ' WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ?;';
-//  params = [schema, schema, this.table, schema, this.table, schema];
-//
-//  // run Forrest, run
-//  this.query(sql, params, function (err, records) {
-//    var foreignKeys = {};
-//
-//    if (err) return callback(err);
-//
-//    records.forEach(function (record) {
-//      var column = {},
-//        key, table;
-//
-//      key = record.CONSTRAINT_NAME;
-//
-//      if (record.TABLE_NAME === self.table) {
-//        table = record.REFERENCED_TABLE_NAME;
-//        column[record.COLUMN_NAME] = record.REFERENCED_COLUMN_NAME;
-//      } else {
-//        table = record.TABLE_NAME;
-//        column[record.REFERENCED_COLUMN_NAME] = record.COLUMN_NAME;
-//      }
-//
-//      foreignKeys[key] = foreignKeys[key] || {
-//        referencedTable: table,
-//        associatedColumns: []
-//      };
-//
-//      foreignKeys[key].associatedColumns.push(column);
-//    });
-//
-//    callback(null, foreignKeys);
-//  });
-//};
 
 /**
  * Runs the given SQL statement to the database.
