@@ -102,7 +102,7 @@ describe('MySQL Database', function () {
 
     describe('#extend()', function () {
 
-      it('should throw an error when table is invalid', function () {
+      it('should throw an error when table name is invalid', function () {
         assert.throws(function () {
           db.extend();
         });
@@ -201,101 +201,106 @@ describe('MySQL Database', function () {
         });
       });
 
-      it('should return index information on #_getIndices()', function (done) {
-        employees._getIndices(function (err, info) {
+      it('should contain valid metadata', function (done) {
+        db._bootstrap(function (err) {
+          var meta;
+
           if (err) return done(err);
 
-          assert.isObject(info);
+          meta = db.tables.employees;
 
-          assert.property(info, 'primaryKey');
-          assert.isArray(info.primaryKey);
-          assert.lengthOf(info.primaryKey, 1);
-          assert.strictEqual(info.primaryKey[0], 'id');
+          assert.isObject(meta);
 
-          assert.property(info, 'uniqueKeys');
-          assert.isObject(info.uniqueKeys);
-          assert.property(info.uniqueKeys, 'unique_idx');
-          assert.isArray(info.uniqueKeys.unique_idx);
-          assert.lengthOf(info.uniqueKeys.unique_idx, 2);
-          assert.sameMembers(info.uniqueKeys.unique_idx, ['firstName', 'lastName']);
+          // assert columns
+          assert.property(meta, 'columns');
+          assert.isObject(meta.columns);
 
-          assert.property(info, 'indexKeys');
-          assert.isObject(info.indexKeys);
-          assert.property(info.indexKeys, 'age_idx');
-          assert.isArray(info.indexKeys.age_idx);
-          assert.lengthOf(info.indexKeys.age_idx, 1);
-          assert.strictEqual(info.indexKeys.age_idx[0], 'age');
+          assert.property(meta.columns, 'id');
+          assert.isObject(meta.columns.id);
+          assert.isFalse(meta.columns.id.isNullable);
+          assert.isNull(meta.columns.id.comment);
+          assert.strictEqual(meta.columns.id.position, 0);
+
+          assert.property(meta.columns, 'firstName');
+          assert.isObject(meta.columns.firstName);
+          assert.isFalse(meta.columns.firstName.isNullable);
+          assert.strictEqual(meta.columns.firstName.collation, 'utf8_general_ci');
+          assert.isNull(meta.columns.firstName.comment);
+          assert.strictEqual(meta.columns.firstName.position, 1);
+
+          assert.property(meta.columns, 'lastName');
+          assert.isObject(meta.columns.lastName);
+          assert.isFalse(meta.columns.lastName.isNullable);
+          assert.strictEqual(meta.columns.lastName.collation, 'utf8_general_ci');
+          assert.isNull(meta.columns.lastName.comment);
+          assert.strictEqual(meta.columns.lastName.position, 2);
+
+          assert.property(meta.columns, 'age');
+          assert.isObject(meta.columns.age);
+          assert.isTrue(meta.columns.age.isNullable);
+          assert.isNull(meta.columns.age.default);
+          assert.isNull(meta.columns.age.comment);
+          assert.strictEqual(meta.columns.age.position, 3);
+
+          // assert indices
+          assert.property(meta, 'primaryKey');
+          assert.isArray(meta.primaryKey);
+          assert.lengthOf(meta.primaryKey, 1);
+          assert.strictEqual(meta.primaryKey[0], 'id');
+
+          assert.property(meta, 'uniqueKeys');
+          assert.isObject(meta.uniqueKeys);
+          assert.property(meta.uniqueKeys, 'unique_idx');
+          assert.isArray(meta.uniqueKeys.unique_idx);
+          assert.lengthOf(meta.uniqueKeys.unique_idx, 2);
+          assert.sameMembers(meta.uniqueKeys.unique_idx, ['firstName', 'lastName']);
+
+          assert.property(meta, 'indexKeys');
+          assert.isObject(meta.indexKeys);
+          assert.property(meta.indexKeys, 'age_idx');
+          assert.isArray(meta.indexKeys.age_idx);
+          assert.lengthOf(meta.indexKeys.age_idx, 1);
+          assert.strictEqual(meta.indexKeys.age_idx[0], 'age');
 
           done();
         });
       });
 
-      it('should return column information on #_getColumns()', function (done) {
-        employees._getColumns(function (err, info) {
+      it('should return true on #isPrimaryKey("id")', function (done) {
+        db._bootstrap(function (err) {
           if (err) return done(err);
 
-          assert.isObject(info);
-
-          assert.property(info, 'id');
-          assert.isObject(info.id);
-          assert.isFalse(info.id.isNullable);
-          assert.isNull(info.id.comment);
-          assert.strictEqual(info.id.position, 0);
-
-          assert.property(info, 'firstName');
-          assert.isObject(info.firstName);
-          assert.isFalse(info.firstName.isNullable);
-          assert.strictEqual(info.firstName.collation, 'utf8_general_ci');
-          assert.isNull(info.firstName.comment);
-          assert.strictEqual(info.firstName.position, 1);
-
-          assert.property(info, 'lastName');
-          assert.isObject(info.lastName);
-          assert.isFalse(info.lastName.isNullable);
-          assert.strictEqual(info.lastName.collation, 'utf8_general_ci');
-          assert.isNull(info.lastName.comment);
-          assert.strictEqual(info.lastName.position, 2);
-
-          assert.property(info, 'age');
-          assert.isObject(info.age);
-          assert.isTrue(info.age.isNullable);
-          assert.isNull(info.age.default);
-          assert.isNull(info.age.comment);
-          assert.strictEqual(info.age.position, 3);
+          assert.isTrue(employees.isPrimaryKey('id'));
+          assert.isFalse(employees.isPrimaryKey('age'));
+          assert.isFalse(employees.isPrimaryKey('invalid-column'));
+          assert.isFalse(employees.isPrimaryKey());
 
           done();
         });
       });
 
-      it('should return true on #_isPrimaryKey("id")', function (done) {
-        setTimeout(function () {
-          assert.isTrue(employees._isPrimaryKey('id'));
-          assert.isFalse(employees._isPrimaryKey('age'));
-          assert.isFalse(employees._isPrimaryKey('invalid-column'));
-          assert.isFalse(employees._isPrimaryKey());
+      it('should return true on #isUniqueKey("firstName", "lastName")', function (done) {
+        db._bootstrap(function (err) {
+          if (err) return done(err);
+
+          assert.isTrue(employees.isUniqueKey('firstName', 'lastName'));
+          assert.isFalse(employees.isUniqueKey('age'));
+          assert.isFalse(employees.isUniqueKey('invalid-column'));
 
           done();
-        }, 500);
+        });
       });
 
-      it('should return true on #_isUniqueKey("firstName", "lastName")', function (done) {
-        setTimeout(function () {
-          assert.isTrue(employees._isUniqueKey('firstName', 'lastName'));
-          assert.isFalse(employees._isUniqueKey('age'));
-          assert.isFalse(employees._isUniqueKey('invalid-column'));
+      it('should return true on #isIndexKey("age")', function (done) {
+        db._bootstrap(function (err) {
+          if (err) return done(err);
+
+          assert.isTrue(employees.isIndexKey('age'));
+          assert.isFalse(employees.isIndexKey('age', 'firstName'));
+          assert.isFalse(employees.isIndexKey('invalid-column'));
 
           done();
-        }, 500);
-      });
-
-      it('should return true on #_isIndexKey("age")', function (done) {
-        setTimeout(function () {
-          assert.isTrue(employees._isIndexKey('age'));
-          assert.isFalse(employees._isIndexKey('age', 'firstName'));
-          assert.isFalse(employees._isIndexKey('invalid-column'));
-
-          done();
-        }, 500);
+        });
       });
 
       it('should be able run a CRUD [+ Count] operation', function (done) {
