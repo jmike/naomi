@@ -46,7 +46,7 @@ Database.prototype.connect = function (callback) {
 
   // load metadata
   if (!this.isReady) {
-    this._bootstrap(defaultCallback);
+    this._loadMeta(defaultCallback);
   }
 
   callback();
@@ -216,7 +216,7 @@ Database.prototype._getForeignKeys = function (callback) {
  * @param {Function} callback a callback function i.e. function(err).
  * @private
  */
-Database.prototype._bootstrap = function (callback) {
+Database.prototype._loadMeta = function (callback) {
   var self = this;
 
   async.parallel({

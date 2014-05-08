@@ -202,7 +202,7 @@ describe('MySQL Database', function () {
       });
 
       it('should contain valid metadata', function (done) {
-        db._bootstrap(function (err) {
+        db._loadMeta(function (err) {
           var meta;
 
           if (err) return done(err);
@@ -267,7 +267,7 @@ describe('MySQL Database', function () {
       });
 
       it('should return true on #isPrimaryKey("id")', function (done) {
-        db._bootstrap(function (err) {
+        db._loadMeta(function (err) {
           if (err) return done(err);
 
           assert.isTrue(employees.isPrimaryKey('id'));
@@ -280,7 +280,7 @@ describe('MySQL Database', function () {
       });
 
       it('should return true on #isUniqueKey("firstName", "lastName")', function (done) {
-        db._bootstrap(function (err) {
+        db._loadMeta(function (err) {
           if (err) return done(err);
 
           assert.isTrue(employees.isUniqueKey('firstName', 'lastName'));
@@ -292,7 +292,7 @@ describe('MySQL Database', function () {
       });
 
       it('should return true on #isIndexKey("age")', function (done) {
-        db._bootstrap(function (err) {
+        db._loadMeta(function (err) {
           if (err) return done(err);
 
           assert.isTrue(employees.isIndexKey('age'));
