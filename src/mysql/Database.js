@@ -13,8 +13,8 @@ var events = require('events'),
  * @constructor
  */
 function Database(connectionProperties) {
-  this.connectionProperties = connectionProperties;
-  this.tables = {};
+  this._connectionProperties = connectionProperties;
+  this._tables = {};
   this.isConnected = false;
   this.isReady = false;
 
@@ -38,7 +38,7 @@ Database.prototype.connect = function (callback) {
 
   // connect to database
   if (!this.isConnected) {
-    this._pool = mysql.createPool(this.connectionProperties);
+    this._pool = mysql.createPool(this._connectionProperties);
     this.isConnected = true;
 
     this.emit('connect');
@@ -85,7 +85,7 @@ Database.prototype.disconnect = function (callback) {
  * @private
  */
 Database.prototype._getTables = function (cb) {
-  var schema = this.connectionProperties.database,
+  var schema = this._connectionProperties.database,
     sql, params;
 
   // compile parameterized SQL statement
@@ -114,7 +114,7 @@ Database.prototype._getTables = function (cb) {
  * @private
  */
 Database.prototype._getColumns = function (cb) {
-  var schema = this.connectionProperties.database,
+  var schema = this._connectionProperties.database,
     sql, params;
 
   // compile parameterized SQL statement
@@ -150,7 +150,7 @@ Database.prototype._getColumns = function (cb) {
  * @private
  */
 Database.prototype._getIndices = function (cb) {
-  var schema = this.connectionProperties.database,
+  var schema = this._connectionProperties.database,
     sql, params;
 
   // compile a parameterized SQL statement
@@ -183,7 +183,7 @@ Database.prototype._getIndices = function (cb) {
  * @private
  */
 Database.prototype._getForeignKeys = function (callback) {
-  var schema = this.connectionProperties.database,
+  var schema = this._connectionProperties.database,
     sql, params;
 
   // compile a parameterized SQL statement
@@ -242,7 +242,7 @@ Database.prototype._loadMeta = function (callback) {
 
     // init tables
     result.tables.forEach(function (table) {
-      self.tables[table] = {
+      self._tables[table] = {
         columns: {},
         primaryKey: [],
         uniqueKeys: {},
@@ -253,7 +253,7 @@ Database.prototype._loadMeta = function (callback) {
 
     // load columns
     result.columns.forEach(function (column) {
-      var stack = self.tables[column.table];
+      var stack = self._tables[column.table];
 
       if (stack) {
         stack = stack.columns;
@@ -263,7 +263,7 @@ Database.prototype._loadMeta = function (callback) {
 
     // load indices
     result.indices.forEach(function (index) {
-      var stack = self.tables[index.table];
+      var stack = self._tables[index.table];
 
       if (stack) {
         if (index.key === 'PRIMARY') {
@@ -286,7 +286,7 @@ Database.prototype._loadMeta = function (callback) {
     result.foreignKeys.forEach(function (foreignKey) {
       var stack;
 
-      stack = self.tables[foreignKey.table];
+      stack = self._tables[foreignKey.table];
       if (stack) {
         stack.related[foreignKey.refTable] = stack.related[foreignKey.refTable] || {};
         stack = stack.related[foreignKey.refTable];
@@ -294,7 +294,7 @@ Database.prototype._loadMeta = function (callback) {
       }
 
       // do the other side of the relation
-      stack = self.tables[foreignKey.refTable];
+      stack = self._tables[foreignKey.refTable];
       if (stack) {
         stack.related[foreignKey.table] = stack.related[foreignKey.table] || {};
         stack = stack.related[foreignKey.table];
@@ -437,7 +437,7 @@ Database.prototype.extend = function (table, customProperties) {
  */
 Database.prototype.existsTable = function (table) {
   if (this.isReady) {
-    return this.tables.hasOwnProperty(table);
+    return this._tables.hasOwnProperty(table);
   }
 
   return false;

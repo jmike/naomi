@@ -28,7 +28,7 @@ function Collection(db, table) {
   this._queue = queue;
 
   db.on('ready', function () {
-    self._loadMetadata();
+    self._loadMeta();
     self._queue.resume();
   });
 
@@ -37,7 +37,7 @@ function Collection(db, table) {
   });
 
   if (db.isReady) {
-    this._loadMetadata();
+    this._loadMeta();
   }
 }
 
@@ -45,8 +45,8 @@ function Collection(db, table) {
  * Loads metadata from database.
  * @private
  */
-Collection.prototype._loadMetadata = function () {
-  var meta = this.db.tables[this.table];
+Collection.prototype._loadMeta = function () {
+  var meta = this.db._tables[this.table];
 
   if (meta) {
     this.columns = meta.columns;

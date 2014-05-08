@@ -207,7 +207,7 @@ describe('MySQL Database', function () {
 
           if (err) return done(err);
 
-          meta = db.tables.employees;
+          meta = db._tables.employees;
 
           assert.isObject(meta);
 
