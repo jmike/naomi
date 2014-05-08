@@ -131,7 +131,7 @@ Collection.prototype._parseSelector = function (selector) {
     params = [],
     obj = {};
 
-  if (_.isArray(selector)) {
+  if (_.isArray(selector)) { // array implies the use of "OR" comparator
 
     selector.forEach(function (e) {
       var result = self._parseSelector(e);
@@ -142,7 +142,7 @@ Collection.prototype._parseSelector = function (selector) {
 
     return {sql: sql.join(' OR '), params: params};
 
-  } else if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) {
+  } else if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) { // plain values imply primary key
 
     if (this.primaryKey.length === 1) { // primary key is simple
       obj[this.primaryKey[0]] = selector;
@@ -152,16 +152,22 @@ Collection.prototype._parseSelector = function (selector) {
       throw new Error('Primary key is compound or non existent, thus Boolean, Number, String and Date selectors are useless');
     }
 
-  } else if (_.isPlainObject(selector)) {
+  } else if (_.isPlainObject(selector)) { // standard selector type
 
     _.forOwn(selector, function (v, k) {
-      if (self.existsColumn(k)) {
-        sql.push('`' + k + '` = ?');
-        params.push(v);
 
-      } else {
+      if (!self.existsColumn(k)) {
         throw new Error('Column "' + k + '" could not be found in table "' + self.table + '"');
       }
+
+      if (v === null) {
+        sql.push('`' + k + '` IS NULL');
+
+      } else {
+        sql.push('`' + k + '` = ?');
+        params.push(v);
+      }
+
     });
 
     return {sql: sql.join(' AND '), params: params};
