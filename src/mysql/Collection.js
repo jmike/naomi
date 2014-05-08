@@ -1,6 +1,5 @@
 var _ = require('lodash'),
-  async = require('async'),
-  defaultCallback = require('../utils/defaultCallback');
+  async = require('async');
 
 /**
  * Constructs a new MySQL collection.
