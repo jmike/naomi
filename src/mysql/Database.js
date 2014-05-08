@@ -435,7 +435,7 @@ Database.prototype.extend = function (table, customProperties) {
  * @param {String} table the name of the table.
  * @returns {Boolean}
  */
-Database.prototype.existsTable = function (table) {
+Database.prototype.hasTable = function (table) {
   if (this.isReady) {
     return this._tables.hasOwnProperty(table);
   }

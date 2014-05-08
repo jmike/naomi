@@ -62,7 +62,7 @@ Collection.prototype._loadMeta = function () {
  * @param {String} column the name of the column.
  * @returns {Boolean}
  */
-Collection.prototype.existsColumn = function (column) {
+Collection.prototype.hasColumn = function (column) {
   return this.columns.hasOwnProperty(column);
 };
 
@@ -155,7 +155,7 @@ Collection.prototype._parseSelector = function (selector) {
 
     _.forOwn(selector, function (v, k) {
 
-      if (!self.existsColumn(k)) {
+      if (!self.hasColumn(k)) {
         throw new Error('Column "' + k + '" could not be found in table "' + self.table + '"');
       }
 
@@ -191,7 +191,7 @@ Collection.prototype.get = function (selector, callback) {
   }
 
   // make sure table exists
-  if (!this.db.existsTable(this.table)) {
+  if (!this.db.hasTable(this.table)) {
     return callback(new Error('Table "' + this.table + '" cannot be found in database'));
   }
 
@@ -242,7 +242,7 @@ Collection.prototype.count = function (selector, callback) {
   }
 
   // make sure table exists
-  if (!this.db.existsTable(this.table)) {
+  if (!this.db.hasTable(this.table)) {
     return callback(new Error('Table "' + this.table + '" cannot be found in database'));
   }
 
@@ -299,7 +299,7 @@ Collection.prototype.set = function (properties, callback) {
   }
 
   // make sure table exists
-  if (!this.db.existsTable(this.table)) {
+  if (!this.db.hasTable(this.table)) {
     return callback(new Error('Table "' + this.table + '" cannot be found in database'));
   }
 
@@ -335,7 +335,7 @@ Collection.prototype.del = function (selector, callback) {
   }
 
   // make sure table exists
-  if (!this.db.existsTable(this.table)) {
+  if (!this.db.hasTable(this.table)) {
     return callback(new Error('Table "' + this.table + '" cannot be found in database'));
   }
 
