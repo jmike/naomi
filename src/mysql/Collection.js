@@ -61,6 +61,9 @@ Collection.prototype._loadMeta = function () {
  * Please note: this method is meant to be called after the database is ready.
  * @param {String} column the name of the column.
  * @returns {Boolean}
+ * @example
+ *
+ * collectionInstance.hasColumn('name');
  */
 Collection.prototype.hasColumn = function (column) {
   return this.columns.hasOwnProperty(column);
@@ -72,6 +75,9 @@ Collection.prototype.hasColumn = function (column) {
  * Please note: this method is meant to be called after the database is ready.
  * @param {...String} columns the name of the columns.
  * @returns {Boolean}
+ * @example
+ *
+ * collectionInstance.isPrimaryKey('id');
  */
 Collection.prototype.isPrimaryKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0);
@@ -85,6 +91,9 @@ Collection.prototype.isPrimaryKey = function () {
  * Please note: this method is meant to be called after the database is ready.
  * @param {...String} columns the name of the columns.
  * @returns {Boolean}
+ * @example
+ *
+ * collectionInstance.isUniqueKey('pid');
  */
 Collection.prototype.isUniqueKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0),
@@ -104,6 +113,9 @@ Collection.prototype.isUniqueKey = function () {
  * Please note: this method is meant to be called after the database is ready.
  * @param {...String} columns the name of the columns.
  * @returns {Boolean}
+ * @example
+ *
+ * collectionInstance.isIndexKey('firstName', 'lastName');
  */
 Collection.prototype.isIndexKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0),
