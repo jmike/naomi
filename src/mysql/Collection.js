@@ -1,5 +1,6 @@
 var _ = require('lodash'),
-  async = require('async');
+  async = require('async'),
+  operators = require('./operators.json');
 
 /**
  * Constructs a new MySQL collection.
@@ -130,8 +131,51 @@ Collection.prototype.isIndexKey = function () {
 };
 
 /**
+ * Parses the given expression, as part of a selector, and returns a parameterized where clause.
+ * @param {Object} expr an object with a single property, where key is the operator and value the value.
+ * @returns {Object} with two properties: "sql" and "params".
+ * @private
+ */
+Collection.prototype._parseExpression = function (expr) {
+  var keys = Object.keys(expr),
+    k, v, params, sql;
+
+  if (keys.length !== 1) {
+    throw new Error('Invalid expression in selector - expected single property, received ' + keys.length);
+  }
+
+  k = keys[0];
+
+  if (!operators.hasOwnProperty(k)) {
+    throw new Error('Unable to parse unknown operator "' + k + '"');
+  }
+
+  v = expr[k];
+  k = operators[k]; // convert to sql equivalent
+
+  if (k === '=' && v === null) {
+    sql = 'IS NULL';
+    params = [];
+
+    return {sql: sql, params: params};
+  }
+
+  if (k === '!=' && v === null) {
+    sql = 'IS NOT NULL';
+    params = [];
+
+    return {sql: sql, params: params};
+  }
+
+  sql = k + ' ?';
+  params = [v];
+
+  return {sql: sql, params: params};
+};
+
+/**
  * Parses the given selector and returns a parameterized where clause.
- * @param {Boolean|Number|String|Date|Object|Array} selector the selector.
+ * @param {Boolean|Number|String|Date|Object|Array} selector.
  * @returns {Object} with two properties: "sql" and "params".
  * @throws {Error} if selector is unspecified or invalid.
  * @private
@@ -140,33 +184,33 @@ Collection.prototype._parseSelector = function (selector) {
   var self = this,
     sql = [],
     params = [],
-    obj = {};
+    obj = {},
+    expr;
 
-  if (_.isArray(selector)) { // array implies the use of "OR" comparator
-
-    selector.forEach(function (e) {
-      var result = self._parseSelector(e);
+  if (_.isArray(selector)) {
+    selector.forEach(function (selector) {
+      var result = self._parseSelector(selector);
 
       sql.push(result.sql);
       params.push.apply(params, result.params);
     });
 
-    return {sql: sql.join(' OR '), params: params};
+    return {
+      sql: sql.join(' OR '),
+      params: params
+    };
 
-  } else if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) { // plain values imply primary key
-
-    if (this.primaryKey.length === 1) { // primary key is simple
-      obj[this.primaryKey[0]] = selector;
-      return self._parseSelector(obj);
-
-    } else { // primary key is compound or non existent
+  } else if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) {
+    if (this.primaryKey.length !== 1) { // primary key is compound or non existent
       throw new Error('Primary key is compound or non existent, thus Boolean, Number, String and Date selectors are useless');
     }
+
+    obj[this.primaryKey[0]] = selector;
+    return this._parseSelector(obj);
 
   } else if (_.isPlainObject(selector)) { // standard selector type
 
     _.forOwn(selector, function (v, k) {
-
       if (!self.hasColumn(k)) {
         throw new Error('Column "' + k + '" could not be found in table "' + self.table + '"');
       }
@@ -174,17 +218,21 @@ Collection.prototype._parseSelector = function (selector) {
       if (v === null) {
         sql.push('`' + k + '` IS NULL');
 
+      } else if (_.isPlainObject(v)) { // expression supplied
+        expr = self._parseExpression(v);
+        sql.push('`' + k + '` ' + expr.sql);
+        params.push.apply(params, expr.params);
+
       } else {
         sql.push('`' + k + '` = ?');
         params.push(v);
       }
-
     });
 
     return {sql: sql.join(' AND '), params: params};
 
   } else {
-    throw new Error('Invalid type of selector: ' + typeof(selector));
+    throw new Error('Unexpected type of selector: ' + typeof(selector));
   }
 };
 

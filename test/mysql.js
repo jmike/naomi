@@ -11,7 +11,7 @@ var assert = require('chai').assert,
 
 describe('MySQL Database', function () {
 
-  describe('@DISCONNECTED', function () {
+  describe('@disconnected state', function () {
 
     describe('#query()', function () {
 
@@ -127,7 +127,7 @@ describe('MySQL Database', function () {
 
   });
 
-  describe('@CONNECTED', function () {
+  describe('@connected state', function () {
 
     before(function (done) {
       db.connect(done);
@@ -301,6 +301,58 @@ describe('MySQL Database', function () {
 
           done();
         });
+      });
+
+      it('should accept the use of operators in selector', function () {
+        var result;
+
+        assert.throws(function () {
+          employees._parseSelector({id: {'invalid': 1}});
+        });
+
+        result = employees._parseSelector({id: {'=': 1}});
+        assert.strictEqual(result.sql, '`id` = ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = employees._parseSelector({id: {'==': 1}});
+        assert.strictEqual(result.sql, '`id` = ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = employees._parseSelector({id: {'===': 1}});
+        assert.strictEqual(result.sql, '`id` = ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = employees._parseSelector({id: {'!=': 1}});
+        assert.strictEqual(result.sql, '`id` != ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = employees._parseSelector({id: {'!==': 1}});
+        assert.strictEqual(result.sql, '`id` != ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = employees._parseSelector({id: {'<>': 1}});
+        assert.strictEqual(result.sql, '`id` != ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = employees._parseSelector({id: {'>': 1}});
+        assert.strictEqual(result.sql, '`id` > ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = employees._parseSelector({id: {'>=': 1}});
+        assert.strictEqual(result.sql, '`id` >= ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = employees._parseSelector({id: {'<': 1}});
+        assert.strictEqual(result.sql, '`id` < ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = employees._parseSelector({id: {'<=': 1}});
+        assert.strictEqual(result.sql, '`id` <= ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = employees._parseSelector({firstName: {'~': '%ame%'}});
+        assert.strictEqual(result.sql, '`firstName` LIKE ?');
+        assert.strictEqual(result.params[0], '%ame%');
       });
 
       it('should be able run a CRUD [+ Count] operation', function (done) {
