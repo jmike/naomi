@@ -443,4 +443,40 @@ Database.prototype.hasTable = function (table) {
   return false;
 };
 
+/**
+ * Calculates and returns the shortest path from table A to table B.
+ * Please note: this method is meant to be called after the database is ready.
+ * @param {String} tableA the name of the table A.
+ * @param {String} tableB the name of the table B.
+ * @param {Array.<String>} path the path taken so far.
+ * @param {Array.<Array.<String>>} solutions current list of solutions.
+ * @returns {Array.<String>}
+ */
+Database.prototype._calculatePath = function (tableA, tableB, path, solutions) {
+  var self = this;
+
+  // handle optional path and solutions params
+  path = path || [tableA];
+  solutions = solutions || [];
+
+  if (_.last(path) !== tableB) { // are we there yet?
+    _.forOwn(this._tables[tableA].related, function (columns, table) {
+      var arr = path.slice(0);
+
+      if (arr.indexOf(table) === -1) { // avoid running in circles
+        arr.push(table);
+        self._calculatePath(table, tableB, arr, solutions);
+      }
+    });
+
+  } else { // destination reached
+    solutions.push(path);
+  }
+
+  // return shortest path
+  return _.min(solutions, function(solution) {
+    return solution.length;
+  });
+};
+
 module.exports = Database;

@@ -178,19 +178,53 @@ describe('MySQL Database', function () {
 
     });
 
+    describe('Collection "countries"', function () {
+
+      var countries;
+
+      before(function (done) {
+        var sql = 'CREATE TABLE IF NOT EXISTS `countries`' +
+          ' (`id` int(10) unsigned NOT NULL AUTO_INCREMENT, ' +
+          ' `name` varchar(100) NOT NULL, ' +
+          ' PRIMARY KEY (`id`))' +
+          ' ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+
+        db.query(sql, function (error) {
+          if (error) return done(error);
+
+          countries = db.extend('countries');
+          done();
+        });
+      });
+
+      it('should have valid primary key', function (done) {
+        db._loadMeta(function (err) {
+          if (err) return done(err);
+
+          assert.isTrue(countries.isPrimaryKey('id'));
+          done();
+        });
+      });
+
+    });
+
     describe('Collection "employees"', function () {
 
       var employees;
 
       before(function (done) {
         var sql = 'CREATE TABLE IF NOT EXISTS `employees` (' +
-          '`id` int(10) unsigned NOT NULL AUTO_INCREMENT, ' +
-          '`firstName` varchar(45) NOT NULL, ' +
-          '`lastName` varchar(45) NOT NULL, ' +
-          '`age` tinyint(3) unsigned DEFAULT NULL, ' +
-          'PRIMARY KEY (`id`), ' +
-          'UNIQUE KEY `unique_idx` (`firstName`,`lastName`), ' +
-          'KEY `age_idx` (`age`)' +
+          ' `id` int(10) unsigned NOT NULL AUTO_INCREMENT,' +
+          ' `firstName` varchar(45) NOT NULL,' +
+          ' `lastName` varchar(45) NOT NULL,' +
+          ' `age` tinyint(3) unsigned DEFAULT NULL,' +
+          ' `country_id` int(10) unsigned DEFAULT NULL,' +
+          ' PRIMARY KEY (`id`),' +
+          ' UNIQUE KEY `unique_idx` (`firstName`,`lastName`),' +
+          ' KEY `age_idx` (`age`),' +
+          ' KEY `country_idx` (`country_id`),' +
+          ' CONSTRAINT `fk_employees_countries`' +
+          ' FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE' +
           ') ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;';
 
         db.query(sql, function (error) {
@@ -433,7 +467,113 @@ describe('MySQL Database', function () {
 
     });
 
+    describe('Collection "companies"', function () {
+
+      var companies;
+
+      before(function (done) {
+        var sql = 'CREATE TABLE IF NOT EXISTS `companies` (' +
+          ' `id` int(10) unsigned NOT NULL AUTO_INCREMENT, ' +
+          ' `name` varchar(45) NOT NULL, ' +
+          ' `country_id` int(10) unsigned DEFAULT NULL,' +
+          ' PRIMARY KEY (`id`),' +
+          ' KEY `country_idx` (`country_id`),' +
+          ' CONSTRAINT `fk_companies_countries`' +
+          ' FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE' +
+          ') ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+
+        db.query(sql, function (error) {
+          if (error) return done(error);
+
+          companies = db.extend('companies');
+          done();
+        });
+      });
+
+      it('should have valid primary key', function (done) {
+        db._loadMeta(function (err) {
+          if (err) return done(err);
+
+          assert.isTrue(companies.isPrimaryKey('id'));
+          done();
+        });
+      });
+
+    });
+
+    describe('Collection "companyEmployees"', function () {
+
+      var companyEmployees;
+
+      before(function (done) {
+        var sql = 'CREATE TABLE IF NOT EXISTS `companyEmployees` (' +
+          ' `id` int(10) unsigned NOT NULL AUTO_INCREMENT,' +
+          ' `company_id` int(10) unsigned NOT NULL,' +
+          ' `employee_id` int(10) unsigned NOT NULL,' +
+          ' PRIMARY KEY (`id`),' +
+          ' KEY `fk_companyEmployee_company_idx` (`company_id`),' +
+          ' KEY `fk_companyEmployee_employee_idx` (`employee_id`),' +
+          ' CONSTRAINT `fk_companyEmployees_companies`' +
+          ' FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,' +
+          ' CONSTRAINT `fk_companyEmployees_employees`' +
+          ' FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE' +
+          ') ENGINE=InnoDB DEFAULT CHARSET=utf8;';
+
+        db.query(sql, function (error) {
+          if (error) return done(error);
+
+          companyEmployees = db.extend('companyEmployees');
+          done();
+        });
+      });
+
+      it('should be related with "companies" and "employees"', function (done) {
+        db._loadMeta(function (err) {
+          var related;
+
+          if (err) return done(err);
+
+          related = db._tables.companyEmployees.related;
+
+          assert.isObject(related);
+          assert.lengthOf(Object.keys(related), 2);
+
+          assert.property(related, 'companies');
+          assert.isObject(related.companies);
+          assert.propertyVal(related.companies, 'company_id', 'id');
+
+          assert.property(related, 'employees');
+          assert.isObject(related.employees);
+          assert.propertyVal(related.employees, 'employee_id', 'id');
+
+          done();
+        });
+      });
+
+      it('should be able to calculate a valid path on db#_calculatePath("employees", "companies")', function () {
+        var path = db._calculatePath('employees', 'companies');
+
+        assert.isArray(path);
+        assert.strictEqual(path[0], 'employees');
+        assert.strictEqual(path[1], 'companyEmployees');
+        assert.strictEqual(path[2], 'companies');
+      });
+
+      it('should be able to calculate a valid path on db#_calculatePath("employees", "countries")', function () {
+        var path = db._calculatePath('employees', 'countries');
+
+        assert.isArray(path);
+        assert.strictEqual(path[0], 'employees');
+        assert.strictEqual(path[1], 'countries');
+      });
+
+    });
+
+
+
   });
+
+
 
   // describe('#_parseSelector()', function () {
   //
