@@ -6,6 +6,6 @@ node_js:
 services:
   - mysql
 before_script:
-  - mysql -e 'CREATE DATABASE naomi_test;'
+  - mysql < assets/mysql-test.sql
 env:
   - NODE_ENV=development DATABASE_HOST=localhost DATABASE_PORT=3306 DATABASE_USERNAME=root DATABASE_PASSWORD= DATABASE_SCHEMA=naomi_test
