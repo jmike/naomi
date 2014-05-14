@@ -473,6 +473,9 @@ Database.prototype._calculatePath = function (tableA, tableB, path, solutions) {
     solutions.push(path);
   }
 
+  // make sure solutions is not empty
+  if (_.isEmpty(solutions)) return null;
+
   // return shortest path
   return _.min(solutions, function(solution) {
     return solution.length;
