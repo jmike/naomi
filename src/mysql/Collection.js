@@ -455,19 +455,23 @@ Collection.prototype.getRelated = function (table, selector, callback) {
 
   // compile a parameterized SELECT statement
   sql = 'SELECT `' + table + '`.* ' +
-    path.map(function (table, i) {
-      var prev, meta;
+    path
+      .map(function (table, i) {
+        var ref, constraints;
 
-      if (i === 0) return 'FROM `' + table + '`';
+        if (i === 0) return 'FROM `' + table + '`';
 
-      prev = path[i - 1];
-      meta = self.db.getTableMeta(table);
+        ref = path[i - 1];
+        constraints = self.db.getTableMeta(table).related[ref];
 
-      return 'INNER JOIN `' + table + '` ON ' +
-        Object.keys(meta.related[prev]).map(function (k) {
-          return '`' + prev + '`.`' + k + '` = `' + table + '`.`' + meta.related[prev][k] + '`';
-        }).join(' AND ');
-    }).join(' ');
+        return 'INNER JOIN `' + table + '` ON ' +
+          Object.keys(constraints)
+            .map(function (k) {
+              return '`' + ref + '`.' + k + ' = `' + table + '`.' + constraints[k];
+            })
+            .join(' AND ');
+      })
+      .join(' ');
   params = [];
 
   // handle optional "selector" param
