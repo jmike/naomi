@@ -176,38 +176,42 @@ Collection.prototype._parseExpression = function (expr) {
 
 /**
  * Parses the given selector and returns a parameterized where clause.
- * @param {Boolean|Number|String|Date|Object|Array} selector.
+ * @param {Boolean|Number|String|Date|Object|Array} selector
+ * @param {Object} [options]
  * @returns {Object} with two properties: "sql" and "params".
  * @throws {Error} if selector is unspecified or invalid.
  * @private
  */
-Collection.prototype._parseSelector = function (selector) {
+Collection.prototype._parseSelector = function (selector, options) {
   var self = this,
     sql = [],
     params = [],
     obj = {},
     expr;
 
-  if (_.isArray(selector)) {
+  // handle optional "options" param
+  options = options || {};
+
+  if (_.isArray(selector)) { // array of selectors
+
     selector.forEach(function (selector) {
-      var result = self._parseSelector(selector);
+      var result = self._parseSelector(selector, options);
 
       sql.push(result.sql);
       params.push.apply(params, result.params);
     });
 
-    return {
-      sql: sql.join(' OR '),
-      params: params
-    };
+    return {sql: sql.join(' OR '), params: params};
 
-  } else if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) {
-    if (this.primaryKey.length !== 1) { // primary key is compound or non existent
-      throw new Error('Primary key is compound or non existent, thus Boolean, Number, String and Date selectors are useless');
-    }
+  } else if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) { // plain value selector
+
+    // is primary key compound or non existent?
+    if (this.primaryKey.length !== 1) throw new Error(
+      'Primary key is compound or non existent, thus Boolean, Number, String and Date selectors are useless'
+    );
 
     obj[this.primaryKey[0]] = selector;
-    return this._parseSelector(obj);
+    return this._parseSelector(obj, options);
 
   } else if (_.isPlainObject(selector)) { // standard selector type
 
@@ -216,16 +220,16 @@ Collection.prototype._parseSelector = function (selector) {
         throw new Error('Column "' + k + '" could not be found in table "' + self.table + '"');
       }
 
-      if (v === null) {
-        sql.push('`' + self.table + '`.`' + k + '` IS NULL');
+      if (v === null) { // null value
+        sql.push((options.qualified ? '`' + self.table + '`.' + k : '`' + k + '`') + ' IS NULL');
 
       } else if (_.isPlainObject(v)) { // expression supplied
         expr = self._parseExpression(v);
-        sql.push('`' + self.table + '`.`' + k + '` ' + expr.sql);
+        sql.push((options.qualified ? '`' + self.table + '`.' + k : '`' + k + '`') + ' ' + expr.sql);
         params.push.apply(params, expr.params);
 
-      } else {
-        sql.push('`' + self.table + '`.`' + k + '` = ?');
+      } else { // plain value
+        sql.push((options.qualified ? '`' + self.table + '`.' + k : '`' + k + '`') + ' = ?');
         params.push(v);
       }
     });
@@ -458,7 +462,6 @@ Collection.prototype.getRelated = function (table, selector, callback) {
 
       prev = path[i - 1];
       meta = self.db.getTableMeta(table);
-      console.log(prev, table, meta.related);
 
       return 'INNER JOIN `' + table + '` ON ' +
         Object.keys(meta.related[prev]).map(function (k) {
@@ -477,7 +480,7 @@ Collection.prototype.getRelated = function (table, selector, callback) {
   if (selector) {
 
     try {
-      whereClause = this._parseSelector(selector);
+      whereClause = this._parseSelector(selector, {qualified: true});
     } catch (err) {
       return callback(err);
     }
@@ -487,8 +490,6 @@ Collection.prototype.getRelated = function (table, selector, callback) {
   }
 
   sql += ';';
-
-  console.log(sql, params);
 
   // run Forrest, run
   this.db.query(sql, params, callback);
