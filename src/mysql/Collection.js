@@ -37,6 +37,7 @@ function Collection(db, table) {
     self._queue.pause();
   });
 
+  // check if db is already loaded
   if (db.isReady) {
     this._loadMeta();
   }
@@ -47,7 +48,7 @@ function Collection(db, table) {
  * @private
  */
 Collection.prototype._loadMeta = function () {
-  var meta = this.db._tables[this.table];
+  var meta = this.db.getTableMeta(this.table);
 
   if (meta) {
     this.columns = meta.columns;
@@ -64,7 +65,7 @@ Collection.prototype._loadMeta = function () {
  * @returns {Boolean}
  * @example
  *
- * collectionInstance.hasColumn('name');
+ * collection.hasColumn('name');
  */
 Collection.prototype.hasColumn = function (column) {
   return this.columns.hasOwnProperty(column);
@@ -78,7 +79,7 @@ Collection.prototype.hasColumn = function (column) {
  * @returns {Boolean}
  * @example
  *
- * collectionInstance.isPrimaryKey('id');
+ * collection.isPrimaryKey('id');
  */
 Collection.prototype.isPrimaryKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0);
@@ -94,7 +95,7 @@ Collection.prototype.isPrimaryKey = function () {
  * @returns {Boolean}
  * @example
  *
- * collectionInstance.isUniqueKey('pid');
+ * collection.isUniqueKey('pid');
  */
 Collection.prototype.isUniqueKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0),
@@ -116,7 +117,7 @@ Collection.prototype.isUniqueKey = function () {
  * @returns {Boolean}
  * @example
  *
- * collectionInstance.isIndexKey('firstName', 'lastName');
+ * collection.isIndexKey('firstName', 'lastName');
  */
 Collection.prototype.isIndexKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0),
@@ -216,15 +217,15 @@ Collection.prototype._parseSelector = function (selector) {
       }
 
       if (v === null) {
-        sql.push('`' + k + '` IS NULL');
+        sql.push('`' + self.table + '`.`' + k + '` IS NULL');
 
       } else if (_.isPlainObject(v)) { // expression supplied
         expr = self._parseExpression(v);
-        sql.push('`' + k + '` ' + expr.sql);
+        sql.push('`' + self.table + '`.`' + k + '` ' + expr.sql);
         params.push.apply(params, expr.params);
 
       } else {
-        sql.push('`' + k + '` = ?');
+        sql.push('`' + self.table + '`.`' + k + '` = ?');
         params.push(v);
       }
     });
@@ -242,7 +243,7 @@ Collection.prototype._parseSelector = function (selector) {
  * @param {Function} callback a callback function i.e. function(error, data).
  */
 Collection.prototype.get = function (selector, callback) {
-  var sql, params, result;
+  var sql, params, whereClause;
 
   // postpone if not ready
   if (!this.db.isReady) {
@@ -251,9 +252,9 @@ Collection.prototype.get = function (selector, callback) {
   }
 
   // make sure table exists
-  if (!this.db.hasTable(this.table)) {
-    return callback(new Error('Table "' + this.table + '" cannot be found in database'));
-  }
+  if (!this.db.hasTable(this.table)) return callback(
+    new Error('Table "' + this.table + '" cannot be found in database')
+  );
 
   // handle optional "selector" param
   if (typeof selector === 'function') {
@@ -269,16 +270,13 @@ Collection.prototype.get = function (selector, callback) {
   if (selector) {
 
     try {
-      result = this._parseSelector(selector);
+      whereClause = this._parseSelector(selector);
     } catch (err) {
       return callback(err);
     }
 
-    if (! _.isEmpty(result.sql)) {
-      sql += ' WHERE ' + result.sql;
-      params.push.apply(params, result.params);
-    }
-
+    sql += ' WHERE ' + whereClause.sql;
+    params.push.apply(params, whereClause.params);
   }
 
   sql += ';';
@@ -293,7 +291,7 @@ Collection.prototype.get = function (selector, callback) {
  * @param {Function} callback a callback function i.e. function(error, data).
  */
 Collection.prototype.count = function (selector, callback) {
-  var sql, params, result;
+  var sql, params, whereClause;
 
   // postpone if not ready
   if (!this.db.isReady) {
@@ -302,9 +300,9 @@ Collection.prototype.count = function (selector, callback) {
   }
 
   // make sure table exists
-  if (!this.db.hasTable(this.table)) {
-    return callback(new Error('Table "' + this.table + '" cannot be found in database'));
-  }
+  if (!this.db.hasTable(this.table)) return callback(
+    new Error('Table "' + this.table + '" cannot be found in database')
+  );
 
   // handle optional "selector" param
   if (typeof selector === 'function') {
@@ -320,15 +318,13 @@ Collection.prototype.count = function (selector, callback) {
   if (selector) {
 
     try {
-      result = this._parseSelector(selector);
+      whereClause = this._parseSelector(selector);
     } catch (err) {
       return callback(err);
     }
 
-    if (! _.isEmpty(result.sql)) {
-      sql += ' WHERE ' + result.sql;
-      params.push.apply(params, result.params);
-    }
+    sql += ' WHERE ' + whereClause.sql;
+    params.push.apply(params, whereClause.params);
   }
 
   sql += ';';
@@ -359,9 +355,9 @@ Collection.prototype.set = function (properties, callback) {
   }
 
   // make sure table exists
-  if (!this.db.hasTable(this.table)) {
-    return callback(new Error('Table "' + this.table + '" cannot be found in database'));
-  }
+  if (!this.db.hasTable(this.table)) return callback(
+    new Error('Table "' + this.table + '" cannot be found in database')
+  );
 
   // compile a parameterized INSERT [ON DUPLICATE KEY UPDATE] statement
   sql = 'INSERT INTO ?? SET ?';
@@ -386,7 +382,7 @@ Collection.prototype.set = function (properties, callback) {
  * @param {Function} callback a callback function i.e. function(error, data).
  */
 Collection.prototype.del = function (selector, callback) {
-  var sql, params, result;
+  var sql, params, whereClause;
 
   // postpone if not ready
   if (!this.db.isReady) {
@@ -395,9 +391,9 @@ Collection.prototype.del = function (selector, callback) {
   }
 
   // make sure table exists
-  if (!this.db.hasTable(this.table)) {
-    return callback(new Error('Table "' + this.table + '" cannot be found in database'));
-  }
+  if (!this.db.hasTable(this.table)) return callback(
+    new Error('Table "' + this.table + '" cannot be found in database')
+  );
 
   // compile a parameterized DELETE statement
   sql = 'DELETE FROM ??';
@@ -405,17 +401,94 @@ Collection.prototype.del = function (selector, callback) {
 
   // append a WHERE clause
   try {
-    result = this._parseSelector(selector);
+    whereClause = this._parseSelector(selector);
   } catch (err) {
     return callback(err);
   }
 
-  if (! _.isEmpty(result.sql)) {
-    sql += ' WHERE ' + result.sql;
-    params.push.apply(params, result.params);
+  sql += ' WHERE ' + whereClause.sql;
+  params.push.apply(params, whereClause.params);
+
+  sql += ';';
+
+  // run Forrest, run
+  this.db.query(sql, params, callback);
+};
+
+/**
+ * Retrieves the designated record(s) from the given related table from database.
+ * @param {String} table the name of the related table.
+ * @param {Boolean|Number|String|Date|Object|Array.<Object>} [selector] selector to match the record(s) in database.
+ * @param {Function} callback a callback function i.e. function(error, data).
+ */
+Collection.prototype.getRelated = function (table, selector, callback) {
+  var self = this,
+    sql, params, path, whereClause;
+
+  // postpone if not ready
+  if (!this.db.isReady) {
+    this._queue.push(this.getRelated.bind(this, table, selector, callback));
+    return;
+  }
+
+  // make sure collection table exists in db
+  if (!this.db.hasTable(this.table)) return callback(
+    new Error('Table "' + this.table + '" cannot be found in database')
+  );
+
+  // make sure related table exists in db
+  if (!this.db.hasTable(table)) return callback(
+    new Error('Related table "' + table + '" cannot be found in database')
+  );
+
+  // calculate path to related table
+  path = this.db._calculatePath(this.table, table);
+
+  // make sure tables are actually related
+  if (path === null) return callback(
+    new Error('Tables "' + this.table + '" and "' + table + '" are not related; did you forget to set a foreign key?')
+  );
+
+  // compile a parameterized SELECT statement
+  sql = 'SELECT `' + table + '`.* ' +
+    path.map(function (table, i) {
+      var prev, meta;
+
+      if (i === 0) return 'FROM `' + table + '`';
+
+      prev = path[i - 1];
+      meta = self.db.getTableMeta(table);
+      console.log(prev, table, meta.related);
+
+      return 'INNER JOIN `' + table + '` ON ' +
+        Object.keys(meta.related[prev]).map(function (k) {
+          return '`' + prev + '`.`' + k + '` = `' + table + '`.`' + meta.related[prev][k] + '`';
+        }).join(' AND ');
+    }).join(' ');
+  params = [];
+
+  // handle optional "selector" param
+  if (typeof selector === 'function') {
+    callback = selector;
+    selector = null;
+  }
+
+  // append a WHERE clause if selector is specified
+  if (selector) {
+
+    try {
+      whereClause = this._parseSelector(selector);
+    } catch (err) {
+      return callback(err);
+    }
+
+    sql += ' WHERE ' + whereClause.sql;
+    params.push.apply(params, whereClause.params);
   }
 
   sql += ';';
+
+  console.log(sql, params);
 
   // run Forrest, run
   this.db.query(sql, params, callback);

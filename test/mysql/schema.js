@@ -28,11 +28,8 @@ describe('MySQL schema', function () {
       regions = db.extend('region');
     });
 
-    it('should be able to set a new record', function (done) {
-      regions.set({
-        id: 1,
-        name: 'Europe'
-      }, done);
+    it('should have valid primary key', function () {
+      assert.isTrue(regions.isPrimaryKey('id'));
     });
 
   });
@@ -49,14 +46,6 @@ describe('MySQL schema', function () {
       assert.isTrue(countries.isPrimaryKey('id'));
     });
 
-    it('should be able to set a new record', function (done) {
-      countries.set({
-        id: 1,
-        name: 'UK',
-        regionId: 1
-      }, done);
-    });
-
   });
 
   describe('employees collection', function () {
@@ -67,7 +56,7 @@ describe('MySQL schema', function () {
       employees = db.extend('employee');
     });
 
-    it('should contain valid metadata', function () {
+    it('should have valid metadata', function () {
       var meta = db._tables.employee;
 
       assert.isObject(meta);
@@ -152,47 +141,59 @@ describe('MySQL schema', function () {
 
     it('should accept the use of operators in selector', function () {
       var result = employees._parseSelector({id: {'=': 1}});
-      assert.strictEqual(result.sql, '`id` = ?');
+      assert.match(result.sql, / = /);
       assert.strictEqual(result.params[0], 1);
 
       result = employees._parseSelector({id: {'==': 1}});
-      assert.strictEqual(result.sql, '`id` = ?');
+      assert.match(result.sql, / = /);
       assert.strictEqual(result.params[0], 1);
 
       result = employees._parseSelector({id: {'===': 1}});
-      assert.strictEqual(result.sql, '`id` = ?');
+      assert.match(result.sql, / = /);
       assert.strictEqual(result.params[0], 1);
+
+      result = employees._parseSelector({id: {'=': null}});
+      assert.match(result.sql, /IS NULL/);
+      assert.lengthOf(result.params, 0);
 
       result = employees._parseSelector({id: {'!=': 1}});
-      assert.strictEqual(result.sql, '`id` != ?');
+      assert.match(result.sql, /\!=/);
       assert.strictEqual(result.params[0], 1);
 
+      result = employees._parseSelector({id: {'!=': null}});
+      assert.match(result.sql, /IS NOT NULL/);
+      assert.lengthOf(result.params, 0);
+
       result = employees._parseSelector({id: {'!==': 1}});
-      assert.strictEqual(result.sql, '`id` != ?');
+      assert.match(result.sql, /\!=/);
       assert.strictEqual(result.params[0], 1);
 
       result = employees._parseSelector({id: {'<>': 1}});
-      assert.strictEqual(result.sql, '`id` != ?');
+      assert.match(result.sql, /\!=/);
       assert.strictEqual(result.params[0], 1);
 
+      result = employees._parseSelector({id: {'<>': null}});
+      assert.match(result.sql, /IS NOT NULL/);
+      assert.lengthOf(result.params, 0);
+
       result = employees._parseSelector({id: {'>': 1}});
-      assert.strictEqual(result.sql, '`id` > ?');
+      assert.match(result.sql, / > /);
       assert.strictEqual(result.params[0], 1);
 
       result = employees._parseSelector({id: {'>=': 1}});
-      assert.strictEqual(result.sql, '`id` >= ?');
+      assert.match(result.sql, />=/);
       assert.strictEqual(result.params[0], 1);
 
       result = employees._parseSelector({id: {'<': 1}});
-      assert.strictEqual(result.sql, '`id` < ?');
+      assert.match(result.sql, / < /);
       assert.strictEqual(result.params[0], 1);
 
       result = employees._parseSelector({id: {'<=': 1}});
-      assert.strictEqual(result.sql, '`id` <= ?');
+      assert.match(result.sql, /<=/);
       assert.strictEqual(result.params[0], 1);
 
       result = employees._parseSelector({firstName: {'~': '%ame%'}});
-      assert.strictEqual(result.sql, '`firstName` LIKE ?');
+      assert.match(result.sql, /LIKE/);
       assert.strictEqual(result.params[0], '%ame%');
 
       assert.throws(function () {
@@ -200,50 +201,56 @@ describe('MySQL schema', function () {
       });
     });
 
-    it('should be able run a CRUD [+ Count] operation', function (done) {
+    it('should be able to run a CRUD [+ Count] operation', function (done) {
 
       async.series({
 
         create: function (callback) {
           employees.set({
-            id: 1,
-            firstName: 'James',
-            lastName: 'Bond',
+            id: 2,
+            firstName: 'Donnie',
+            lastName: 'Azoff',
             age: 36,
             countryId: 1
           }, callback);
         },
 
         read: function (callback) {
-          employees.get(1, callback);
+          employees.get(2, callback);
         },
 
         count: function (callback) {
           employees.count(callback);
         },
 
+        companies: function (callback) {
+          employees.getRelated('company', 1, callback);
+        },
+
         update: function (callback) {
           employees.set({
-            id: 1,
-            firstName: 'James',
-            lastName: 'Bond',
-            age: 36,
+            id: 2,
+            firstName: 'Donnie',
+            lastName: 'Azoff',
+            age: 37,
             countryId: 1
           }, callback);
         },
 
         delete: function (callback) {
-          employees.del(1, callback);
+          employees.del(2, callback);
         }
 
       }, function (error, result) {
         if (error) return done(error);
 
         assert.isObject(result.create);
-        assert.strictEqual(result.create.insertId, 1);
+        assert.strictEqual(result.create.insertId, 2);
         assert.isArray(result.read);
         assert.lengthOf(result.read, 1);
-        assert.strictEqual(result.count, 1);
+        assert.isArray(result.companies);
+        assert.lengthOf(result.companies, 1);
+        assert.strictEqual(result.count, 2);
         assert.isObject(result.update);
         assert.isObject(result.delete);
 
@@ -302,19 +309,25 @@ describe('MySQL schema', function () {
       companyEmployees = db.extend('companyEmployee');
     });
 
-    it('should be related with "company" and "employee"', function () {
-      var related = db._tables.companyEmployee.related;
+    it('should be related with tables: "company" and "employee"', function () {
+      assert.isObject(db._tables.companyEmployee.related);
+      assert.lengthOf(Object.keys(db._tables.companyEmployee.related), 2);
 
-      assert.isObject(related);
-      assert.lengthOf(Object.keys(related), 2);
+      assert.property(db._tables.companyEmployee.related, 'company');
+      assert.isObject(db._tables.companyEmployee.related.company);
+      assert.propertyVal(db._tables.companyEmployee.related.company, 'id', 'companyId');
 
-      assert.property(related, 'company');
-      assert.isObject(related.company);
-      assert.propertyVal(related.company, 'companyId', 'id');
+      assert.property(db._tables.company.related, 'companyEmployee');
+      assert.isObject(db._tables.company.related.companyEmployee);
+      assert.propertyVal(db._tables.company.related.companyEmployee, 'companyId', 'id');
 
-      assert.property(related, 'employee');
-      assert.isObject(related.employee);
-      assert.propertyVal(related.employee, 'employeeId', 'id');
+      assert.property(db._tables.companyEmployee.related, 'employee');
+      assert.isObject(db._tables.companyEmployee.related.employee);
+      assert.propertyVal(db._tables.companyEmployee.related.employee, 'id', 'employeeId');
+
+      assert.property(db._tables.employee.related, 'companyEmployee');
+      assert.isObject(db._tables.employee.related.companyEmployee);
+      assert.propertyVal(db._tables.employee.related.companyEmployee, 'employeeId', 'id');
     });
 
   });

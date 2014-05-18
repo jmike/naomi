@@ -84,7 +84,7 @@ Database.prototype.disconnect = function (callback) {
  * @param {Function} cb a callback function i.e. function(err, tables).
  * @private
  */
-Database.prototype._getTables = function (cb) {
+Database.prototype._fetchTableMeta = function (cb) {
   var schema = this._connectionProperties.database,
     sql, params;
 
@@ -113,7 +113,7 @@ Database.prototype._getTables = function (cb) {
  * @param {Function} cb a callback function i.e. function(err, columns).
  * @private
  */
-Database.prototype._getColumns = function (cb) {
+Database.prototype._fetchColumnMeta = function (cb) {
   var schema = this._connectionProperties.database,
     sql, params;
 
@@ -149,7 +149,7 @@ Database.prototype._getColumns = function (cb) {
  * @param {Function} cb a callback function i.e. function(err, indices).
  * @private
  */
-Database.prototype._getIndices = function (cb) {
+Database.prototype._fetchIndexMeta = function (cb) {
   var schema = this._connectionProperties.database,
     sql, params;
 
@@ -182,7 +182,7 @@ Database.prototype._getIndices = function (cb) {
  * @param {Function} callback a callback function i.e. function(err, constraints).
  * @private
  */
-Database.prototype._getForeignKeys = function (callback) {
+Database.prototype._fetchForeignKeyMeta = function (callback) {
   var schema = this._connectionProperties.database,
     sql, params;
 
@@ -222,22 +222,23 @@ Database.prototype._loadMeta = function (callback) {
   async.parallel({
 
     tables: function(callback) {
-      self._getTables(callback);
+      self._fetchTableMeta(callback);
     },
 
     columns: function(callback) {
-      self._getColumns(callback);
+      self._fetchColumnMeta(callback);
     },
 
     indices: function(callback) {
-      self._getIndices(callback);
+      self._fetchIndexMeta(callback);
     },
 
     foreignKeys: function(callback) {
-      self._getForeignKeys(callback);
+      self._fetchForeignKeyMeta(callback);
     }
 
   }, function (err, result) {
+
     if (err) return callback(err);
 
     // init tables
@@ -290,7 +291,7 @@ Database.prototype._loadMeta = function (callback) {
       if (stack) {
         stack.related[foreignKey.refTable] = stack.related[foreignKey.refTable] || {};
         stack = stack.related[foreignKey.refTable];
-        stack[foreignKey.column] = foreignKey.refColumn;
+        stack[foreignKey.refColumn] = foreignKey.column;
       }
 
       // do the other side of the relation
@@ -298,7 +299,7 @@ Database.prototype._loadMeta = function (callback) {
       if (stack) {
         stack.related[foreignKey.table] = stack.related[foreignKey.table] || {};
         stack = stack.related[foreignKey.table];
-        stack[foreignKey.refColumn] = foreignKey.column;
+        stack[foreignKey.column] = foreignKey.refColumn;
       }
     });
 
@@ -441,6 +442,16 @@ Database.prototype.hasTable = function (table) {
   }
 
   return false;
+};
+
+/**
+ * Returns the designated table's metadata.
+ * Please note: this method is meant to be called after the database is ready.
+ * @param {String} table the name of the table.
+ * @returns {Object|Null}
+ */
+Database.prototype.getTableMeta = function (table) {
+  return this._tables[table] || null;
 };
 
 /**
