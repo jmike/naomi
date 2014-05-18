@@ -31,8 +31,18 @@ CREATE TABLE `company` (
   PRIMARY KEY (`id`),
   KEY `country_idx` (`countryId`),
   CONSTRAINT `fk_company_country` FOREIGN KEY (`countryId`) REFERENCES `country` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `company`
+--
+
+LOCK TABLES `company` WRITE;
+/*!40000 ALTER TABLE `company` DISABLE KEYS */;
+INSERT INTO `company` VALUES (1,'Stratton Oakmont',1);
+/*!40000 ALTER TABLE `company` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `companyEmployee`
@@ -50,8 +60,18 @@ CREATE TABLE `companyEmployee` (
   KEY `employee_idx` (`employeeId`),
   CONSTRAINT `fk_companyEmployee_company` FOREIGN KEY (`companyId`) REFERENCES `company` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_companyEmployee_employee` FOREIGN KEY (`employeeId`) REFERENCES `employee` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `companyEmployee`
+--
+
+LOCK TABLES `companyEmployee` WRITE;
+/*!40000 ALTER TABLE `companyEmployee` DISABLE KEYS */;
+INSERT INTO `companyEmployee` VALUES (1,1,1);
+/*!40000 ALTER TABLE `companyEmployee` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `country`
@@ -71,6 +91,16 @@ CREATE TABLE `country` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `country`
+--
+
+LOCK TABLES `country` WRITE;
+/*!40000 ALTER TABLE `country` DISABLE KEYS */;
+INSERT INTO `country` VALUES (1,'USA',1);
+/*!40000 ALTER TABLE `country` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `employee`
 --
 
@@ -88,8 +118,18 @@ CREATE TABLE `employee` (
   KEY `age_idx` (`age`),
   KEY `country_idx` (`countryId`),
   CONSTRAINT `fk_employee_country` FOREIGN KEY (`countryId`) REFERENCES `country` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `employee`
+--
+
+LOCK TABLES `employee` WRITE;
+/*!40000 ALTER TABLE `employee` DISABLE KEYS */;
+INSERT INTO `employee` VALUES (1,'Jordan','Belfort',1,1);
+/*!40000 ALTER TABLE `employee` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `irrelevant`
@@ -106,6 +146,15 @@ CREATE TABLE `irrelevant` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `irrelevant`
+--
+
+LOCK TABLES `irrelevant` WRITE;
+/*!40000 ALTER TABLE `irrelevant` DISABLE KEYS */;
+/*!40000 ALTER TABLE `irrelevant` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `region`
 --
 
@@ -119,6 +168,16 @@ CREATE TABLE `region` (
   UNIQUE KEY `unique_idx` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `region`
+--
+
+LOCK TABLES `region` WRITE;
+/*!40000 ALTER TABLE `region` DISABLE KEYS */;
+INSERT INTO `region` VALUES (1,'North America');
+/*!40000 ALTER TABLE `region` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -129,4 +188,4 @@ CREATE TABLE `region` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-05-14 21:57:41
+-- Dump completed on 2014-05-18 18:43:35
