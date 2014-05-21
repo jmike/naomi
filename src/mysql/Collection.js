@@ -3,7 +3,7 @@ var _ = require('lodash'),
   operators = require('./operators.json');
 
 /**
- * Constructs a new MySQL collection.
+ * Constructs a new MySQL collection, i.e. an object representing a MySQL table.
  * @param {Database} db a MySQL database instance.
  * @param {String} table the name of a table in database.
  * @constructor

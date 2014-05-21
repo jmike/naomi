@@ -7,7 +7,7 @@ var events = require('events'),
   Collection = require('./Collection');
 
 /**
- * Constructs a new MySQL database.
+ * Constructs a new MySQL database, i.e. an object representing a MySQL schema.
  * @param {Object} connectionProperties connection properties.
  * @see https://github.com/felixge/node-mysql#connection-options for a list of connection properties to use.
  * @constructor
