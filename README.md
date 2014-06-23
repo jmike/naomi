@@ -203,6 +203,68 @@ Less than or equal operator | <=
 
 Please not that {'=': null} compiles to 'IS NULL' and {'=': null} compiles to 'IS NOT NULL'.
 
+##### Retrieving records with ORDER BY clause
+
+```
+employees.get({age: {'>': 18}}, {
+  order: 'lastName',
+}, function (err, records) {
+  if (err) {
+    return console.error(err);
+  }
+
+  // do something with records
+});
+```
+
+This will result to the following SQL, run under the hood:
+
+```
+SELECT * FROM `employees` WHERE `age` > 18 ORDER BY `lastName` ASC;
+```
+
+##### Retrieving records with complex ORDER BY clause
+
+```
+employees.get({age: {'>': 18}}, {
+  order: ['lastName', {id: 'desc'}],
+}, function (err, records) {
+  if (err) {
+    return console.error(err);
+  }
+
+  // do something with records
+});
+```
+
+This will result to the following SQL, run under the hood:
+
+```
+SELECT * FROM `employees` WHERE `age` > 18 ORDER BY `lastName` ASC, `id` DESC;
+```
+
+##### Retrieving records using LIMIT and OFFSET
+
+```
+employees.get({age: {'>': 18}}, {
+  order: 'lastName',
+  limit: 10,
+  offset: 20
+}, function (err, records) {
+  if (err) {
+    return console.error(err);
+  }
+
+  // do something with records
+});
+```
+
+This will result to the following SQL, run under the hood:
+
+```
+SELECT * FROM `employees` WHERE `age` > 18 ORDER BY `lastName` LIMIT 10 OFFSET 20;
+```
+
 ##### Deleting records
 
 ```

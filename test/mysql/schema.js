@@ -201,6 +201,48 @@ describe('MySQL schema', function () {
       });
     });
 
+    it('should accept an order expression', function () {
+      var result = employees._parseOrder('id');
+      assert.strictEqual(result, '`id` ASC');
+
+      result = employees._parseOrder({id: 'ASC'});
+      assert.strictEqual(result, '`id` ASC');
+
+      result = employees._parseOrder({id: 'DESC'});
+      assert.strictEqual(result, '`id` DESC');
+
+      result = employees._parseOrder([{age: 'DESC'}, 'id']);
+      assert.strictEqual(result, '`age` DESC, `id` ASC');
+
+      assert.throws(function () {
+        employees._parseOrder({id: 'invalid'});
+      });
+    });
+
+    it('should accept a limit expression', function () {
+      assert.strictEqual(employees._parseLimit('1'), 1);
+      assert.strictEqual(employees._parseLimit('10'), 10);
+      assert.strictEqual(employees._parseLimit(20), 20);
+
+      assert.throws(function () {
+        employees._parseLimit('0');
+      });
+
+      assert.throws(function () {
+        employees._parseLimit('-1');
+      });
+    });
+
+    it('should accept offset expressions', function () {
+      assert.strictEqual(employees._parseOffset('0'), 0);
+      assert.strictEqual(employees._parseOffset('10'), 10);
+      assert.strictEqual(employees._parseOffset(20), 20);
+
+      assert.throws(function () {
+        employees._parseOffset('-1');
+      });
+    });
+
     it('should be able to run a CRUD [+ Count] operation', function (done) {
 
       async.series({

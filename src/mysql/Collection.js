@@ -175,7 +175,7 @@ Collection.prototype._parseExpression = function (expr) {
 };
 
 /**
- * Parses the given selector and returns a parameterized where clause.
+ * Parses the given selector and returns parameterized SQL to be used in a WHERE clause.
  * @param {Boolean|Number|String|Date|Object|Array} selector
  * @param {Object} [options]
  * @returns {Object} with two properties: "sql" and "params".
@@ -189,32 +189,28 @@ Collection.prototype._parseSelector = function (selector, options) {
     obj = {},
     expr;
 
-  // handle optional "options" param
-  options = options || {};
+  options = options || {}; // handle optional "options" param
 
   if (_.isArray(selector)) { // array of selectors
-
     selector.forEach(function (selector) {
       var result = self._parseSelector(selector, options);
-
       sql.push(result.sql);
       params.push.apply(params, result.params);
     });
-
     return {sql: sql.join(' OR '), params: params};
 
   } else if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) { // plain value selector
-
     // is primary key compound or non existent?
-    if (this.primaryKey.length !== 1) throw new Error(
-      'Primary key is compound or non existent, thus Boolean, Number, String and Date selectors are useless'
-    );
+    if (this.primaryKey.length !== 1) {
+      throw new Error(
+        'Primary key is compound or non existent, thus Boolean, Number, String and Date selectors are useless'
+      );
+    }
 
     obj[this.primaryKey[0]] = selector;
     return this._parseSelector(obj, options);
 
   } else if (_.isPlainObject(selector)) { // standard selector type
-
     _.forOwn(selector, function (v, k) {
       if (!self.hasColumn(k)) {
         throw new Error('Column "' + k + '" could not be found in table "' + self.table + '"');
@@ -242,12 +238,92 @@ Collection.prototype._parseSelector = function (selector, options) {
 };
 
 /**
+ * Parses the given order expression and returns SQL statement to be used in an ORDER BY clause.
+ * @param {String|Object|Array<Object>} order an order expression, e.g. 'name', {'name': 'desc'}, [{'name': 'desc'}, 'id'].
+ * @returns {String}
+ * @throws {Error} if order is unspecified or invalid.
+ * @private
+ */
+Collection.prototype._parseOrder = function (order) {
+  var self = this,
+    sql = [],
+    re = /^(asc|desc)$/i,
+    keys,
+    k, v;
+
+  if (_.isArray(order)) {
+    order.forEach(function (e) {
+      sql.push(self._parseOrder(e));
+    });
+
+  } else if (_.isString(order)) {
+    k = order;
+
+    if (!self.hasColumn(k)) throw new Error('Column "' + k + '" cannot be found in table "' + self.table + '"');
+    sql.push('`' + k + '` ASC');
+
+  } else if (_.isPlainObject(order)) {
+    keys = Object.keys(order);
+
+    if (keys.length !== 1) throw new Error('Order object should contain a single property');
+
+    k = keys[0];
+    v = order[k];
+
+    if (!self.hasColumn(k)) throw new Error('Column "' + k + '" cannot be found in table "' + self.table + '"');
+    if (!re.test(v)) throw new Error('Value in order expression should match either "asc" or "desc"');
+
+    sql.push('`' + k + '` ' + v);
+
+  } else {
+    throw new Error('Unexpected type of order: ' + typeof(order));
+  }
+
+  return sql.join(', ');
+};
+
+/**
+ * Parses the given limit expression and returns a number to be used in a LIMIT clause.
+ * @param {String|Number} limit a limit expression, e.g. '10'.
+ * @returns {Number}
+ * @throws {Error} if limit is unspecified or invalid.
+ * @private
+ */
+Collection.prototype._parseLimit = function (limit) {
+  var n = parseInt(limit, 10);
+
+  if (n % 1 !== 0 || n < 1) {
+    throw new Error('Invalid limit expression - expecting a String or Number representing a positive integer');
+  }
+
+  return n;
+};
+
+/**
+ * Parses the given offset expression and returns a number to be used in an OFFSET clause.
+ * @param {String|Number} offset an offset expression, e.g. '10'.
+ * @returns {Number}
+ * @throws {Error} if offset is unspecified or invalid.
+ * @private
+ */
+Collection.prototype._parseOffset = function (offset) {
+  var n = parseInt(offset, 10);
+
+  if (n % 1 !== 0 || n < 0) {
+    throw new Error('Invalid offset expression - expecting a String or Number representing a non-negative integer');
+  }
+
+  return n;
+};
+
+/**
  * Retrieves the designated record(s) from database.
  * @param {Boolean|Number|String|Date|Object|Array.<Object>} [selector] a selector to match the record(s) in database.
+ * @param {Object} [options]
  * @param {Function} callback a callback function i.e. function(error, data).
  */
-Collection.prototype.get = function (selector, callback) {
-  var sql, params, whereClause;
+Collection.prototype.get = function (selector, options, callback) {
+  var sql, params;
 
   // postpone if not ready
   if (!this.db.isReady) {
@@ -266,21 +342,53 @@ Collection.prototype.get = function (selector, callback) {
     selector = null;
   }
 
-  // compile a parameterized SELECT statement
+  // handle optional "options" param
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+
+  // compile a SELECT statement
   sql = 'SELECT * FROM ??';
   params = [this.table];
 
   // append a WHERE clause if selector is specified
   if (selector) {
-
     try {
-      whereClause = this._parseSelector(selector);
+      selector = this._parseSelector(selector);
     } catch (err) {
       return callback(err);
     }
 
-    sql += ' WHERE ' + whereClause.sql;
-    params.push.apply(params, whereClause.params);
+    sql += ' WHERE ' + selector.sql;
+    params.push.apply(params, selector.params);
+  }
+
+  // append an ORDER BY clause if order is specified in options
+  if (options.order) {
+    try {
+      sql += ' ORDER BY ' + this._parseOrder(options.order);
+    } catch (err) {
+      return callback(err);
+    }
+  }
+
+  // append a LIMIT clause if limit is specified in options
+  if (options.limit) {
+    try {
+      sql += ' LIMIT ' + this._parseLimit(options.limit);
+    } catch (err) {
+      return callback(err);
+    }
+  }
+
+  // append an OFFSET clause if offset is specified in options
+  if (options.offset) {
+    try {
+      sql += ' OFFSET ' + this._parseOffset(options.offset);
+    } catch (err) {
+      return callback(err);
+    }
   }
 
   sql += ';';
