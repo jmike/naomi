@@ -73,7 +73,6 @@ Engine.prototype.query = function (sql, params, options, callback) {
  * Returns the name of the tables of the database schema specified at construction time.
  * @param {Function} callback a callback function i.e. function(err, tables).
  * @returns {Array<String>}
- * @private
  */
 Engine.prototype.getTables = function (callback) {
   var schema = this._connectionProperties.database,
@@ -102,7 +101,6 @@ Engine.prototype.getTables = function (callback) {
  * Returns column properties from the database schema specified at construction time.
  * @param {Function} callback a callback function i.e. function(err, columns).
  * @returns {Array<Object>}
- * @private
  */
 Engine.prototype.getColumns = function (callback) {
   var schema = this._connectionProperties.database,
@@ -137,7 +135,6 @@ Engine.prototype.getColumns = function (callback) {
  * Returns index properties from the database schema specified at construction time.
  * @param {Function} callback a callback function i.e. function(err, indices).
  * @returns {Array<Object>}
- * @private
  */
 Engine.prototype.getIndices = function (callback) {
   var schema = this._connectionProperties.database,
@@ -168,7 +165,6 @@ Engine.prototype.getIndices = function (callback) {
  * Returns foreign key properties from the database schema specified at construction time.
  * @param {Function} callback a callback function i.e. function(err, constraints).
  * @returns {Array<Object>}
- * @private
  */
 Engine.prototype.getForeignKeys = function (callback) {
   var schema = this._connectionProperties.database,
@@ -194,6 +190,32 @@ Engine.prototype.getForeignKeys = function (callback) {
 
     callback(null, foreignKeys);
   });
+};
+
+/**
+ * Compiles and returns a select statement.
+ * @param {String} table the name of the table.
+ * @param {Boolean|Number|String|Date|Object|Array.<Object>|Null} selector a selector to match the record(s) in database.
+ * @param {Object} [options]
+ * @returns {Object}
+ */
+Engine.prototype.compileSelectStmt = function (table, selector, options) {
+  var sql, params;
+
+  sql = 'SELECT * FROM ??';
+  params = [table];
+
+  // append a WHERE clause if selector is specified
+  if (selector) {
+    try {
+      selector = this.parseSelector(selector);
+    } catch (err) {
+      return callback(err);
+    }
+
+    sql += ' WHERE ' + selector.sql;
+    params.push.apply(params, selector.params);
+  }
 };
 
 module.exports = Engine;

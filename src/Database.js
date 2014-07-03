@@ -7,7 +7,7 @@ var events = require('events'),
 
 /**
  * Constructs a new Database, i.e. an object representing a relational schema.
- * @param {Engine} engine the instance of a Naomi database engine.
+ * @param {Engine} engine a Naomi engine instance.
  * @constructor
  */
 function Database(engine) {
@@ -21,7 +21,7 @@ function Database(engine) {
   events.EventEmitter.call(this);
   this.setMaxListeners(99);
 
-  this.once('connect', function () {
+  this.on('connect', function () {
     if (!self.isReady) self._loadMeta(defaultCallback);
   });
 }
@@ -101,7 +101,7 @@ Database.prototype.query = function (sql, params, options, callback) {
       options = params;
     } else if (type === 'function') {
       callback = params;
-    } else if (type) { // not nullable
+    } else if (params) { // not nullable
       throw new Error('Invalid query parameters - expected array, received ' + type);
     }
 
@@ -113,7 +113,7 @@ Database.prototype.query = function (sql, params, options, callback) {
 
     if (type === 'function') {
       callback = options;
-    } else if (type) { // not nullable
+    } else if (options) { // not nullable
       throw new Error('Invalid query options - expected object, received ' + type);
     }
 
