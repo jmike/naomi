@@ -249,6 +249,32 @@ describe('MySQL SQLDesigner', function () {
 
     });
 
+    describe('#compileCountSQL', function () {
+
+      it('should accept a null selector', function () {
+        var stmt = SQLDesigner.compileCountSQL(employees, null);
+
+        assert.strictEqual(stmt.sql, 'SELECT COUNT(*) AS `count` FROM `employee`;');
+        assert.lengthOf(stmt.params, 0);
+      });
+
+    });
+
+    describe('#compileDeleteSQL', function () {
+
+      it('should accept a selector, an order option and a limit option', function () {
+        var stmt = SQLDesigner.compileDeleteSQL(employees, {age: 19}, {
+          order: {id: 'desc'},
+          limit: 2
+        });
+
+        assert.strictEqual(stmt.sql, 'DELETE FROM `employee` WHERE `age` = ? ORDER BY `id` DESC LIMIT 2;');
+        assert.lengthOf(stmt.params, 1);
+        assert.strictEqual(stmt.params[0], 19);
+      });
+
+    });
+
   });
 
 });

@@ -265,3 +265,106 @@ exports.compileSelectSQL = function (collection, selector, options) {
 
   return {sql: sql, params: params};
 };
+
+/**
+ * Compiles and returns a SQL count statement.
+ * @param {Collection} collection the collection to run the SQL statement against.
+ * @param {Boolean|Number|String|Date|Object|Array.<Object>|Null} selector a selector to match the record(s) in the collection.
+ * @param {Object} [options]
+ * @returns {Object}
+ * @public
+ * @static
+ */
+exports.compileCountSQL = function (collection, selector, options) {
+  var sql, params, clause;
+
+  // handle optional "options" param
+  if (options === undefined) {
+    options = {};
+  }
+
+  // init parameterized SQL query
+  sql = 'SELECT COUNT(*) AS `count` FROM `' + collection.table + '`';
+  params = [];
+
+  // check if selector exists (null denotes selector absense)
+  if (selector !== undefined && selector !== null) {
+    clause = compileWhereClause(collection, selector, options);
+
+    sql += ' WHERE ' + clause.sql;
+    params.push.apply(params, clause.params);
+  }
+
+  // check if order option exists
+  if (options.order !== undefined && options.order !== null) {
+    clause = compileOrderClause(collection, options.order, options);
+
+    sql += ' ORDER BY ' + clause;
+  }
+
+  // check if limit option exists
+  if (options.limit !== undefined && options.limit !== null) {
+    clause = compileLimitClause(options.limit);
+
+    sql += ' LIMIT ' + clause;
+  }
+
+  // check if offset option exists
+  if (options.offset !== undefined && options.offset !== null) {
+    clause = compileOffsetClause(options.offset);
+
+    sql += ' OFFSET ' + clause;
+  }
+
+  sql += ';';
+
+  return {sql: sql, params: params};
+};
+
+/**
+ * Compiles and returns a SQL delete statement.
+ * @param {Collection} collection the collection to run the SQL statement against.
+ * @param {Boolean|Number|String|Date|Object|Array.<Object>|Null} selector a selector to match the record(s) in the collection.
+ * @param {Object} [options]
+ * @returns {Object}
+ * @public
+ * @static
+ */
+exports.compileDeleteSQL = function (collection, selector, options) {
+  var sql, params, clause;
+
+  // handle optional "options" param
+  if (options === undefined) {
+    options = {};
+  }
+
+  // init parameterized SQL query
+  sql = 'DELETE FROM `' + collection.table + '`';
+  params = [];
+
+  // check if selector exists (null denotes selector absense)
+  if (selector !== undefined && selector !== null) {
+    clause = compileWhereClause(collection, selector, options);
+
+    sql += ' WHERE ' + clause.sql;
+    params.push.apply(params, clause.params);
+  }
+
+  // check if order option exists
+  if (options.order !== undefined && options.order !== null) {
+    clause = compileOrderClause(collection, options.order, options);
+
+    sql += ' ORDER BY ' + clause;
+  }
+
+  // check if limit option exists
+  if (options.limit !== undefined && options.limit !== null) {
+    clause = compileLimitClause(options.limit);
+
+    sql += ' LIMIT ' + clause;
+  }
+
+  sql += ';';
+
+  return {sql: sql, params: params};
+};
