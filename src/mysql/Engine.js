@@ -192,30 +192,4 @@ Engine.prototype.getForeignKeys = function (callback) {
   });
 };
 
-/**
- * Compiles and returns a select statement.
- * @param {String} table the name of the table.
- * @param {Boolean|Number|String|Date|Object|Array.<Object>|Null} selector a selector to match the record(s) in database.
- * @param {Object} [options]
- * @returns {Object}
- */
-Engine.prototype.compileSelectStmt = function (table, selector, options) {
-  var sql, params;
-
-  sql = 'SELECT * FROM ??';
-  params = [table];
-
-  // append a WHERE clause if selector is specified
-  if (selector) {
-    try {
-      selector = this.parseSelector(selector);
-    } catch (err) {
-      return callback(err);
-    }
-
-    sql += ' WHERE ' + selector.sql;
-    params.push.apply(params, selector.params);
-  }
-};
-
 module.exports = Engine;
