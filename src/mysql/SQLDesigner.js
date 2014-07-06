@@ -217,6 +217,7 @@ function compileOffsetClause(offset) {
  * @param {Boolean|Number|String|Date|Object|Array.<Object>|Null} selector a selector to match the record(s) in the collection.
  * @param {Object} [options]
  * @returns {Object}
+ * @throws {Error} if parameters are invalid
  * @public
  * @static
  */
@@ -272,6 +273,7 @@ exports.compileSelectSQL = function (collection, selector, options) {
  * @param {Boolean|Number|String|Date|Object|Array.<Object>|Null} selector a selector to match the record(s) in the collection.
  * @param {Object} [options]
  * @returns {Object}
+ * @throws {Error} if parameters are invalid
  * @public
  * @static
  */
@@ -327,6 +329,7 @@ exports.compileCountSQL = function (collection, selector, options) {
  * @param {Boolean|Number|String|Date|Object|Array.<Object>|Null} selector a selector to match the record(s) in the collection.
  * @param {Object} [options]
  * @returns {Object}
+ * @throws {Error} if parameters are invalid
  * @public
  * @static
  */
@@ -363,6 +366,78 @@ exports.compileDeleteSQL = function (collection, selector, options) {
 
     sql += ' LIMIT ' + clause;
   }
+
+  sql += ';';
+
+  return {sql: sql, params: params};
+};
+
+/**
+ * Compiles and returns a SQL upsert statement.
+ * @param {Collection} collection the collection to run the SQL statement against.
+ * @param {Array<Object>|Object} attrs the record attributes to create/update in the collection.
+ * @param {Object} [options]
+ * @returns {Object}
+ * @throws {Error} if parameters are invalid
+ * @public
+ * @static
+ */
+exports.compileUpsertSQL = function (collection, attrs, options) {
+  var sql, params, keys;
+
+  // validate "attrs" param
+  if (_.isPlainObject(attrs)) {
+    attrs = [attrs]; // convert to array
+
+  } else if (!_.isArray(attrs)) {
+    throw new Error('Invalid attributes param - expected Object or Array<Object>, got ' + typeof(attrs));
+
+  } else if (attrs.length === 0) {
+    throw new Error('Attributes array cannot be empty');
+  }
+
+  // handle optional "options" param
+  if (options === undefined) {
+    options = {};
+  }
+
+  // init parameterized SQL query
+  sql = 'INSERT INTO `' + collection.table + '`';
+  params = [];
+
+  // extract column names
+  keys = Object.keys(attrs[0]); // assuming all objects in attrs have the same property
+
+  // check if column names exist in collection
+  keys.forEach(function (k) {
+    if (!collection.hasColumn(k)) {
+      throw new Error('Column "' + k + '" cannot not be found in table "' + collection.table + '"');
+    }
+  });
+
+  // append column names to SQL
+  sql += ' (' + Object.keys(attrs[0]).map(function (k) {
+    return escape(k, options.qualified && collection.table);
+  }).join(', ') + ')';
+
+  // append values to SQL
+  sql += ' VALUES ' +
+    attrs.map(function(obj) {
+      return '(' +
+        keys.map(function (k) {
+          params.push(obj[k]);
+          return '?';
+        }).join(', ') +
+      ')';
+    }).join(', ');
+
+  // append the on duplicate key clause ...
+  sql += ' ON DUPLICATE KEY UPDATE ' +
+    _.difference(keys, collection.primaryKey)
+    .map(function (k) {
+      k = escape(k, options.qualified && collection.table);
+      return k + ' = VALUES(' + k + ')';
+    }).join(', ');
 
   sql += ';';
 

@@ -275,6 +275,73 @@ describe('MySQL SQLDesigner', function () {
 
     });
 
+    describe('#compileUpsertSQL', function () {
+
+      it('should accept attributes as Object', function () {
+        var stmt = SQLDesigner.compileUpsertSQL(employees, {
+          id: 2,
+          firstName: 'Donnie',
+          lastName: 'Azoff',
+          age: 36,
+          countryId: 1
+        });
+
+        assert.strictEqual(stmt.sql, 'INSERT INTO `employee` (`id`, `firstName`, `lastName`, `age`, `countryId`) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE `firstName` = VALUES(`firstName`), `lastName` = VALUES(`lastName`), `age` = VALUES(`age`), `countryId` = VALUES(`countryId`);');
+        assert.lengthOf(stmt.params, 5);
+        assert.strictEqual(stmt.params[0], 2);
+        assert.strictEqual(stmt.params[1], 'Donnie');
+        assert.strictEqual(stmt.params[2], 'Azoff');
+        assert.strictEqual(stmt.params[3], 36);
+        assert.strictEqual(stmt.params[4], 1);
+      });
+
+      it('should accept attributes as Array<Object>', function () {
+        var stmt = SQLDesigner.compileUpsertSQL(employees, [
+          {
+            id: 1,
+            firstName: 'Danny',
+            lastName: 'Porush'
+          },
+          {
+            id: 2,
+            firstName: 'Donnie',
+            lastName: 'Azoff'
+          }
+        ]);
+
+        assert.strictEqual(stmt.sql, 'INSERT INTO `employee` (`id`, `firstName`, `lastName`) VALUES (?, ?, ?), (?, ?, ?) ON DUPLICATE KEY UPDATE `firstName` = VALUES(`firstName`), `lastName` = VALUES(`lastName`);');
+        assert.lengthOf(stmt.params, 6);
+        assert.strictEqual(stmt.params[0], 1);
+        assert.strictEqual(stmt.params[1], 'Danny');
+        assert.strictEqual(stmt.params[2], 'Porush');
+        assert.strictEqual(stmt.params[3], 2);
+        assert.strictEqual(stmt.params[4], 'Donnie');
+        assert.strictEqual(stmt.params[5], 'Azoff');
+      });
+
+      it('should throw an error if attributes are invalid', function () {
+        assert.throws(function () {
+          SQLDesigner.compileUpsertSQL(employees, []);
+        });
+        assert.throws(function () {
+          SQLDesigner.compileUpsertSQL(employees, null);
+        });
+        assert.throws(function () {
+          SQLDesigner.compileUpsertSQL(employees, true);
+        });
+        assert.throws(function () {
+          SQLDesigner.compileUpsertSQL(employees, 123);
+        });
+        assert.throws(function () {
+          SQLDesigner.compileUpsertSQL(employees, 'abc');
+        });
+        assert.throws(function () {
+          SQLDesigner.compileUpsertSQL(employees, function () {});
+        });
+      });
+
+    });
+
   });
 
 });
