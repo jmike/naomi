@@ -139,68 +139,6 @@ describe('MySQL schema', function () {
       assert.isFalse(employees.isIndexKey('invalid-column'));
     });
 
-    it('should accept the use of operators in selector', function () {
-      var result = employees._parseSelector({id: {'=': 1}});
-      assert.match(result.sql, / = /);
-      assert.strictEqual(result.params[0], 1);
-
-      result = employees._parseSelector({id: {'==': 1}});
-      assert.match(result.sql, / = /);
-      assert.strictEqual(result.params[0], 1);
-
-      result = employees._parseSelector({id: {'===': 1}});
-      assert.match(result.sql, / = /);
-      assert.strictEqual(result.params[0], 1);
-
-      result = employees._parseSelector({id: {'=': null}});
-      assert.match(result.sql, /IS NULL/);
-      assert.lengthOf(result.params, 0);
-
-      result = employees._parseSelector({id: {'!=': 1}});
-      assert.match(result.sql, /\!=/);
-      assert.strictEqual(result.params[0], 1);
-
-      result = employees._parseSelector({id: {'!=': null}});
-      assert.match(result.sql, /IS NOT NULL/);
-      assert.lengthOf(result.params, 0);
-
-      result = employees._parseSelector({id: {'!==': 1}});
-      assert.match(result.sql, /\!=/);
-      assert.strictEqual(result.params[0], 1);
-
-      result = employees._parseSelector({id: {'<>': 1}});
-      assert.match(result.sql, /\!=/);
-      assert.strictEqual(result.params[0], 1);
-
-      result = employees._parseSelector({id: {'<>': null}});
-      assert.match(result.sql, /IS NOT NULL/);
-      assert.lengthOf(result.params, 0);
-
-      result = employees._parseSelector({id: {'>': 1}});
-      assert.match(result.sql, / > /);
-      assert.strictEqual(result.params[0], 1);
-
-      result = employees._parseSelector({id: {'>=': 1}});
-      assert.match(result.sql, />=/);
-      assert.strictEqual(result.params[0], 1);
-
-      result = employees._parseSelector({id: {'<': 1}});
-      assert.match(result.sql, / < /);
-      assert.strictEqual(result.params[0], 1);
-
-      result = employees._parseSelector({id: {'<=': 1}});
-      assert.match(result.sql, /<=/);
-      assert.strictEqual(result.params[0], 1);
-
-      result = employees._parseSelector({firstName: {'~': '%ame%'}});
-      assert.match(result.sql, /LIKE/);
-      assert.strictEqual(result.params[0], '%ame%');
-
-      assert.throws(function () {
-        employees._parseSelector({id: {'invalid': 1}});
-      });
-    });
-
     it('should accept an order expression', function () {
       var result = employees._parseOrder('id');
       assert.strictEqual(result, '`id` ASC');

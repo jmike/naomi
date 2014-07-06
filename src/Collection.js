@@ -19,6 +19,8 @@ function Collection(db, table) {
   this.uniqueKeys = {};
   this.indexKeys = {};
 
+  this.queryBuilder = db._engine.QueryBuilder(this);
+
   // setup queue to stack queries until db is ready
   queue = async.queue(function (task, callback) {
     task();
@@ -131,12 +133,12 @@ Collection.prototype.isIndexKey = function () {
 
 /**
  * Retrieves the designated record(s) from database.
- * @param {Boolean|Number|String|Date|Object|Array.<Object>} selector a selector to match the record(s) in database.
+ * @param {Boolean|Number|String|Date|Object|Array<Object>|Null} selector a selector to match the record(s) in database.
  * @param {Object} [options]
  * @param {Function} callback a callback function i.e. function(err, data).
  */
 Collection.prototype.get = function (selector, options, callback) {
-  var stmt, type;
+  var query, type;
 
   // postpone if not ready
   if (!this.db.isReady) {
@@ -149,8 +151,9 @@ Collection.prototype.get = function (selector, options, callback) {
     return callback(new Error('Table "' + this.table + '" cannot be found in database'));
   }
 
-  // validate params
+  // validate "selector" param
   type = typeof(selector);
+
   if (
     type !== 'boolean' &&
     type !== 'number' &&
@@ -159,49 +162,54 @@ Collection.prototype.get = function (selector, options, callback) {
     !Array.isArray(selector) &&
     !_.isDate(selector)
   ) {
-    throw new Error('Invalid selector');
+    throw new Error('Invalid selector param');
   }
 
+  // handle optional "options" param
   if (!_.isPlainObject(options)) {
     type = typeof(options);
 
     if (type === 'function') {
       callback = options;
-    } else if (options) { // non nullable
-      throw new Error('Invalid options - expected object, received ' + type);
+    } else if (type !== 'undefined') {
+      throw new Error('Invalid options param - expected object, received ' + type);
     }
 
     options = {};
   }
 
+  // validate "callback" param
   type = typeof(callback);
+
   if (type !== 'function' && type !== 'undefined') {
-    throw new Error('Invalid callback - expected function, received ' + type);
+    throw new Error('Invalid callback param - expected function, received ' + type);
   }
 
   // compile select statement
-  stmt = {};
+  query = this.queryBuilder.compileSelectSQL(selector, options);
 
   // run Forrest, run
-  this.db.query(stmt.sql, stmt.params, callback);
+  this.db.query(query.sql, query.params, callback);
 };
 
 /**
  * Retrieves all record(s) from database.
+ * This is no more that a handy alias to #get(null, options, callback).
  * @param {Object} [options]
  * @param {Function} callback a callback function i.e. function(err, data).
  */
-Collection.prototype.all = function (options, callback) {
+Collection.prototype.getAll = function (options, callback) {
   this.get(null, options, callback);
 };
 
 /**
  * Counts the designated record(s) in database.
- * @param {Boolean|Number|String|Date|Object|Array.<Object>} [selector] a selector to match the record(s) in database.
+ * @param {Boolean|Number|String|Date|Object|Array<Object>|Null} selector a selector to match the record(s) in database.
+ * @param {Object} [options]
  * @param {Function} callback a callback function i.e. function(err, count).
  */
-Collection.prototype.count = function (selector, callback) {
-  var stmt;
+Collection.prototype.count = function (selector, options, callback) {
+  var query, type;
 
   // postpone if not ready
   if (!this.db.isReady) {
@@ -214,17 +222,45 @@ Collection.prototype.count = function (selector, callback) {
     return callback('Table "' + this.table + '" cannot be found in database');
   }
 
-  // handle optional "selector" param
-  if (typeof selector === 'function') {
-    callback = selector;
-    selector = null;
+  // validate "selector" param
+  type = typeof(selector);
+
+  if (
+    type !== 'boolean' &&
+    type !== 'number' &&
+    type !== 'string' &&
+    !_.isPlainObject(selector) &&
+    !Array.isArray(selector) &&
+    !_.isDate(selector)
+  ) {
+    throw new Error('Invalid selector param');
+  }
+
+  // handle optional "options" param
+  if (!_.isPlainObject(options)) {
+    type = typeof(options);
+
+    if (type === 'function') {
+      callback = options;
+    } else if (type !== 'undefined') {
+      throw new Error('Invalid options param - expected object, received ' + type);
+    }
+
+    options = {};
+  }
+
+  // validate "callback" param
+  type = typeof(callback);
+
+  if (type !== 'function' && type !== 'undefined') {
+    throw new Error('Invalid callback param - expected function, received ' + type);
   }
 
   // compile a parameterized SELECT COUNT statement
-  stmt = {};
+  query = this.queryBuilder.compileCountSQL(selector, options);
 
   // run Forrest, run
-  this.db.query(stmt.sql, stmt.params, function (error, records) {
+  this.db.query(query.sql, query.params, function (error, records) {
     var count;
 
     if (error) return callback(error);
@@ -235,12 +271,22 @@ Collection.prototype.count = function (selector, callback) {
 };
 
 /**
+ * Counts all record(s) in database.
+ * This is no more than a handy alias to #count(null, options, callback).
+ * @param {Object} [options]
+ * @param {Function} callback a callback function i.e. function(err, data).
+ */
+Collection.prototype.countAll = function (options, callback) {
+  this.count(null, options, callback);
+};
+
+/**
  * Creates or updates the specified record in database.
- * @param {Object} attrs the record attributes.
+ * @param {Array<Object>|Object} attrs the record attributes.
  * @param {Function} callback a callback function i.e. function(error, data).
  */
 Collection.prototype.set = function (attrs, callback) {
-  var stmt;
+  var query;
 
   // postpone if not ready
   if (!this.db.isReady) {
@@ -254,19 +300,20 @@ Collection.prototype.set = function (attrs, callback) {
   }
 
   // compile upsert statement
-  stmt = {};
+  query = this.queryBuilder.compileUpsertSQL(attrs);
 
   // run Forrest, run
-  this.db.query(stmt.sql, stmt.params, callback);
+  this.db.query(query.sql, query.params, callback);
 };
 
 /**
  * Deletes the designated record(s) from database.
  * @param {Boolean|Number|String|Date|Object|Array.<Object>} selector a selector to match the record(s) in database.
+ * @param {Object} [options]
  * @param {Function} callback a callback function i.e. function(error, data).
  */
-Collection.prototype.del = function (selector, callback) {
-  var stmt, type;
+Collection.prototype.del = function (selector, options, callback) {
+  var query, type;
 
   // postpone if not ready
   if (!this.db.isReady) {
@@ -279,8 +326,9 @@ Collection.prototype.del = function (selector, callback) {
     return callback('Table "' + this.table + '" cannot be found in database');
   }
 
-  // validate params
+  // validate "selector" param
   type = typeof(selector);
+
   if (
     type !== 'boolean' &&
     type !== 'number' &&
@@ -289,19 +337,34 @@ Collection.prototype.del = function (selector, callback) {
     !Array.isArray(selector) &&
     !_.isDate(selector)
   ) {
-    throw new Error('Invalid selector');
+    throw new Error('Invalid selector param');
   }
 
+  // handle optional "options" param
+  if (!_.isPlainObject(options)) {
+    type = typeof(options);
+
+    if (type === 'function') {
+      callback = options;
+    } else if (type !== 'undefined') {
+      throw new Error('Invalid options param - expected object, received ' + type);
+    }
+
+    options = {};
+  }
+
+  // validate "callback" param
   type = typeof(callback);
+
   if (type !== 'function' && type !== 'undefined') {
-    throw new Error('Invalid callback - expected function, received ' + type);
+    throw new Error('Invalid callback param - expected function, received ' + type);
   }
 
   // compile a parameterized DELETE statement
-  stmt = {};
+  query = this.queryBuilder.compileDeleteSQL(selector, options);
 
   // run Forrest, run
-  this.db.query(stmt.sql, stmt.params, callback);
+  this.db.query(query.sql, query.params, callback);
 };
 
 module.exports = Collection;

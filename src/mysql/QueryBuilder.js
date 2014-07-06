@@ -44,8 +44,8 @@ QueryBuilder.prototype._parseExpression = function (expr) {
     throw new Error('Unable to parse unknown operator "' + k + '"');
   }
 
-  k = operators[k]; // convert to sql equivalent
   v = expr[k];
+  k = operators[k]; // convert to sql equivalent
 
   if (v === null && k === '=') {
     sql = 'IS NULL';

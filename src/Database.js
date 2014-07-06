@@ -3,7 +3,7 @@ var events = require('events'),
   _ = require('lodash'),
   async = require('async'),
   Collection = require('./Collection'),
-  defaultCallback = require('../utils/defaultCallback');
+  defaultCallback = require('./utils/defaultCallback');
 
 /**
  * Constructs a new Database, i.e. an object representing a relational schema.
@@ -89,11 +89,12 @@ Database.prototype.disconnect = function (callback) {
 Database.prototype.query = function (sql, params, options, callback) {
   var type;
 
-  // handle required and optional params
+  // validate "sql" param
   if (typeof sql !== 'string') {
     throw new Error('You must specify a valid SQL statement');
   }
 
+  // handle optional "params" param
   if (!_.isArray(params)) {
     type = typeof(params);
 
@@ -101,30 +102,32 @@ Database.prototype.query = function (sql, params, options, callback) {
       options = params;
     } else if (type === 'function') {
       callback = params;
-    } else if (params) { // not nullable
-      throw new Error('Invalid query parameters - expected array, received ' + type);
+    } else if (params !== undefined) {
+      throw new Error('Invalid parameters - expected an Array, received ' + type);
     }
 
     params = [];
   }
 
+  // handle optional "options" param
   if (!_.isPlainObject(options)) {
     type = typeof(options);
 
     if (type === 'function') {
       callback = options;
-    } else if (options) { // not nullable
-      throw new Error('Invalid query options - expected object, received ' + type);
+    } else if (options !== undefined) {
+      throw new Error('Invalid options param - expected object, received ' + type);
     }
 
     options = {};
   }
 
+  // handle optional "callback" param
   type = typeof(callback);
 
   if (type !== 'function') {
     if (type !== 'undefined') {
-      throw new Error('Invalid callback - expected function, received ' + type);
+      throw new Error('Invalid callback param - expected function, received ' + type);
     }
 
     callback = defaultCallback;
@@ -260,7 +263,7 @@ Database.prototype.getTableMeta = function (table) {
 Database.prototype.extend = function (table, customProperties) {
   var collection;
 
-  // validate params
+  // validate "table" param
   if (typeof table !== 'string') {
     throw new Error('Invalid table name - expected string, received ' + typeof(table));
   }

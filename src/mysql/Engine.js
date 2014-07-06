@@ -1,4 +1,6 @@
-var mysql = require('mysql');
+var mysql = require('mysql'),
+  _ = require('lodash'),
+  QueryBuilder = require('./QueryBuilder');
 
 /**
  * Constructs a new MySQL engine, i.e. a handy wrapper to MySQL Node.js client.
@@ -8,6 +10,7 @@ var mysql = require('mysql');
  */
 function Engine(connectionProperties) {
   this._connectionProperties = connectionProperties;
+  this.QueryBuilder = QueryBuilder;
 }
 
 /**
@@ -53,10 +56,10 @@ Engine.prototype.query = function (sql, params, options, callback) {
       if (error) {
         callback(error);
 
-      } else if (Array.isArray(records)) { // SELECT
+      } else if (Array.isArray(records)) { // Select statement
         callback(null, records);
 
-      } else { // DML
+      } else { // DML statement
         meta = {
           insertId: records.insertId,
           affectedRows: records.affectedRows

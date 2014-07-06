@@ -1,3 +1,6 @@
+// load environmental variables
+require('dotenv').load();
+
 var assert = require('chai').assert,
   naomi = require('../../src/naomi'),
   db = naomi.create('MYSQL', {
@@ -8,7 +11,8 @@ var assert = require('chai').assert,
     database: process.env.DATABASE_SCHEMA
   });
 
-describe('MySQL database', function () {
+
+describe('MySQL:Database', function () {
 
   describe('#query()', function () {
 
@@ -22,10 +26,10 @@ describe('MySQL database', function () {
     });
 
     it('should throw an error when params array is invalid', function () {
-      assert.throws(function () { db.query('SELECT 1;', 1); }, /invalid query parameters/i);
-      assert.throws(function () { db.query('SELECT 1;', true); }, /invalid query parameters/i);
-      assert.throws(function () { db.query('SELECT 1;', 'foo'); }, /invalid query parameters/i);
-      assert.throws(function () { db.query('SELECT 1;', null); }, /invalid query parameters/i);
+      assert.throws(function () { db.query('SELECT 1;', 1); }, /invalid parameters/i);
+      assert.throws(function () { db.query('SELECT 1;', true); }, /invalid parameters/i);
+      assert.throws(function () { db.query('SELECT 1;', 'foo'); }, /invalid parameters/i);
+      assert.throws(function () { db.query('SELECT 1;', null); }, /invalid parameters/i);
     });
 
     it('should throw an error when options is invalid', function () {

@@ -330,6 +330,72 @@ describe('MySQL:QueryBuilder', function () {
 
     });
 
+    describe('#_parseExpression', function () {
+
+      it('should accept the use of operators', function () {
+        var result = builder._parseExpression({'=': 1});
+        assert.strictEqual(result.sql, '= ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = builder._parseExpression({'==': 1});
+        assert.strictEqual(result.sql, '= ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = builder._parseExpression({'===': 1});
+        assert.strictEqual(result.sql, '= ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = builder._parseExpression({'=': null});
+        assert.strictEqual(result.sql, 'IS NULL');
+        assert.lengthOf(result.params, 0);
+
+        result = builder._parseExpression({'!=': 1});
+        assert.strictEqual(result.sql, '!= ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = builder._parseExpression({'!=': null});
+        assert.strictEqual(result.sql, 'IS NOT NULL');
+        assert.lengthOf(result.params, 0);
+
+        result = builder._parseExpression({'!==': 1});
+        assert.strictEqual(result.sql, '!= ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = builder._parseExpression({'<>': 1});
+        assert.strictEqual(result.sql, '!= ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = builder._parseExpression({'<>': null});
+        assert.strictEqual(result.sql, 'IS NOT NULL');
+        assert.lengthOf(result.params, 0);
+
+        result = builder._parseExpression({'>': 1});
+        assert.strictEqual(result.sql, '> ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = builder._parseExpression({'>=': 1});
+        assert.strictEqual(result.sql, '>= ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = builder._parseExpression({'<': 1});
+        assert.strictEqual(result.sql, '< ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = builder._parseExpression({'<=': 1});
+        assert.strictEqual(result.sql, '<= ?');
+        assert.strictEqual(result.params[0], 1);
+
+        result = builder._parseExpression({'~': '%ame%'});
+        assert.strictEqual(result.sql, 'LIKE ?');
+        assert.strictEqual(result.params[0], '%ame%');
+
+        assert.throws(function () {
+          builder._parseExpression({'invalid': 1});
+        });
+      });
+
+    });
+
   });
 
 });

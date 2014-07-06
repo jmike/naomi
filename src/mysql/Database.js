@@ -113,7 +113,7 @@ Database.prototype._fetchTableMeta = function (cb) {
  * @param {Function} cb a callback function i.e. function(err, columns).
  * @private
  */
-Database.prototype._fetchColumnMeta = function (cb) {
+Database.prototype.   _fetchColumnMeta = function (cb) {
   var schema = this._connectionProperties.database,
     sql, params;
 

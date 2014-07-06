@@ -1,26 +1,28 @@
-var MySQLDatabase = require('./mysql/Database');
+var Database = require('./Database'),
+  MySQLEngine = require('./mysql/Engine');
 
-module.exports = {
+// type constants
+exports.MYSQL = 'MYSQL';
+exports.POSTGRES = 'POSTGRES';
 
-  // db type constants
-  MYSQL: 'MYSQL',
-  POSTGRES: 'POSTGRES',
+/**
+ * Creates and returns a new database of the specified type.
+ * @param {String} type the database type.
+ * @param {Object} connectionProperties connection properties.
+ * @static
+ */
+exports.create = function (type, connectionProperties) {
+  var engine;
 
-  /**
-   * Creates and returns a new database of the specified type.
-   * @param {String} type the database type.
-   * @param {Object} connectionProperties connection properties.
-   * @see https://github.com/felixge/node-mysql#connection-options for a list of MySQL connection properties.
-   * @static
-   */
-  create: function (type, connectionProperties) {
-    switch (type) {
+  switch (type) {
     case this.MYSQL:
-      return new MySQLDatabase(connectionProperties);
+      engine = new MySQLEngine(connectionProperties);
+      return new Database(engine);
+
     case this.POSTGRES:
       throw new Error('Naomi: Postgres database not yet supported');
+
     default:
       throw new Error('Naomi: Invalid or unspecified database type');
-    }
   }
 };
