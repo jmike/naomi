@@ -3,7 +3,7 @@ require('dotenv').load();
 
 var assert = require('chai').assert,
   naomi = require('../../src/naomi'),
-  SQLDesigner = require('../../src/mysql/SQLDesigner'),
+  QueryBuilder = require('../../src/mysql/QueryBuilder'),
   db = naomi.create('MYSQL', {
     host: process.env.DATABASE_HOST,
     port: parseInt(process.env.DATABASE_PORT, 10),
@@ -12,7 +12,7 @@ var assert = require('chai').assert,
     database: process.env.DATABASE_SCHEMA
   });
 
-describe('MySQL SQLDesigner', function () {
+describe('MySQL:QueryBuilder', function () {
 
   before(function (done) {
     db.connect();
@@ -34,14 +34,14 @@ describe('MySQL SQLDesigner', function () {
     describe('#compileSelectSQL', function () {
 
       it('should accept a null selector', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, null);
+        var stmt = QueryBuilder.compileSelectSQL(employees, null);
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee`;');
         assert.lengthOf(stmt.params, 0);
       });
 
       it('should accept an Integer selector', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, 1);
+        var stmt = QueryBuilder.compileSelectSQL(employees, 1);
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` WHERE `id` = ?;');
         assert.lengthOf(stmt.params, 1);
@@ -49,7 +49,7 @@ describe('MySQL SQLDesigner', function () {
       });
 
       it('should accept a Float selector', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, 1.056);
+        var stmt = QueryBuilder.compileSelectSQL(employees, 1.056);
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` WHERE `id` = ?;');
         assert.lengthOf(stmt.params, 1);
@@ -57,7 +57,7 @@ describe('MySQL SQLDesigner', function () {
       });
 
       it('should accept a Boolean selector', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, true);
+        var stmt = QueryBuilder.compileSelectSQL(employees, true);
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` WHERE `id` = ?;');
         assert.lengthOf(stmt.params, 1);
@@ -66,7 +66,7 @@ describe('MySQL SQLDesigner', function () {
 
       it('should accept a Date selector', function () {
         var date = new Date(),
-          stmt = SQLDesigner.compileSelectSQL(employees, date);
+          stmt = QueryBuilder.compileSelectSQL(employees, date);
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` WHERE `id` = ?;');
         assert.lengthOf(stmt.params, 1);
@@ -74,7 +74,7 @@ describe('MySQL SQLDesigner', function () {
       });
 
       it('should accept a String selector', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, 'abc');
+        var stmt = QueryBuilder.compileSelectSQL(employees, 'abc');
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` WHERE `id` = ?;');
         assert.lengthOf(stmt.params, 1);
@@ -82,7 +82,7 @@ describe('MySQL SQLDesigner', function () {
       });
 
       it('should accept an Object selector', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, {
+        var stmt = QueryBuilder.compileSelectSQL(employees, {
           firstName: 'James',
           age: {'>': 23}
         });
@@ -94,7 +94,7 @@ describe('MySQL SQLDesigner', function () {
       });
 
       it('should accept an Array<Number> selector', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, [1, 2]);
+        var stmt = QueryBuilder.compileSelectSQL(employees, [1, 2]);
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` WHERE `id` = ? OR `id` = ?;');
         assert.lengthOf(stmt.params, 2);
@@ -103,7 +103,7 @@ describe('MySQL SQLDesigner', function () {
       });
 
       it('should accept an Array<Object> selector', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, [1, {age: {'>': 18}}]);
+        var stmt = QueryBuilder.compileSelectSQL(employees, [1, {age: {'>': 18}}]);
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` WHERE `id` = ? OR `age` > ?;');
         assert.lengthOf(stmt.params, 2);
@@ -112,7 +112,7 @@ describe('MySQL SQLDesigner', function () {
       });
 
       it('should accept a zero (0) selector, even though is falsy', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, true);
+        var stmt = QueryBuilder.compileSelectSQL(employees, true);
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` WHERE `id` = ?;');
         assert.lengthOf(stmt.params, 1);
@@ -120,21 +120,21 @@ describe('MySQL SQLDesigner', function () {
       });
 
       it('should accept an order option in the form of a String', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, null, {order: 'age'});
+        var stmt = QueryBuilder.compileSelectSQL(employees, null, {order: 'age'});
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` ORDER BY `age` ASC;');
         assert.lengthOf(stmt.params, 0);
       });
 
       it('should accept an order option in the form of an Object', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, null, {order: {age: 'desc'}});
+        var stmt = QueryBuilder.compileSelectSQL(employees, null, {order: {age: 'desc'}});
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` ORDER BY `age` DESC;');
         assert.lengthOf(stmt.params, 0);
       });
 
       it('should accept an order option in the form of an Array<Object|String>', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, null, {order: [{age: 'desc'}, 'id']});
+        var stmt = QueryBuilder.compileSelectSQL(employees, null, {order: [{age: 'desc'}, 'id']});
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` ORDER BY `age` DESC, `id` ASC;');
         assert.lengthOf(stmt.params, 0);
@@ -142,32 +142,32 @@ describe('MySQL SQLDesigner', function () {
 
       it('should throw an error if order option is invalid', function () {
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {order: 123});
+          QueryBuilder.compileSelectSQL(employees, null, {order: 123});
         });
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {order: function () {}});
+          QueryBuilder.compileSelectSQL(employees, null, {order: function () {}});
         });
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {order: false});
+          QueryBuilder.compileSelectSQL(employees, null, {order: false});
         });
       });
 
       it('should accept a limit option in the form of an Integer', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, null, {limit: 10});
+        var stmt = QueryBuilder.compileSelectSQL(employees, null, {limit: 10});
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` LIMIT 10;');
         assert.lengthOf(stmt.params, 0);
       });
 
       it('should accept a limit option in the form of a String', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, null, {limit: '15'});
+        var stmt = QueryBuilder.compileSelectSQL(employees, null, {limit: '15'});
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` LIMIT 15;');
         assert.lengthOf(stmt.params, 0);
       });
 
       it('should accept a limit option in the form of a Float', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, null, {limit: 3.1475});
+        var stmt = QueryBuilder.compileSelectSQL(employees, null, {limit: 3.1475});
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` LIMIT 3;');
         assert.lengthOf(stmt.params, 0);
@@ -175,45 +175,45 @@ describe('MySQL SQLDesigner', function () {
 
       it('should throw an error if limit option is invalid', function () {
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {limit: false});
+          QueryBuilder.compileSelectSQL(employees, null, {limit: false});
         });
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {limit: function () {}});
+          QueryBuilder.compileSelectSQL(employees, null, {limit: function () {}});
         });
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {limit: {}});
+          QueryBuilder.compileSelectSQL(employees, null, {limit: {}});
         });
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {limit: 0});
+          QueryBuilder.compileSelectSQL(employees, null, {limit: 0});
         });
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {limit: -10});
+          QueryBuilder.compileSelectSQL(employees, null, {limit: -10});
         });
       });
 
       it('should accept an offset option in the form of an Integer', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, null, {offset: 10});
+        var stmt = QueryBuilder.compileSelectSQL(employees, null, {offset: 10});
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` OFFSET 10;');
         assert.lengthOf(stmt.params, 0);
       });
 
       it('should accept an offset option in the form of a String', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, null, {offset: '15'});
+        var stmt = QueryBuilder.compileSelectSQL(employees, null, {offset: '15'});
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` OFFSET 15;');
         assert.lengthOf(stmt.params, 0);
       });
 
       it('should accept an offset option in the form of a Float', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, null, {offset: 3.1475});
+        var stmt = QueryBuilder.compileSelectSQL(employees, null, {offset: 3.1475});
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` OFFSET 3;');
         assert.lengthOf(stmt.params, 0);
       });
 
       it('should accept an offset option with zero (0) as value', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, null, {offset: 0});
+        var stmt = QueryBuilder.compileSelectSQL(employees, null, {offset: 0});
 
         assert.strictEqual(stmt.sql, 'SELECT * FROM `employee` OFFSET 0;');
         assert.lengthOf(stmt.params, 0);
@@ -221,21 +221,21 @@ describe('MySQL SQLDesigner', function () {
 
       it('should throw an error if offset option is invalid', function () {
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {offset: false});
+          QueryBuilder.compileSelectSQL(employees, null, {offset: false});
         });
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {offset: function () {}});
+          QueryBuilder.compileSelectSQL(employees, null, {offset: function () {}});
         });
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {offset: {}});
+          QueryBuilder.compileSelectSQL(employees, null, {offset: {}});
         });
         assert.throws(function () {
-          SQLDesigner.compileSelectSQL(employees, null, {offset: -10});
+          QueryBuilder.compileSelectSQL(employees, null, {offset: -10});
         });
       });
 
       it('should qualify column names on options = {qualify: true}', function () {
-        var stmt = SQLDesigner.compileSelectSQL(employees, 1, {
+        var stmt = QueryBuilder.compileSelectSQL(employees, 1, {
           order: 'age',
           limit: 5,
           offset: 2,
@@ -252,7 +252,7 @@ describe('MySQL SQLDesigner', function () {
     describe('#compileCountSQL', function () {
 
       it('should accept a null selector', function () {
-        var stmt = SQLDesigner.compileCountSQL(employees, null);
+        var stmt = QueryBuilder.compileCountSQL(employees, null);
 
         assert.strictEqual(stmt.sql, 'SELECT COUNT(*) AS `count` FROM `employee`;');
         assert.lengthOf(stmt.params, 0);
@@ -263,7 +263,7 @@ describe('MySQL SQLDesigner', function () {
     describe('#compileDeleteSQL', function () {
 
       it('should accept a selector, an order option and a limit option', function () {
-        var stmt = SQLDesigner.compileDeleteSQL(employees, {age: 19}, {
+        var stmt = QueryBuilder.compileDeleteSQL(employees, {age: 19}, {
           order: {id: 'desc'},
           limit: 2
         });
@@ -278,7 +278,7 @@ describe('MySQL SQLDesigner', function () {
     describe('#compileUpsertSQL', function () {
 
       it('should accept attributes as Object', function () {
-        var stmt = SQLDesigner.compileUpsertSQL(employees, {
+        var stmt = QueryBuilder.compileUpsertSQL(employees, {
           id: 2,
           firstName: 'Donnie',
           lastName: 'Azoff',
@@ -296,7 +296,7 @@ describe('MySQL SQLDesigner', function () {
       });
 
       it('should accept attributes as Array<Object>', function () {
-        var stmt = SQLDesigner.compileUpsertSQL(employees, [
+        var stmt = QueryBuilder.compileUpsertSQL(employees, [
           {
             id: 1,
             firstName: 'Danny',
@@ -321,22 +321,22 @@ describe('MySQL SQLDesigner', function () {
 
       it('should throw an error if attributes are invalid', function () {
         assert.throws(function () {
-          SQLDesigner.compileUpsertSQL(employees, []);
+          QueryBuilder.compileUpsertSQL(employees, []);
         });
         assert.throws(function () {
-          SQLDesigner.compileUpsertSQL(employees, null);
+          QueryBuilder.compileUpsertSQL(employees, null);
         });
         assert.throws(function () {
-          SQLDesigner.compileUpsertSQL(employees, true);
+          QueryBuilder.compileUpsertSQL(employees, true);
         });
         assert.throws(function () {
-          SQLDesigner.compileUpsertSQL(employees, 123);
+          QueryBuilder.compileUpsertSQL(employees, 123);
         });
         assert.throws(function () {
-          SQLDesigner.compileUpsertSQL(employees, 'abc');
+          QueryBuilder.compileUpsertSQL(employees, 'abc');
         });
         assert.throws(function () {
-          SQLDesigner.compileUpsertSQL(employees, function () {});
+          QueryBuilder.compileUpsertSQL(employees, function () {});
         });
       });
 
