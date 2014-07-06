@@ -2,29 +2,35 @@ var _ = require('lodash'),
   operators = require('./operators.json');
 
 /**
+ * Constructs a new MySQL QueryBuilder for the designated collection.
+ * @param {Collection} collection the collection.
+ * @constructor
+ */
+function QueryBuilder(collection) {
+  this.collection = collection;
+}
+
+/**
  * Escapes the given column name to be used in a SQL query.
  * @param {String} column the name of the column.
- * @param {String} [table] the name of the table (optional).
  * @returns {String}
  * @private
- * @static
  */
-function escape(column, table) {
-  if (table) {
-    return '`' + table + '`.' + column;
-  }
+QueryBuilder.prototype._escape = function (column) {
+  // if (table) {
+  //   return '`' + table + '`.' + column;
+  // }
 
   return '`' + column + '`';
-}
+};
 
 /**
  * Parses the given expression, as part of a selector, and returns a parameterized SQL expression.
  * @param {Object} expr an object with a single property, where key represents the operator.
  * @returns {Object} with two properties: "sql" and "params".
  * @private
- * @static
  */
-function parseExpression(expr) {
+QueryBuilder.prototype._parseExpression = function (expr) {
   var keys = Object.keys(expr),
     k, v, params, sql;
 
@@ -55,17 +61,16 @@ function parseExpression(expr) {
   }
 
   return {sql: sql, params: params};
-}
+};
 
 /**
  * Compiles and returns a SQL where clause, based on the given selector.
  * @param Boolean|Number|String|Date|Object|Array.<Object>} selector
- * @param {Object} [options]
  * @returns {Object} with two properties: "sql" and "params".
  * @throws {Error} if selector is unspecified or invalid.
  * @private
  */
-function compileWhereClause(collection, selector, options) {
+QueryBuilder.prototype._compileWhereClause = function (selector) {
   var sql = [],
     params = [],
     obj = {},
@@ -73,17 +78,17 @@ function compileWhereClause(collection, selector, options) {
 
   if (_.isPlainObject(selector)) { // standard selector type
     _.forOwn(selector, function (v, k) {
-      if (!collection.hasColumn(k)) {
-        throw new Error('Column "' + k + '" could not be found in table "' + collection.table + '"');
+      if (!this.collection.hasColumn(k)) {
+        throw new Error('Column "' + k + '" could not be found in table "' + this.collection.table + '"');
       }
 
-      k = escape(k, options.qualify && collection.table); // qualify column name
+      k = this._escape(k); // qualify column name
 
       if (v === null) { // null value
         sql.push(k + ' IS NULL');
 
       } else if (_.isPlainObject(v)) { // expression specified
-        expr = parseExpression(v);
+        expr = this._parseExpression(v);
         sql.push(k + ' ' + expr.sql);
         params.push.apply(params, expr.params);
 
@@ -91,34 +96,34 @@ function compileWhereClause(collection, selector, options) {
         sql.push(k + ' = ?');
         params.push(v);
       }
-    });
+    }, this);
 
     return {sql: sql.join(' AND '), params: params};
 
   } else if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) { // plain value selector
     // is primary key compound or non existent?
-    if (collection.primaryKey.length !== 1) {
+    if (this.collection.primaryKey.length !== 1) {
       throw new Error(
         'Primary key is compound or non existent, thus Boolean, Number, String and Date selectors are useless'
       );
     }
 
-    obj[collection.primaryKey[0]] = selector;
-    return compileWhereClause(collection, obj, options);
+    obj[this.collection.primaryKey[0]] = selector;
+    return this._compileWhereClause(obj);
 
   } else if (_.isArray(selector)) { // array of selectors
     selector.forEach(function (selector) {
-      var result = compileWhereClause(collection, selector, options);
+      var result = this._compileWhereClause(selector);
       sql.push(result.sql);
       params.push.apply(params, result.params);
-    });
+    }, this);
 
     return {sql: sql.join(' OR '), params: params};
 
   } else {
     throw new Error('Unexpected type of selector: ' + typeof(selector));
   }
-}
+};
 
 /**
  * Compiles and returns a SQL order clause, based on the given order expression.
@@ -126,9 +131,8 @@ function compileWhereClause(collection, selector, options) {
  * @returns {String}
  * @throws {Error} if order is unspecified or invalid.
  * @private
- * @static
  */
-function compileOrderClause(collection, order, options) {
+QueryBuilder.prototype._compileOrderClause = function (order) {
   var re = /^(asc|desc)$/i,
     sql = [],
     obj = {},
@@ -145,15 +149,15 @@ function compileOrderClause(collection, order, options) {
     k = keys[0];
     v = order[k];
 
-    if (!collection.hasColumn(k)) {
-      throw new Error('Column "' + k + '" cannot be found in table "' + collection.table + '"');
+    if (!this.collection.hasColumn(k)) {
+      throw new Error('Column "' + k + '" cannot be found in table "' + this.collection.table + '"');
     }
 
     if (!re.test(v)) {
       throw new Error('Value in order expression should match either "asc" or "desc"');
     }
 
-    k = escape(k, options.qualify && collection.table); // qualify column name
+    k = this._escape(k); // qualify column name
     v = v.toUpperCase();
 
     sql.push(k + ' ' + v);
@@ -161,19 +165,19 @@ function compileOrderClause(collection, order, options) {
   } else if (_.isString(order)) {
     k = order;
     obj[k] = 'asc';
-    sql.push(compileOrderClause(collection, obj, options));
+    sql.push(this._compileOrderClause(obj));
 
   } else if (_.isArray(order)) {
     order.forEach(function (e) {
-      sql.push(compileOrderClause(collection, e, options));
-    });
+      sql.push(this._compileOrderClause(e));
+    }, this);
 
   } else {
     throw new Error('Unexpected type of order: ' + typeof(order));
   }
 
   return sql.join(', ');
-}
+};
 
 
 /**
@@ -183,7 +187,7 @@ function compileOrderClause(collection, order, options) {
  * @throws {Error} if limit is unspecified or invalid.
  * @private
  */
-function compileLimitClause(limit) {
+QueryBuilder.prototype._compileLimitClause = function (limit) {
   var n = parseInt(limit, 10);
 
   if (n % 1 !== 0 || n < 1) {
@@ -191,7 +195,7 @@ function compileLimitClause(limit) {
   }
 
   return n;
-}
+};
 
 
 /**
@@ -201,7 +205,7 @@ function compileLimitClause(limit) {
  * @throws {Error} if offset is unspecified or invalid.
  * @private
  */
-function compileOffsetClause(offset) {
+QueryBuilder.prototype._compileOffsetClause = function (offset) {
   var n = parseInt(offset, 10);
 
   if (n % 1 !== 0 || n < 0) {
@@ -209,19 +213,16 @@ function compileOffsetClause(offset) {
   }
 
   return n;
-}
+};
 
 /**
  * Compiles and returns a SQL select statement.
- * @param {Collection} collection the collection to run the SQL statement against.
  * @param {Boolean|Number|String|Date|Object|Array.<Object>|Null} selector a selector to match the record(s) in the collection.
  * @param {Object} [options]
  * @returns {Object}
  * @throws {Error} if parameters are invalid
- * @public
- * @static
  */
-exports.compileSelectSQL = function (collection, selector, options) {
+QueryBuilder.prototype.compileSelectSQL = function (selector, options) {
   var sql, params, clause;
 
   // handle optional "options" param
@@ -230,12 +231,12 @@ exports.compileSelectSQL = function (collection, selector, options) {
   }
 
   // init parameterized SQL query
-  sql = 'SELECT * FROM `' + collection.table + '`';
+  sql = 'SELECT * FROM `' + this.collection.table + '`';
   params = [];
 
   // check if selector exists (null denotes selector absense)
   if (selector !== undefined && selector !== null) {
-    clause = compileWhereClause(collection, selector, options);
+    clause = this._compileWhereClause(selector);
 
     sql += ' WHERE ' + clause.sql;
     params.push.apply(params, clause.params);
@@ -243,21 +244,21 @@ exports.compileSelectSQL = function (collection, selector, options) {
 
   // check if order option exists
   if (options.order !== undefined && options.order !== null) {
-    clause = compileOrderClause(collection, options.order, options);
+    clause = this._compileOrderClause(options.order);
 
     sql += ' ORDER BY ' + clause;
   }
 
   // check if limit option exists
   if (options.limit !== undefined && options.limit !== null) {
-    clause = compileLimitClause(options.limit);
+    clause = this._compileLimitClause(options.limit);
 
     sql += ' LIMIT ' + clause;
   }
 
   // check if offset option exists
   if (options.offset !== undefined && options.offset !== null) {
-    clause = compileOffsetClause(options.offset);
+    clause = this._compileOffsetClause(options.offset);
 
     sql += ' OFFSET ' + clause;
   }
@@ -269,15 +270,12 @@ exports.compileSelectSQL = function (collection, selector, options) {
 
 /**
  * Compiles and returns a SQL count statement.
- * @param {Collection} collection the collection to run the SQL statement against.
  * @param {Boolean|Number|String|Date|Object|Array.<Object>|Null} selector a selector to match the record(s) in the collection.
  * @param {Object} [options]
  * @returns {Object}
  * @throws {Error} if parameters are invalid
- * @public
- * @static
  */
-exports.compileCountSQL = function (collection, selector, options) {
+QueryBuilder.prototype.compileCountSQL = function (selector, options) {
   var sql, params, clause;
 
   // handle optional "options" param
@@ -286,12 +284,12 @@ exports.compileCountSQL = function (collection, selector, options) {
   }
 
   // init parameterized SQL query
-  sql = 'SELECT COUNT(*) AS `count` FROM `' + collection.table + '`';
+  sql = 'SELECT COUNT(*) AS `count` FROM `' + this.collection.table + '`';
   params = [];
 
   // check if selector exists (null denotes selector absense)
   if (selector !== undefined && selector !== null) {
-    clause = compileWhereClause(collection, selector, options);
+    clause = this._compileWhereClause(selector);
 
     sql += ' WHERE ' + clause.sql;
     params.push.apply(params, clause.params);
@@ -299,21 +297,21 @@ exports.compileCountSQL = function (collection, selector, options) {
 
   // check if order option exists
   if (options.order !== undefined && options.order !== null) {
-    clause = compileOrderClause(collection, options.order, options);
+    clause = this._compileOrderClause(options.order);
 
     sql += ' ORDER BY ' + clause;
   }
 
   // check if limit option exists
   if (options.limit !== undefined && options.limit !== null) {
-    clause = compileLimitClause(options.limit);
+    clause = this._compileLimitClause(options.limit);
 
     sql += ' LIMIT ' + clause;
   }
 
   // check if offset option exists
   if (options.offset !== undefined && options.offset !== null) {
-    clause = compileOffsetClause(options.offset);
+    clause = this._compileOffsetClause(options.offset);
 
     sql += ' OFFSET ' + clause;
   }
@@ -325,15 +323,12 @@ exports.compileCountSQL = function (collection, selector, options) {
 
 /**
  * Compiles and returns a SQL delete statement.
- * @param {Collection} collection the collection to run the SQL statement against.
  * @param {Boolean|Number|String|Date|Object|Array.<Object>|Null} selector a selector to match the record(s) in the collection.
  * @param {Object} [options]
  * @returns {Object}
  * @throws {Error} if parameters are invalid
- * @public
- * @static
  */
-exports.compileDeleteSQL = function (collection, selector, options) {
+QueryBuilder.prototype.compileDeleteSQL = function (selector, options) {
   var sql, params, clause;
 
   // handle optional "options" param
@@ -342,12 +337,12 @@ exports.compileDeleteSQL = function (collection, selector, options) {
   }
 
   // init parameterized SQL query
-  sql = 'DELETE FROM `' + collection.table + '`';
+  sql = 'DELETE FROM `' + this.collection.table + '`';
   params = [];
 
   // check if selector exists (null denotes selector absense)
   if (selector !== undefined && selector !== null) {
-    clause = compileWhereClause(collection, selector, options);
+    clause = this._compileWhereClause(selector);
 
     sql += ' WHERE ' + clause.sql;
     params.push.apply(params, clause.params);
@@ -355,14 +350,14 @@ exports.compileDeleteSQL = function (collection, selector, options) {
 
   // check if order option exists
   if (options.order !== undefined && options.order !== null) {
-    clause = compileOrderClause(collection, options.order, options);
+    clause = this._compileOrderClause(options.order);
 
     sql += ' ORDER BY ' + clause;
   }
 
   // check if limit option exists
   if (options.limit !== undefined && options.limit !== null) {
-    clause = compileLimitClause(options.limit);
+    clause = this._compileLimitClause(options.limit);
 
     sql += ' LIMIT ' + clause;
   }
@@ -374,15 +369,12 @@ exports.compileDeleteSQL = function (collection, selector, options) {
 
 /**
  * Compiles and returns a SQL upsert statement.
- * @param {Collection} collection the collection to run the SQL statement against.
  * @param {Array<Object>|Object} attrs the record attributes to create/update in the collection.
  * @param {Object} [options]
  * @returns {Object}
  * @throws {Error} if parameters are invalid
- * @public
- * @static
  */
-exports.compileUpsertSQL = function (collection, attrs, options) {
+QueryBuilder.prototype.compileUpsertSQL = function (attrs, options) {
   var sql, params, keys;
 
   // validate "attrs" param
@@ -402,7 +394,7 @@ exports.compileUpsertSQL = function (collection, attrs, options) {
   }
 
   // init parameterized SQL query
-  sql = 'INSERT INTO `' + collection.table + '`';
+  sql = 'INSERT INTO `' + this.collection.table + '`';
   params = [];
 
   // extract column names
@@ -410,15 +402,17 @@ exports.compileUpsertSQL = function (collection, attrs, options) {
 
   // check if column names exist in collection
   keys.forEach(function (k) {
-    if (!collection.hasColumn(k)) {
-      throw new Error('Column "' + k + '" cannot not be found in table "' + collection.table + '"');
+    if (!this.collection.hasColumn(k)) {
+      throw new Error('Column "' + k + '" cannot not be found in table "' + this.collection.table + '"');
     }
-  });
+  }, this);
 
   // append column names to SQL
-  sql += ' (' + Object.keys(attrs[0]).map(function (k) {
-    return escape(k, options.qualified && collection.table);
-  }).join(', ') + ')';
+  sql += ' (' +
+    keys.map(function (k) {
+      return this._escape(k);
+    }, this).join(', ') +
+    ')';
 
   // append values to SQL
   sql += ' VALUES ' +
@@ -433,13 +427,15 @@ exports.compileUpsertSQL = function (collection, attrs, options) {
 
   // append the on duplicate key clause ...
   sql += ' ON DUPLICATE KEY UPDATE ' +
-    _.difference(keys, collection.primaryKey)
+    _.difference(keys, this.collection.primaryKey)
     .map(function (k) {
-      k = escape(k, options.qualified && collection.table);
+      k = this._escape(k);
       return k + ' = VALUES(' + k + ')';
-    }).join(', ');
+    }, this).join(', ');
 
   sql += ';';
 
   return {sql: sql, params: params};
 };
+
+module.exports = QueryBuilder;
