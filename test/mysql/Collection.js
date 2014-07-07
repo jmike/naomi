@@ -1,3 +1,6 @@
+// load environmental variables
+require('dotenv').load();
+
 var assert = require('chai').assert,
   async = require('async'),
   naomi = require('../../src/naomi'),
@@ -9,7 +12,7 @@ var assert = require('chai').assert,
     database: process.env.DATABASE_SCHEMA
   });
 
-describe('MySQL schema', function () {
+describe('MySQL:Collection', function () {
 
   before(function (done) {
     db.connect();
@@ -20,7 +23,7 @@ describe('MySQL schema', function () {
     db.disconnect(done);
   });
 
-  describe('regions collection', function () {
+  describe('regions', function () {
 
     var regions;
 
@@ -34,7 +37,7 @@ describe('MySQL schema', function () {
 
   });
 
-  describe('countries collection', function () {
+  describe('countries', function () {
 
     var countries;
 
@@ -48,7 +51,7 @@ describe('MySQL schema', function () {
 
   });
 
-  describe('employees collection', function () {
+  describe('employees', function () {
 
     var employees;
 
@@ -57,7 +60,7 @@ describe('MySQL schema', function () {
     });
 
     it('should have valid metadata', function () {
-      var meta = db._tables.employee;
+      var meta = db.tables.employee;
 
       assert.isObject(meta);
 
@@ -139,48 +142,6 @@ describe('MySQL schema', function () {
       assert.isFalse(employees.isIndexKey('invalid-column'));
     });
 
-    it('should accept an order expression', function () {
-      var result = employees._parseOrder('id');
-      assert.strictEqual(result, '`id` ASC');
-
-      result = employees._parseOrder({id: 'ASC'});
-      assert.strictEqual(result, '`id` ASC');
-
-      result = employees._parseOrder({id: 'DESC'});
-      assert.strictEqual(result, '`id` DESC');
-
-      result = employees._parseOrder([{age: 'DESC'}, 'id']);
-      assert.strictEqual(result, '`age` DESC, `id` ASC');
-
-      assert.throws(function () {
-        employees._parseOrder({id: 'invalid'});
-      });
-    });
-
-    it('should accept a limit expression', function () {
-      assert.strictEqual(employees._parseLimit('1'), 1);
-      assert.strictEqual(employees._parseLimit('10'), 10);
-      assert.strictEqual(employees._parseLimit(20), 20);
-
-      assert.throws(function () {
-        employees._parseLimit('0');
-      });
-
-      assert.throws(function () {
-        employees._parseLimit('-1');
-      });
-    });
-
-    it('should accept offset expressions', function () {
-      assert.strictEqual(employees._parseOffset('0'), 0);
-      assert.strictEqual(employees._parseOffset('10'), 10);
-      assert.strictEqual(employees._parseOffset(20), 20);
-
-      assert.throws(function () {
-        employees._parseOffset('-1');
-      });
-    });
-
     it('should be able to run a CRUD [+ Count] operation', function (done) {
 
       async.series({
@@ -200,12 +161,12 @@ describe('MySQL schema', function () {
         },
 
         count: function (callback) {
-          employees.count(callback);
+          employees.countAll(callback);
         },
 
-        companies: function (callback) {
-          employees.getRelated('company', 1, callback);
-        },
+        // companies: function (callback) {
+        //   employees.getRelated('company', 1, callback);
+        // },
 
         update: function (callback) {
           employees.set({
@@ -228,8 +189,8 @@ describe('MySQL schema', function () {
         assert.strictEqual(result.create.insertId, 2);
         assert.isArray(result.read);
         assert.lengthOf(result.read, 1);
-        assert.isArray(result.companies);
-        assert.lengthOf(result.companies, 1);
+        // assert.isArray(result.companies);
+        // assert.lengthOf(result.companies, 1);
         assert.strictEqual(result.count, 2);
         assert.isObject(result.update);
         assert.isObject(result.delete);
@@ -238,29 +199,23 @@ describe('MySQL schema', function () {
       });
     });
 
-    it('should return error on #get() when selector key is not column ', function (done) {
+    it('should return error on #get() when column does not exist', function (done) {
       employees.get({foo: 'bar'}, function (err) {
-        assert.instanceOf(err, Error);
-        assert.equal(err.message, 'Column "foo" could not be found in table "employee"');
-
+        assert.strictEqual(err, 'Column "foo" could not be found in table "employee"');
         done();
       });
     });
 
-    it('should return error on #count() when selector key is not column ', function (done) {
+    it('should return error on #count() when column does not exist', function (done) {
       employees.count({foo: 'bar'}, function (err) {
-        assert.instanceOf(err, Error);
-        assert.equal(err.message, 'Column "foo" could not be found in table "employee"');
-
+        assert.strictEqual(err, 'Column "foo" could not be found in table "employee"');
         done();
       });
     });
 
-    it('should return error on #del() when selector key is not column ', function (done) {
+    it('should return error on #del() when column does not exist', function (done) {
       employees.del({foo: 'bar'}, function (err) {
-        assert.instanceOf(err, Error);
-        assert.equal(err.message, 'Column "foo" could not be found in table "employee"');
-
+        assert.strictEqual(err, 'Column "foo" could not be found in table "employee"');
         done();
       });
     });
@@ -279,59 +234,6 @@ describe('MySQL schema', function () {
       assert.isTrue(companies.isPrimaryKey('id'));
     });
 
-  });
-
-  describe('companyEmployees collection', function () {
-
-    var companyEmployees;
-
-    before(function () {
-      companyEmployees = db.extend('companyEmployee');
-    });
-
-    it('should be related with tables: "company" and "employee"', function () {
-      assert.isObject(db._tables.companyEmployee.related);
-      assert.lengthOf(Object.keys(db._tables.companyEmployee.related), 2);
-
-      assert.property(db._tables.companyEmployee.related, 'company');
-      assert.isObject(db._tables.companyEmployee.related.company);
-      assert.propertyVal(db._tables.companyEmployee.related.company, 'id', 'companyId');
-
-      assert.property(db._tables.company.related, 'companyEmployee');
-      assert.isObject(db._tables.company.related.companyEmployee);
-      assert.propertyVal(db._tables.company.related.companyEmployee, 'companyId', 'id');
-
-      assert.property(db._tables.companyEmployee.related, 'employee');
-      assert.isObject(db._tables.companyEmployee.related.employee);
-      assert.propertyVal(db._tables.companyEmployee.related.employee, 'id', 'employeeId');
-
-      assert.property(db._tables.employee.related, 'companyEmployee');
-      assert.isObject(db._tables.employee.related.companyEmployee);
-      assert.propertyVal(db._tables.employee.related.companyEmployee, 'employeeId', 'id');
-    });
-
-  });
-
-  it('should return a valid path on #_calculatePath("employee", "company")', function () {
-    var path = db._calculatePath('employee', 'company');
-
-    assert.isArray(path);
-    assert.strictEqual(path[0], 'employee');
-    assert.strictEqual(path[1], 'companyEmployee');
-    assert.strictEqual(path[2], 'company');
-  });
-
-  it('should return a valid path on #_calculatePath("employee", "country")', function () {
-    var path = db._calculatePath('employee', 'country');
-
-    assert.isArray(path);
-    assert.strictEqual(path[0], 'employee');
-    assert.strictEqual(path[1], 'country');
-  });
-
-  it('should return null on #_calculatePath("employee", "irrelevant")', function () {
-    var path = db._calculatePath('employee', 'irrelevant');
-    assert.isNull(path);
   });
 
 });

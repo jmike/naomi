@@ -1,7 +1,5 @@
 // load environmental variables
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').load();
-}
+require('dotenv').load();
 
 var Mocha = require('mocha'),
   fs = require('fs'),

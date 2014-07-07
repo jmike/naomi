@@ -13,8 +13,8 @@ var events = require('events'),
 function Database(engine) {
   var self = this;
 
-  this._engine = engine;
-  this._tables = {};
+  this.engine = engine;
+  this.tables = {};
   this.isConnected = false;
   this.isReady = false;
 
@@ -42,7 +42,7 @@ Database.prototype.connect = function (callback) {
 
   // connect to database
   if (!this.isConnected) {
-    this._engine.connect(callback);
+    this.engine.connect(callback);
     this.isConnected = true;
 
     this.emit('connect');
@@ -67,7 +67,7 @@ Database.prototype.disconnect = function (callback) {
 
   // disconnect from database
   if (this.isConnected) {
-    this._engine.disconnect(callback);
+    this.engine.disconnect(callback);
     this.isConnected = false;
     this.isReady = false;
 
@@ -85,6 +85,7 @@ Database.prototype.disconnect = function (callback) {
  * @param {Array} [params] an array of parameter values.
  * @param {Object} [options] query options.
  * @param {Function} [callback] a callback function, i.e. function(error, records, meta) for SELECT statements and function(error, meta) for DML statements.
+ * @throws {Error} if parameters are invalid.
  */
 Database.prototype.query = function (sql, params, options, callback) {
   var type;
@@ -115,7 +116,7 @@ Database.prototype.query = function (sql, params, options, callback) {
 
     if (type === 'function') {
       callback = options;
-    } else if (options !== undefined) {
+    } else if (type !== 'undefined') {
       throw new Error('Invalid options param - expected object, received ' + type);
     }
 
@@ -135,10 +136,10 @@ Database.prototype.query = function (sql, params, options, callback) {
 
   // make sure db is connected
   if (!this.isConnected) {
-    return callback(new Error('Connection is closed - did you forget to call #connect()?'));
+    return callback('Connection is closed - did you forget to call #connect()?');
   }
 
-  this._engine.query(sql, params, options, callback);
+  this.engine.query(sql, params, options, callback);
 };
 
 /**
@@ -151,23 +152,23 @@ Database.prototype._loadMeta = function (callback) {
 
   async.parallel({
     tables: function(callback) {
-      self._engine.getTables(callback);
+      self.engine.getTables(callback);
     },
     columns: function(callback) {
-      self._engine.getColumns(callback);
+      self.engine.getColumns(callback);
     },
     indices: function(callback) {
-      self._engine.getIndices(callback);
+      self.engine.getIndices(callback);
     },
     foreignKeys: function(callback) {
-      self._engine.getForeignKeys(callback);
+      self.engine.getForeignKeys(callback);
     }
   }, function (err, result) {
     if (err) return callback(err);
 
     // init tables object
     result.tables.forEach(function (table) {
-      self._tables[table] = {
+      self.tables[table] = {
         columns: {},
         primaryKey: [],
         uniqueKeys: {},
@@ -178,7 +179,7 @@ Database.prototype._loadMeta = function (callback) {
 
     // load columns
     result.columns.forEach(function (column) {
-      var stack = self._tables[column.table];
+      var stack = self.tables[column.table];
 
       if (stack) {
         stack = stack.columns;
@@ -188,7 +189,7 @@ Database.prototype._loadMeta = function (callback) {
 
     // load indices
     result.indices.forEach(function (index) {
-      var stack = self._tables[index.table];
+      var stack = self.tables[index.table];
 
       if (stack) {
         if (index.key === 'PRIMARY') {
@@ -211,7 +212,7 @@ Database.prototype._loadMeta = function (callback) {
     result.foreignKeys.forEach(function (foreignKey) {
       var stack;
 
-      stack = self._tables[foreignKey.table];
+      stack = self.tables[foreignKey.table];
       if (stack) {
         stack.related[foreignKey.refTable] = stack.related[foreignKey.refTable] || {};
         stack = stack.related[foreignKey.refTable];
@@ -219,7 +220,7 @@ Database.prototype._loadMeta = function (callback) {
       }
 
       // do the other side of the relation
-      stack = self._tables[foreignKey.refTable];
+      stack = self.tables[foreignKey.refTable];
       if (stack) {
         stack.related[foreignKey.table] = stack.related[foreignKey.table] || {};
         stack = stack.related[foreignKey.table];
@@ -241,7 +242,7 @@ Database.prototype._loadMeta = function (callback) {
  * @returns {Boolean}
  */
 Database.prototype.hasTable = function (table) {
-  return this.isReady && this._tables.hasOwnProperty(table);
+  return this.isReady && this.tables.hasOwnProperty(table);
 };
 
 /**
@@ -251,7 +252,7 @@ Database.prototype.hasTable = function (table) {
  * @returns {Object|Null}
  */
 Database.prototype.getTableMeta = function (table) {
-  return this._tables[table] || null;
+  return this.tables[table] || null;
 };
 
 /**
@@ -287,28 +288,31 @@ Database.prototype.extend = function (table, customProperties) {
  * @returns {Array<String>}
  */
 Database.prototype.calculatePath = function (tableA, tableB, path, solutions) {
-  var self = this;
-
-  // handle optional path and solutions params
+  // handle optional "path" param
   path = path || [tableA];
+
+  // handle optional "solutions" param
   solutions = solutions || [];
 
+  // main logic (this is Sparta)
   if (_.last(path) !== tableB) { // are we there yet?
-    _.forOwn(this._tables[tableA].related, function (columns, table) {
+    _.forOwn(this.tables[tableA].related, function (columns, table) {
       var arr = path.slice(0);
 
       if (arr.indexOf(table) === -1) { // avoid running in circles
         arr.push(table);
-        self._calculatePath(table, tableB, arr, solutions);
+        this.calculatePath(table, tableB, arr, solutions);
       }
-    });
+    }, this);
 
   } else { // destination reached
     solutions.push(path);
   }
 
   // make sure solutions is not empty
-  if (_.isEmpty(solutions)) return null;
+  if (_.isEmpty(solutions)) {
+    return null;
+  }
 
   // return shortest path
   return _.min(solutions, function(solution) {

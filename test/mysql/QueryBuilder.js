@@ -151,6 +151,9 @@ describe('MySQL:QueryBuilder', function () {
         assert.throws(function () {
           builder.compileSelectSQL(null, {order: false});
         });
+        assert.throws(function () {
+          builder.compileSelectSQL(null, {order: {id: 'invalid'}});
+        });
       });
 
       it('should accept a limit option in the form of an Integer', function () {
@@ -189,6 +192,9 @@ describe('MySQL:QueryBuilder', function () {
         });
         assert.throws(function () {
           builder.compileSelectSQL(null, {limit: -10});
+        });
+        assert.throws(function () {
+          builder.compileSelectSQL(null, {limit: 'invalid'});
         });
       });
 
@@ -232,6 +238,9 @@ describe('MySQL:QueryBuilder', function () {
         });
         assert.throws(function () {
           builder.compileSelectSQL(null, {offset: -10});
+        });
+        assert.throws(function () {
+          builder.compileSelectSQL(null, {offset: 'invalid'});
         });
       });
 
