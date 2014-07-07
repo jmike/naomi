@@ -56,7 +56,7 @@ Engine.prototype.query = function (sql, params, options, callback) {
       if (error) {
         callback(error);
 
-      } else if (Array.isArray(records)) { // Select statement
+      } else if (_.isArray(records)) { // Select statement
         callback(null, records);
 
       } else { // DML statement

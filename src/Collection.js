@@ -159,7 +159,7 @@ Collection.prototype.get = function (selector, options, callback) {
     type !== 'boolean' &&
     type !== 'number' &&
     type !== 'string' &&
-    type !== null &&
+    selector !== null &&
     !_.isPlainObject(selector) &&
     !Array.isArray(selector) &&
     !_.isDate(selector)
