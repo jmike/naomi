@@ -79,8 +79,7 @@ describe('MySQL:Database', function () {
   describe('@connected state', function () {
 
     before(function (done) {
-      db.connect();
-      db.once('ready', done);
+      db.once('ready', done).connect();
     });
 
     after(function (done) {
@@ -108,10 +107,10 @@ describe('MySQL:Database', function () {
       assert.propertyVal(db.tables.employee.related.companyEmployee, 'employeeId', 'id');
     });
 
-    describe('#calculatePath()', function () {
+    describe('#findPath()', function () {
 
       it('should return a valid path from "employee" to "company"', function () {
-        var path = db.calculatePath('employee', 'company');
+        var path = db.findPath('employee', 'company');
         assert.isArray(path);
         assert.strictEqual(path[0], 'employee');
         assert.strictEqual(path[1], 'companyEmployee');
@@ -119,14 +118,14 @@ describe('MySQL:Database', function () {
       });
 
       it('should return a valid path from "employee" to "country"', function () {
-        var path = db.calculatePath('employee', 'country');
+        var path = db.findPath('employee', 'country');
         assert.isArray(path);
         assert.strictEqual(path[0], 'employee');
         assert.strictEqual(path[1], 'country');
       });
 
       it('should return null from "employee" to "irrelevant"', function () {
-        var path = db.calculatePath('employee', 'irrelevant');
+        var path = db.findPath('employee', 'irrelevant');
         assert.isNull(path);
       });
 

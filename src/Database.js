@@ -32,7 +32,7 @@ util.inherits(Database, events.EventEmitter);
 /**
  * Attempts to connect to the database server.
  * @param {Function} [callback] a callback function to execute when connection has been established, i.e. function (err).
- * @returns {Database} this instance, to enable method chaining.
+ * @returns {Database} this instance to enable method chaining.
  */
 Database.prototype.connect = function (callback) {
   // handle optional params
@@ -57,7 +57,7 @@ Database.prototype.connect = function (callback) {
  * Gracefully closes any connection to the database server.
  * The instance will become practically useless after calling this method, unless calling connect() again.
  * @param {Function} [callback] a callback function to execute when connection has been closed, i.e. function (err).
- * @returns {Database} this to enable method chaining.
+ * @returns {Database} this instance to enable method chaining.
  */
 Database.prototype.disconnect = function (callback) {
   // handle optional params
@@ -86,6 +86,7 @@ Database.prototype.disconnect = function (callback) {
  * @param {Object} [options] query options.
  * @param {Function} [callback] a callback function, i.e. function(error, records, meta) for SELECT statements and function(error, meta) for DML statements.
  * @throws {Error} if parameters are invalid.
+ * @returns {Database} this instance to enable method chaining.
  */
 Database.prototype.query = function (sql, params, options, callback) {
   var type;
@@ -140,6 +141,8 @@ Database.prototype.query = function (sql, params, options, callback) {
   }
 
   this.engine.query(sql, params, options, callback);
+
+  return this;
 };
 
 /**
@@ -281,13 +284,13 @@ Database.prototype.extend = function (table, customProperties) {
 };
 
 /**
- * Calculates and returns the shortest path from table A to table B.
+ * Returns the shortest path from table A to table B.
  * Please note: this method is meant to be called after the database is ready.
  * @param {String} tableA the name of the table A.
  * @param {String} tableB the name of the table B.
  * @returns {Array<String>}
  */
-Database.prototype.calculatePath = function (tableA, tableB, path, solutions) {
+Database.prototype.findPath = function (tableA, tableB, path, solutions) {
   // handle optional "path" param
   path = path || [tableA];
 
@@ -301,7 +304,7 @@ Database.prototype.calculatePath = function (tableA, tableB, path, solutions) {
 
       if (arr.indexOf(table) === -1) { // avoid running in circles
         arr.push(table);
-        this.calculatePath(table, tableB, arr, solutions);
+        this.findPath(table, tableB, arr, solutions);
       }
     }, this);
 

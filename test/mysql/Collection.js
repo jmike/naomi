@@ -15,8 +15,7 @@ var assert = require('chai').assert,
 describe('MySQL:Collection', function () {
 
   before(function (done) {
-    db.connect();
-    db.once('ready', done);
+    db.once('ready', done).connect();
   });
 
   after(function (done) {
@@ -60,11 +59,11 @@ describe('MySQL:Collection', function () {
     });
 
     it('should have valid metadata', function () {
-      var meta = db.tables.employee;
+      var meta = db.getTableMeta('employee');
 
       assert.isObject(meta);
 
-      // assert columns
+      // test columns
       assert.property(meta, 'columns');
       assert.isObject(meta.columns);
 
@@ -102,7 +101,7 @@ describe('MySQL:Collection', function () {
       assert.isNull(meta.columns.countryId.comment);
       assert.strictEqual(meta.columns.countryId.position, 4);
 
-      // assert indices
+      // test indices
       assert.property(meta, 'primaryKey');
       assert.isArray(meta.primaryKey);
       assert.lengthOf(meta.primaryKey, 1);
