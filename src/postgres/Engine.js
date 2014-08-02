@@ -1,6 +1,5 @@
-var mysql = require('mysql'),
+var pg = require('pg.js'),
   _ = require('lodash'),
-  Promise = require('bluebird'),
   QueryBuilder = require('./QueryBuilder');
 
 /**
@@ -10,34 +9,26 @@ var mysql = require('mysql'),
  * @constructor
  */
 function Engine(connectionProperties) {
-  this._connectionProperties = connectionProperties;
+  this.connectionProperties = connectionProperties;
   this.QueryBuilder = QueryBuilder;
 }
 
 /**
  * Connects to database server using the connection properties given at construction time.
- * @param {Function} [callback] a callback function to execute when connection has been established, i.e. function (err).
- * @returns {Promise}
+ * @param {Function} callback a callback function to execute when connection has been established, i.e. function (err).
  */
 Engine.prototype.connect = function (callback) {
-  this._pool = mysql.createPool(this._connectionProperties);
-  return Promise.resolve().nodeify(callback);
+  this._pool = mysql.createPool(this.connectionProperties);
+  callback();
 };
 
 /**
  * Disconnects from database server.
  * @param {Function} callback a callback function to execute when connection has been closed, i.e. function (err).
- * @returns {Promise}
+ * @returns {Database} this to enable method chaining.
  */
 Engine.prototype.disconnect = function (callback) {
-  var resolver = function (resolve, reject) {
-    this._pool.end(function (err) {
-      if (err) return reject(err);
-      resolve();
-    });
-  }.bind(this);
-
-  return new Promise(resolver).nodeify(callback);
+  this._pool.end(callback);
 };
 
 
@@ -87,7 +78,7 @@ Engine.prototype.query = function (sql, params, options, callback) {
  * @returns {Array<String>}
  */
 Engine.prototype.getTables = function (callback) {
-  var schema = this._connectionProperties.database,
+  var schema = this.connectionProperties.database,
     sql, params;
 
   sql = 'SHOW FULL TABLES FROM ??;';
@@ -115,7 +106,7 @@ Engine.prototype.getTables = function (callback) {
  * @returns {Array<Object>}
  */
 Engine.prototype.getColumns = function (callback) {
-  var schema = this._connectionProperties.database,
+  var schema = this.connectionProperties.database,
     sql, params;
 
   sql = 'SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ?;';
@@ -149,7 +140,7 @@ Engine.prototype.getColumns = function (callback) {
  * @returns {Array<Object>}
  */
 Engine.prototype.getIndices = function (callback) {
-  var schema = this._connectionProperties.database,
+  var schema = this.connectionProperties.database,
     sql, params;
 
   sql = 'SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE table_schema = ?;';
@@ -179,7 +170,7 @@ Engine.prototype.getIndices = function (callback) {
  * @returns {Array<Object>}
  */
 Engine.prototype.getForeignKeys = function (callback) {
-  var schema = this._connectionProperties.database,
+  var schema = this.connectionProperties.database,
     sql, params;
 
   sql = 'SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ?;';
