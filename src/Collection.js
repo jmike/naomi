@@ -1,5 +1,4 @@
 var _ = require('lodash'),
-  async = require('async'),
   Promise = require('bluebird');
 
 /**
@@ -9,9 +8,6 @@ var _ = require('lodash'),
  * @constructor
  */
 function Collection(db, table) {
-  var self = this,
-    queue;
-
   this.db = db;
   this.table = table;
 
@@ -22,28 +18,23 @@ function Collection(db, table) {
 
   this.queryBuilder = new db.engine.QueryBuilder(this);
 
-  // setup queue to stack queries until db is ready
-  queue = async.queue(function (task, callback) {
-    task();
-    callback();
-  }, 10);
-  queue.pause(); // pause by default
-  this._queue = queue;
-
   db.on('ready', function () {
-    self._loadMeta();
-    self._queue.resume();
-  });
-
-  db.on('disconnect', function () {
-    self._queue.pause();
+    this._loadMeta();
   });
 
   // check if db is already loaded
-  if (db.isReady) {
-    this._loadMeta();
-  }
+  if (db.isReady) this._loadMeta();
 }
+
+/**
+ * Enqueues the designated function until db is ready.
+ * @param {Function} fn
+ */
+Collection.prototype._enqueue = function (fn) {
+  Promise.setScheduler(function() {
+    this.db.on('ready', fn);
+  }.bind(this));
+};
 
 /**
  * Loads metadata from database.
@@ -145,7 +136,7 @@ Collection.prototype.get = function (selector, options, callback) {
 
   // postpone if not ready
   if (!this.db.isReady) {
-    this._queue.push(this.get.bind(this, selector, options, callback));
+    this.enqueue(this.get.bind(this, selector, options, callback));
     return;
   }
 
@@ -225,7 +216,7 @@ Collection.prototype.count = function (selector, options, callback) {
 
   // postpone if not ready
   if (!this.db.isReady) {
-    this._queue.push(this.count.bind(this, selector, callback));
+    this.enqueue(this.count.bind(this, selector, callback));
     return;
   }
 
@@ -307,7 +298,7 @@ Collection.prototype.set = function (attrs, callback) {
 
   // postpone if not ready
   if (!this.db.isReady) {
-    this._queue.push(this.set.bind(this, attrs, callback));
+    this.enqueue(this.set.bind(this, attrs, callback));
     return;
   }
 
@@ -339,7 +330,7 @@ Collection.prototype.del = function (selector, options, callback) {
 
   // postpone if not ready
   if (!this.db.isReady) {
-    this._queue.push(this.del.bind(this, selector, callback));
+    this.enqueue(this.del.bind(this, selector, callback));
     return;
   }
 
@@ -407,7 +398,7 @@ Collection.prototype.del = function (selector, options, callback) {
 //
 //   // postpone if not ready
 //   if (!this.db.isReady) {
-//     this._queue.push(this.getRelated.bind(this, table, selector, callback));
+//     this.enqueue(this.getRelated.bind(this, table, selector, callback));
 //     return;
 //   }
 //
