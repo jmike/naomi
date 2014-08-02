@@ -1,7 +1,7 @@
 var events = require('events'),
   util = require('util'),
   _ = require('lodash'),
-  async = require('async'),
+  Promise = require('bluebird'),
   Collection = require('./Collection'),
   defaultCallback = require('./utils/defaultCallback');
 
@@ -32,51 +32,43 @@ util.inherits(Database, events.EventEmitter);
 /**
  * Attempts to connect to the database server.
  * @param {Function} [callback] a callback function to execute when connection has been established, i.e. function (err).
- * @returns {Database} this instance to enable method chaining.
+ * @returns {Promise}
  */
 Database.prototype.connect = function (callback) {
-  // handle optional params
-  if (typeof callback !== 'function') {
-    callback = defaultCallback;
+  if (this.isConnected) { // already connected
+    return Promise.resolve().nodeify(callback);
   }
 
-  // connect to database
-  if (!this.isConnected) {
-    this.engine.connect(callback);
-    this.isConnected = true;
-
-    this.emit('connect');
-  } else { // already connected
-    callback();
-  }
-
-  return this;
+  return this.engine.connect()
+    .bind(this)
+    .then(function () {
+      this.isConnected = true;
+      this.emit('connect');
+      return;
+    })
+    .nodeify(callback);
 };
 
 /**
  * Gracefully closes any connection to the database server.
  * The instance will become practically useless after calling this method, unless calling connect() again.
  * @param {Function} [callback] a callback function to execute when connection has been closed, i.e. function (err).
- * @returns {Database} this instance to enable method chaining.
+ * @returns {Promise}
  */
 Database.prototype.disconnect = function (callback) {
-  // handle optional params
-  if (typeof callback !== 'function') {
-    callback = defaultCallback;
+  if (!this.isConnected) { // already disconnected
+    return Promise.resolve().nodeify(callback);
   }
 
-  // disconnect from database
-  if (this.isConnected) {
-    this.engine.disconnect(callback);
-    this.isConnected = false;
-    this.isReady = false;
-
-    this.emit('disconnect');
-  } else { // already disconnected
-    callback();
-  }
-
-  return this;
+  this.engine.disconnect()
+    .bind(this)
+    .then(function () {
+      this.isConnected = false;
+      this.isReady = false;
+      this.emit('disconnect');
+      return;
+    })
+    .nodeify(callback);
 };
 
 /**
@@ -86,7 +78,7 @@ Database.prototype.disconnect = function (callback) {
  * @param {Object} [options] query options.
  * @param {Function} [callback] a callback function, i.e. function(error, records, meta) for SELECT statements and function(error, meta) for DML statements.
  * @throws {Error} if parameters are invalid.
- * @returns {Database} this instance to enable method chaining.
+ * @returns {Promise}
  */
 Database.prototype.query = function (sql, params, options, callback) {
   var type;
@@ -135,107 +127,97 @@ Database.prototype.query = function (sql, params, options, callback) {
     callback = defaultCallback;
   }
 
-  // make sure db is connected
-  if (!this.isConnected) {
-    return callback('Connection is closed - did you forget to call #connect()?');
+  if (!this.isConnected) { // make sure db is connected
+    return Promise.reject('Connection is closed - did you forget to call #connect()?')
+      .nodeify(callback);
   }
 
-  this.engine.query(sql, params, options, callback);
-
-  return this;
+  return this.engine.query(sql, params, options)
+    .nodeify(callback);
 };
 
 /**
  * Loads metadata from database server.
- * @param {Function} callback a callback function i.e. function(err).
+ * @param {Function} [callback] a callback function i.e. function(err).
  * @private
  */
 Database.prototype._loadMeta = function (callback) {
-  var self = this;
+  return Promise.props({
+    tables: this.engine.getTables(callback),
+    columns: this.engine.getColumns(callback),
+    indices: this.engine.getIndices(callback),
+    foreignKeys: this.engine.getForeignKeys(callback)
+  })
+    .bind(this)
+    .then(function(result) {
+      // init tables object
+      result.tables.forEach(function (table) {
+        this.tables[table] = {
+          columns: {},
+          primaryKey: [],
+          uniqueKeys: {},
+          indexKeys: {},
+          related: {}
+        };
+      }.bind(this));
 
-  async.parallel({
-    tables: function(callback) {
-      self.engine.getTables(callback);
-    },
-    columns: function(callback) {
-      self.engine.getColumns(callback);
-    },
-    indices: function(callback) {
-      self.engine.getIndices(callback);
-    },
-    foreignKeys: function(callback) {
-      self.engine.getForeignKeys(callback);
-    }
-  }, function (err, result) {
-    if (err) return callback(err);
+      // load columns
+      result.columns.forEach(function (column) {
+        var stack = this.tables[column.table];
 
-    // init tables object
-    result.tables.forEach(function (table) {
-      self.tables[table] = {
-        columns: {},
-        primaryKey: [],
-        uniqueKeys: {},
-        indexKeys: {},
-        related: {}
-      };
-    });
+        if (stack) {
+          stack = stack.columns;
+          stack[column.name] = column;
+        }
+      }.bind(this));
 
-    // load columns
-    result.columns.forEach(function (column) {
-      var stack = self.tables[column.table];
+      // load indices
+      result.indices.forEach(function (index) {
+        var stack = this.tables[index.table];
 
-      if (stack) {
-        stack = stack.columns;
-        stack[column.name] = column;
-      }
-    });
+        if (stack) {
+          if (index.key === 'PRIMARY') {
+            stack = stack.primaryKey;
 
-    // load indices
-    result.indices.forEach(function (index) {
-      var stack = self.tables[index.table];
+          } else if (index.isUnique) {
+            stack.uniqueKeys[index.key] = stack.uniqueKeys[index.key] || [];
+            stack = stack.uniqueKeys[index.key];
 
-      if (stack) {
-        if (index.key === 'PRIMARY') {
-          stack = stack.primaryKey;
+          } else {
+            stack.indexKeys[index.key] = stack.indexKeys[index.key] || [];
+            stack = stack.indexKeys[index.key];
+          }
 
-        } else if (index.isUnique) {
-          stack.uniqueKeys[index.key] = stack.uniqueKeys[index.key] || [];
-          stack = stack.uniqueKeys[index.key];
+          stack.push(index.column);
+        }
+      }.bind(this));
 
-        } else {
-          stack.indexKeys[index.key] = stack.indexKeys[index.key] || [];
-          stack = stack.indexKeys[index.key];
+      // load foreign keys
+      result.foreignKeys.forEach(function (foreignKey) {
+        var stack;
+
+        stack = this.tables[foreignKey.table];
+        if (stack) {
+          stack.related[foreignKey.refTable] = stack.related[foreignKey.refTable] || {};
+          stack = stack.related[foreignKey.refTable];
+          stack[foreignKey.refColumn] = foreignKey.column;
         }
 
-        stack.push(index.column);
-      }
-    });
+        // do the other side of the relation
+        stack = this.tables[foreignKey.refTable];
+        if (stack) {
+          stack.related[foreignKey.table] = stack.related[foreignKey.table] || {};
+          stack = stack.related[foreignKey.table];
+          stack[foreignKey.column] = foreignKey.refColumn;
+        }
+      }.bind(this));
 
-    // load foreign keys
-    result.foreignKeys.forEach(function (foreignKey) {
-      var stack;
+      this.isReady = true;
+      this.emit('ready');
 
-      stack = self.tables[foreignKey.table];
-      if (stack) {
-        stack.related[foreignKey.refTable] = stack.related[foreignKey.refTable] || {};
-        stack = stack.related[foreignKey.refTable];
-        stack[foreignKey.refColumn] = foreignKey.column;
-      }
-
-      // do the other side of the relation
-      stack = self.tables[foreignKey.refTable];
-      if (stack) {
-        stack.related[foreignKey.table] = stack.related[foreignKey.table] || {};
-        stack = stack.related[foreignKey.table];
-        stack[foreignKey.column] = foreignKey.refColumn;
-      }
-    });
-
-    self.isReady = true;
-    self.emit('ready');
-
-    callback();
-  });
+      return;
+    })
+    .nodeify(callback);
 };
 
 /**

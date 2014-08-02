@@ -10,26 +10,24 @@ var mysql = require('mysql'),
  * @constructor
  */
 function Engine(connectionProperties) {
-  this._connectionProperties = connectionProperties;
+  this.connectionProperties = connectionProperties;
   this.QueryBuilder = QueryBuilder;
 }
 
 /**
  * Connects to database server using the connection properties given at construction time.
- * @param {Function} [callback] a callback function to execute when connection has been established, i.e. function (err).
  * @returns {Promise}
  */
-Engine.prototype.connect = function (callback) {
-  this._pool = mysql.createPool(this._connectionProperties);
-  return Promise.resolve().nodeify(callback);
+Engine.prototype.connect = function () {
+  this._pool = mysql.createPool(this.connectionProperties);
+  return Promise.resolve();
 };
 
 /**
  * Disconnects from database server.
- * @param {Function} callback a callback function to execute when connection has been closed, i.e. function (err).
  * @returns {Promise}
  */
-Engine.prototype.disconnect = function (callback) {
+Engine.prototype.disconnect = function () {
   var resolver = function (resolve, reject) {
     this._pool.end(function (err) {
       if (err) return reject(err);
@@ -37,7 +35,7 @@ Engine.prototype.disconnect = function (callback) {
     });
   }.bind(this);
 
-  return new Promise(resolver).nodeify(callback);
+  return new Promise(resolver);
 };
 
 
@@ -46,162 +44,145 @@ Engine.prototype.disconnect = function (callback) {
  * @param {String} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
  * @param {Object} options query options, i.e. {nestTables: true} to handle overlapping column names.
- * @param {Function} callback a callback function, i.e. function(error, records, meta) for SELECT statements and function(error, meta) for DML statements.
+ * @returns {Promise}
  */
-Engine.prototype.query = function (sql, params, options, callback) {
-  this._pool.getConnection(function (err, connection) {
-    if (err) return callback(err);
+Engine.prototype.query = function (sql, params, options) {
+  var resolver = function (resolve, reject) {
+    this._pool.getConnection(function (err, connection) {
+      if (err) return reject(err);
 
-    if (options.nestTables) {
-      sql = {
-        sql: sql,
-        nestTables: options.nestTables
-      };
-    }
-
-    connection.query(sql, params, function(error, records) {
-      var meta;
-
-      if (error) {
-        callback(error);
-
-      } else if (_.isArray(records)) { // Select statement
-        callback(null, records);
-
-      } else { // DML statement
-        meta = {
-          insertId: records.insertId,
-          affectedRows: records.affectedRows
+      if (options.nestTables) {
+        sql = {
+          sql: sql,
+          nestTables: options.nestTables
         };
-        callback(null, meta);
       }
 
-      connection.release();
+      connection.query(sql, params, function(err, records) {
+        var meta;
+
+        if (err) {
+          reject(err);
+
+        } else if (_.isArray(records)) { // Select statement
+          resolve(records);
+
+        } else { // DML statement
+          meta = {
+            insertId: records.insertId,
+            affectedRows: records.affectedRows
+          };
+          resolve(meta);
+        }
+
+        connection.release(); // always come to this
+      });
     });
-  });
+  }.bind(this);
+
+  return new Promise(resolver);
 };
 
 /**
  * Returns the name of the tables of the database schema specified at construction time.
- * @param {Function} callback a callback function i.e. function(err, tables).
- * @returns {Array<String>}
+ * @returns {Promise}
  */
-Engine.prototype.getTables = function (callback) {
-  var schema = this._connectionProperties.database,
+Engine.prototype.getTables = function () {
+  var schema = this.connectionProperties.database,
     sql, params;
 
   sql = 'SHOW FULL TABLES FROM ??;';
   params = [schema];
 
-  this.query(sql, params, {}, function (err, records) {
-    var tables;
-
-    if (err) return callback(err);
-
-    tables = records.filter(function (record) {
-      return record.Table_type === 'BASE TABLE';
-    }).map(function (record) {
-      return record['Tables_in_' + schema];
+  return this.query(sql, params, {})
+    .then(function (records) {
+      return records
+        .filter(function (record) {
+          return record.Table_type === 'BASE TABLE';
+        })
+        .map(function (record) {
+          return record['Tables_in_' + schema];
+        });
     });
-
-    callback(null, tables);
-  });
 };
 
 
 /**
  * Returns column properties from the database schema specified at construction time.
- * @param {Function} callback a callback function i.e. function(err, columns).
- * @returns {Array<Object>}
+ * @returns {Promise}
  */
-Engine.prototype.getColumns = function (callback) {
-  var schema = this._connectionProperties.database,
+Engine.prototype.getColumns = function () {
+  var schema = this.connectionProperties.database,
     sql, params;
 
   sql = 'SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ?;';
   params = [schema];
 
-  this.query(sql, params, {}, function (err, records) {
-    var columns;
-
-    if (err) return callback(err);
-
-    columns = records.map(function (record) {
-      return {
-        name: record.COLUMN_NAME,
-        table: record.TABLE_NAME,
-        type: record.DATA_TYPE,
-        isNullable: record.IS_NULLABLE === 'YES',
-        default: record.COLUMN_DEFAULT,
-        collation: record.COLLATION_NAME,
-        comment: _.isEmpty(record.COLUMN_COMMENT) ? null : record.COLUMN_COMMENT,
-        position: record.ORDINAL_POSITION - 1 // zero-indexed
-      };
+  return this.query(sql, params, {})
+    .then(function (records) {
+      return records.map(function (record) {
+        return {
+          name: record.COLUMN_NAME,
+          table: record.TABLE_NAME,
+          type: record.DATA_TYPE,
+          isNullable: record.IS_NULLABLE === 'YES',
+          default: record.COLUMN_DEFAULT,
+          collation: record.COLLATION_NAME,
+          comment: _.isEmpty(record.COLUMN_COMMENT) ? null : record.COLUMN_COMMENT,
+          position: record.ORDINAL_POSITION - 1 // zero-indexed
+        };
+      });
     });
-
-    callback(null, columns);
-  });
 };
 
 /**
  * Returns index properties from the database schema specified at construction time.
- * @param {Function} callback a callback function i.e. function(err, indices).
- * @returns {Array<Object>}
+ * @returns {Promise}
  */
-Engine.prototype.getIndices = function (callback) {
-  var schema = this._connectionProperties.database,
+Engine.prototype.getIndices = function () {
+  var schema = this.connectionProperties.database,
     sql, params;
 
   sql = 'SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE table_schema = ?;';
   params = [schema];
 
-  this.query(sql, params, {}, function (err, records) {
-    var indices;
-
-    if (err) return callback(err);
-
-    indices = records.map(function (record) {
-      return {
-        key: record.INDEX_NAME,
-        table: record.TABLE_NAME,
-        column: record.COLUMN_NAME,
-        isUnique: record.NON_UNIQUE === 0
-      };
+  return this.query(sql, params, {})
+    .then(function (records) {
+      return records.map(function (record) {
+        return {
+          key: record.INDEX_NAME,
+          table: record.TABLE_NAME,
+          column: record.COLUMN_NAME,
+          isUnique: record.NON_UNIQUE === 0
+        };
+      });
     });
-
-    callback(null, indices);
-  });
 };
 
 /**
  * Returns foreign key properties from the database schema specified at construction time.
- * @param {Function} callback a callback function i.e. function(err, constraints).
- * @returns {Array<Object>}
+ * @returns {Promise}
  */
-Engine.prototype.getForeignKeys = function (callback) {
-  var schema = this._connectionProperties.database,
+Engine.prototype.getForeignKeys = function () {
+  var schema = this.connectionProperties.database,
     sql, params;
 
-  sql = 'SELECT * FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ?;';
+  sql = 'SELECT * FROM information_schema.KEY_COLUMN_USAGE ' +
+    'WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ?;';
   params = [schema, schema];
 
-  this.query(sql, params, {}, function (err, records) {
-    var foreignKeys;
-
-    if (err) return callback(err);
-
-    foreignKeys = records.map(function (record) {
-      return {
-        key: record.CONSTRAINT_NAME,
-        table: record.TABLE_NAME,
-        column: record.COLUMN_NAME,
-        refTable: record.REFERENCED_TABLE_NAME,
-        refColumn: record.REFERENCED_COLUMN_NAME
-      };
+  return this.query(sql, params, {})
+    .then(function (records) {
+      return records.map(function (record) {
+        return {
+          key: record.CONSTRAINT_NAME,
+          table: record.TABLE_NAME,
+          column: record.COLUMN_NAME,
+          refTable: record.REFERENCED_TABLE_NAME,
+          refColumn: record.REFERENCED_COLUMN_NAME
+        };
+      });
     });
-
-    callback(null, foreignKeys);
-  });
 };
 
 module.exports = Engine;

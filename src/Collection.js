@@ -1,5 +1,6 @@
 var _ = require('lodash'),
-  async = require('async');
+  async = require('async'),
+  Promise = require('bluebird');
 
 /**
  * Constructs a new Collection, i.e. an object representing a MySQL table.
@@ -135,8 +136,9 @@ Collection.prototype.isIndexKey = function () {
  * Retrieves the designated record(s) from database.
  * @param {Boolean|Number|String|Date|Object|Array<Object>|Null} selector a selector to match the record(s) in database.
  * @param {Object} [options]
- * @param {Function} callback a callback function i.e. function(err, data).
+ * @param {Function} [callback] a callback function i.e. function(err, data).
  * @throws {Error} if parameters are invalid.
+ * @returns {Promise}
  */
 Collection.prototype.get = function (selector, options, callback) {
   var query, type;
@@ -149,7 +151,8 @@ Collection.prototype.get = function (selector, options, callback) {
 
   // make sure table exists
   if (!this.db.hasTable(this.table)) {
-    return callback('Table "' + this.table + '" cannot be found in database');
+    return Promise.reject('Table "' + this.table + '" cannot be found in database')
+      .nodeify(callback);
   }
 
   // validate "selector" param
@@ -195,24 +198,27 @@ Collection.prototype.get = function (selector, options, callback) {
   }
 
   // run Forrest, run
-  this.db.query(query.sql, query.params, callback);
+  return this.db.query(query.sql, query.params)
+    .nodeify(callback);
 };
 
 /**
  * Retrieves all record(s) from database.
  * This is no more that a handy alias to #get(null, options, callback).
  * @param {Object} [options]
- * @param {Function} callback a callback function i.e. function(err, data).
+ * @param {Function} [callback] a callback function i.e. function(err, data).
+ * @returns {Promise}
  */
 Collection.prototype.getAll = function (options, callback) {
-  this.get(null, options, callback);
+  return this.get(null, options, callback);
 };
 
 /**
  * Counts the designated record(s) in database.
  * @param {Boolean|Number|String|Date|Object|Array<Object>|Null} selector a selector to match the record(s) in database.
  * @param {Object} [options]
- * @param {Function} callback a callback function i.e. function(err, count).
+ * @param {Function} [callback] a callback function i.e. function(err, count).
+ * @returns {Promise}
  */
 Collection.prototype.count = function (selector, options, callback) {
   var query, type;
@@ -225,7 +231,8 @@ Collection.prototype.count = function (selector, options, callback) {
 
   // make sure table exists
   if (!this.db.hasTable(this.table)) {
-    return callback('Table "' + this.table + '" cannot be found in database');
+    return Promise.reject('Table "' + this.table + '" cannot be found in database')
+      .nodeify(callback);
   }
 
   // validate "selector" param
@@ -271,30 +278,29 @@ Collection.prototype.count = function (selector, options, callback) {
   }
 
   // run Forrest, run
-  this.db.query(query.sql, query.params, function (error, records) {
-    var count;
-
-    if (error) return callback(error);
-    count = records[0].count; // we need only the number
-
-    callback(null, count);
-  });
+  return this.db.query(query.sql, query.params)
+    .then(function (records) {
+      return records[0].count; // we need only the number
+    })
+    .nodeify(callback);
 };
 
 /**
  * Counts all record(s) in database.
  * This is no more than a handy alias to #count(null, options, callback).
  * @param {Object} [options]
- * @param {Function} callback a callback function i.e. function(err, data).
+ * @param {Function} [callback] a callback function i.e. function(err, data).
+ * @returns {Promise}
  */
 Collection.prototype.countAll = function (options, callback) {
-  this.count(null, options, callback);
+  return this.count(null, options, callback);
 };
 
 /**
  * Creates or updates the specified record in database.
  * @param {Array<Object>|Object} attrs the record attributes.
- * @param {Function} callback a callback function i.e. function(error, data).
+ * @param {Function} [callback] a callback function i.e. function(error, data).
+ * @returns {Promise}
  */
 Collection.prototype.set = function (attrs, callback) {
   var query;
@@ -307,7 +313,8 @@ Collection.prototype.set = function (attrs, callback) {
 
   // make sure table exists
   if (!this.db.hasTable(this.table)) {
-    return callback('Table "' + this.table + '" cannot be found in database');
+    return Promise.reject('Table "' + this.table + '" cannot be found in database')
+      .nodeify(callback);
   }
 
   // compile upsert statement
@@ -317,8 +324,8 @@ Collection.prototype.set = function (attrs, callback) {
     return callback(err.message);
   }
 
-  // run Forrest, run
-  this.db.query(query.sql, query.params, callback);
+  return this.db.query(query.sql, query.params)
+    .nodeify(callback);
 };
 
 /**
@@ -338,7 +345,8 @@ Collection.prototype.del = function (selector, options, callback) {
 
   // make sure table exists
   if (!this.db.hasTable(this.table)) {
-    return callback('Table "' + this.table + '" cannot be found in database');
+    return Promise.reject('Table "' + this.table + '" cannot be found in database')
+      .nodeify(callback);
   }
 
   // validate "selector" param
@@ -383,8 +391,8 @@ Collection.prototype.del = function (selector, options, callback) {
     return callback(err.message);
   }
 
-  // run Forrest, run
-  this.db.query(query.sql, query.params, callback);
+  return this.db.query(query.sql, query.params)
+    .nodeify(callback);
 };
 
 // /**
