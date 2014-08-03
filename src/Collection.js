@@ -31,9 +31,11 @@ function Collection(db, table) {
  * @param {Function} fn
  */
 Collection.prototype._enqueue = function (fn) {
-  Promise.setScheduler(function() {
+  if (this.db.isReady) {
+    fn();
+  } else {
     this.db.on('ready', fn);
-  }.bind(this));
+  }
 };
 
 /**

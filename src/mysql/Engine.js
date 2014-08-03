@@ -19,8 +19,12 @@ function Engine(connectionProperties) {
  * @returns {Promise}
  */
 Engine.prototype.connect = function () {
-  this._pool = mysql.createPool(this.connectionProperties);
-  return Promise.resolve();
+  var resolver = function (resolve) {
+    this._pool = mysql.createPool(this.connectionProperties);
+    resolve();
+  }.bind(this);
+
+  return new Promise(resolver);
 };
 
 /**
