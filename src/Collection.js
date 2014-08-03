@@ -34,7 +34,7 @@ Collection.prototype._enqueue = function (fn) {
   if (this.db.isReady) {
     fn();
   } else {
-    this.db.on('ready', fn);
+    this.db.once('ready', fn);
   }
 };
 
