@@ -218,16 +218,16 @@ describe('MySQL:Collection', function () {
 
   });
 
-  describe('companies collection', function () {
+  describe('@deferred', function () {
 
-    var companies;
+    describe('employees', function () {
 
-    before(function () {
-      companies = db.extend('company');
-    });
+      it('should enqueue queries until db is ready', function (done) {
+        var employees = db.extend('employee');
+        employees.get(1, done);
+        db.connect();
+      });
 
-    it('should have valid primary key', function () {
-      assert.isTrue(companies.isPrimaryKey('id'));
     });
 
   });
