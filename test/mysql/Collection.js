@@ -224,7 +224,14 @@ describe('MySQL:Collection', function () {
 
       it('should enqueue queries until db is ready', function (done) {
         var employees = db.extend('employee');
-        employees.get(1, done);
+        employees.get(1)
+          .then(function () {
+            done();
+          })
+          .finally(function () {
+            db.disconnect();
+          });
+
         db.connect();
       });
 

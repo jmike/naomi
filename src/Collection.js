@@ -20,7 +20,7 @@ function Collection(db, table) {
 
   db.on('ready', function () {
     this._loadMeta();
-  });
+  }.bind(this));
 
   // check if db is already loaded
   if (db.isReady) this._loadMeta();
@@ -187,8 +187,7 @@ Collection.prototype.get = function (selector, options, callback) {
   }
 
   // run Forrest, run
-  return this.db.query(query.sql, query.params)
-    .nodeify(callback);
+  return this.db.query(query.sql, query.params, callback);
 };
 
 /**

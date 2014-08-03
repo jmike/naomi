@@ -6,13 +6,11 @@ var events = require('events'),
   defaultCallback = require('./utils/defaultCallback');
 
 /**
- * Constructs a new Database, i.e. an object representing a relational schema.
+ * Constructs a new Database, i.e. an object representing a relational database.
  * @param {Engine} engine a Naomi engine instance.
  * @constructor
  */
 function Database(engine) {
-  var self = this;
-
   this.engine = engine;
   this.tables = {};
   this.isConnected = false;
@@ -22,7 +20,15 @@ function Database(engine) {
   this.setMaxListeners(99);
 
   this.on('connect', function () {
-    if (!self.isReady) self._loadMeta(defaultCallback);
+    if (this.isReady) return; // already there
+
+    this._fetchMeta()
+      .bind(this)
+      .then(function (tables) {
+        this.tables = tables;
+        this.isReady = true;
+        this.emit('ready');
+      });
   });
 }
 
@@ -132,92 +138,73 @@ Database.prototype.query = function (sql, params, options, callback) {
       .nodeify(callback);
   }
 
-  return this.engine.query(sql, params, options)
-    .nodeify(callback);
+  return this.engine.query(sql, params, options).nodeify(callback);
 };
 
 /**
- * Loads metadata from database server.
- * @param {Function} [callback] a callback function i.e. function(err).
+ * Extracts and returns metadata from database server.
+ * @returns {Promise}
  * @private
  */
-Database.prototype._loadMeta = function (callback) {
+Database.prototype._fetchMeta = function () {
   return Promise.props({
-    tables: this.engine.getTables(callback),
-    columns: this.engine.getColumns(callback),
-    indices: this.engine.getIndices(callback),
-    foreignKeys: this.engine.getForeignKeys(callback)
-  })
-    .bind(this)
-    .then(function(result) {
-      // init tables object
-      result.tables.forEach(function (table) {
-        this.tables[table] = {
-          columns: {},
-          primaryKey: [],
-          uniqueKeys: {},
-          indexKeys: {},
-          related: {}
-        };
-      }.bind(this));
+    tables: this.engine.getTables(),
+    columns: this.engine.getColumns(),
+    indices: this.engine.getIndices(),
+    foreignKeys: this.engine.getForeignKeys()
+  }).then(function(result) {
+    var tables = {};
 
-      // load columns
-      result.columns.forEach(function (column) {
-        var stack = this.tables[column.table];
+    // init tables object
+    result.tables.forEach(function (table) {
+      tables[table] = {
+        columns: {},
+        primaryKey: [],
+        uniqueKeys: {},
+        indexKeys: {},
+        related: {}
+      };
+    });
 
-        if (stack) {
-          stack = stack.columns;
-          stack[column.name] = column;
-        }
-      }.bind(this));
+    // set columns in table(s)
+    result.columns.forEach(function (column) {
+      var table = tables[column.table];
+      table.columns[column.name] = column;
+    });
 
-      // load indices
-      result.indices.forEach(function (index) {
-        var stack = this.tables[index.table];
+    // set indices in table(s)
+    result.indices.forEach(function (index) {
+      var table = tables[index.table];
 
-        if (stack) {
-          if (index.key === 'PRIMARY') {
-            stack = stack.primaryKey;
+      if (index.key === 'PRIMARY') {
+        table.primaryKey.push(index.column);
 
-          } else if (index.isUnique) {
-            stack.uniqueKeys[index.key] = stack.uniqueKeys[index.key] || [];
-            stack = stack.uniqueKeys[index.key];
+      } else if (index.isUnique) {
+        table.uniqueKeys[index.key] = table.uniqueKeys[index.key] || [];
+        table.uniqueKeys[index.key].push(index.column);
 
-          } else {
-            stack.indexKeys[index.key] = stack.indexKeys[index.key] || [];
-            stack = stack.indexKeys[index.key];
-          }
+      } else {
+        table.indexKeys[index.key] = table.indexKeys[index.key] || [];
+        table.indexKeys[index.key].push(index.column);
+      }
+    });
 
-          stack.push(index.column);
-        }
-      }.bind(this));
+    // set foreign keys in table(s)
+    result.foreignKeys.forEach(function (foreignKey) {
+      var table = tables[foreignKey.table];
 
-      // load foreign keys
-      result.foreignKeys.forEach(function (foreignKey) {
-        var stack;
+      table.related[foreignKey.refTable] = table.related[foreignKey.refTable] || {};
+      table.related[foreignKey.refTable][foreignKey.refColumn] = foreignKey.column;
 
-        stack = this.tables[foreignKey.table];
-        if (stack) {
-          stack.related[foreignKey.refTable] = stack.related[foreignKey.refTable] || {};
-          stack = stack.related[foreignKey.refTable];
-          stack[foreignKey.refColumn] = foreignKey.column;
-        }
+      // do the other side of the relation
+      table = tables[foreignKey.refTable];
 
-        // do the other side of the relation
-        stack = this.tables[foreignKey.refTable];
-        if (stack) {
-          stack.related[foreignKey.table] = stack.related[foreignKey.table] || {};
-          stack = stack.related[foreignKey.table];
-          stack[foreignKey.column] = foreignKey.refColumn;
-        }
-      }.bind(this));
+      table.related[foreignKey.table] = table.related[foreignKey.table] || {};
+      table.related[foreignKey.table][foreignKey.column] = foreignKey.refColumn;
+    });
 
-      this.isReady = true;
-      this.emit('ready');
-
-      return;
-    })
-    .nodeify(callback);
+    return tables;
+  });
 };
 
 /**
