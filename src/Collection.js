@@ -136,7 +136,7 @@ Collection.prototype.get = function (selector, options, callback) {
 
   // postpone if not ready
   if (!this.db.isReady) {
-    this.enqueue(this.get.bind(this, selector, options, callback));
+    this._enqueue(this.get.bind(this, selector, options, callback));
     return;
   }
 
@@ -216,7 +216,7 @@ Collection.prototype.count = function (selector, options, callback) {
 
   // postpone if not ready
   if (!this.db.isReady) {
-    this.enqueue(this.count.bind(this, selector, callback));
+    this._enqueue(this.count.bind(this, selector, callback));
     return;
   }
 
@@ -298,7 +298,7 @@ Collection.prototype.set = function (attrs, callback) {
 
   // postpone if not ready
   if (!this.db.isReady) {
-    this.enqueue(this.set.bind(this, attrs, callback));
+    this._enqueue(this.set.bind(this, attrs, callback));
     return;
   }
 
@@ -330,7 +330,7 @@ Collection.prototype.del = function (selector, options, callback) {
 
   // postpone if not ready
   if (!this.db.isReady) {
-    this.enqueue(this.del.bind(this, selector, callback));
+    this._enqueue(this.del.bind(this, selector, callback));
     return;
   }
 
@@ -398,7 +398,7 @@ Collection.prototype.del = function (selector, options, callback) {
 //
 //   // postpone if not ready
 //   if (!this.db.isReady) {
-//     this.enqueue(this.getRelated.bind(this, table, selector, callback));
+//     this._enqueue(this.getRelated.bind(this, table, selector, callback));
 //     return;
 //   }
 //
