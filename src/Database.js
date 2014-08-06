@@ -2,8 +2,7 @@ var events = require('events'),
   util = require('util'),
   _ = require('lodash'),
   Promise = require('bluebird'),
-  Collection = require('./Collection'),
-  defaultCallback = require('./utils/defaultCallback');
+  Collection = require('./Collection');
 
 /**
  * Constructs a new Database, i.e. an object representing a relational database.
