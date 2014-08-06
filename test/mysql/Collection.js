@@ -1,15 +1,23 @@
 // load environmental variables
 require('dotenv').load();
 
-var assert = require('chai').assert,
+var chai = require('chai'),
+  chaiAsPromised = require('chai-as-promised'),
   naomi = require('../../src/naomi'),
-  db = naomi.create('MYSQL', {
-    host: process.env.DATABASE_HOST,
-    port: parseInt(process.env.DATABASE_PORT, 10),
-    user: process.env.DATABASE_USERNAME,
-    password: process.env.DATABASE_PASSWORD,
-    database: process.env.DATABASE_SCHEMA
-  });
+  assert, db;
+
+// enable promises assertion
+chai.use(chaiAsPromised);
+assert = chai.assert;
+
+// init database
+db = naomi.create('MYSQL', {
+  host: process.env.DATABASE_HOST,
+  port: parseInt(process.env.DATABASE_PORT, 10),
+  user: process.env.DATABASE_USERNAME,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_SCHEMA
+});
 
 describe('MySQL:Collection', function () {
 
@@ -151,6 +159,7 @@ describe('MySQL:Collection', function () {
           countryId: 1
         }).then(function (data) {
           assert.isObject(data);
+          console.log(data);
           assert.strictEqual(data.insertId, 2);
 
           return employees.get(2);
@@ -160,6 +169,8 @@ describe('MySQL:Collection', function () {
 
           return employees.countAll();
         }).then(function (count) {
+          console.log(123, count);
+          return;
           assert.strictEqual(count, 2);
 
           return employees.set({
@@ -179,25 +190,16 @@ describe('MySQL:Collection', function () {
         });
       });
 
-      it('should return error on #get() when column does not exist', function (done) {
-        employees.get({foo: 'bar'}, function (err) {
-          assert.strictEqual(err, 'Column "foo" could not be found in table "employee"');
-          done();
-        });
+      it('should return error on #get() when column does not exist', function () {
+        assert.isRejected(employees.get({foo: 'bar'}), 'Column "foo" could not be found in table "employee"');
       });
 
-      it('should return error on #count() when column does not exist', function (done) {
-        employees.count({foo: 'bar'}, function (err) {
-          assert.strictEqual(err, 'Column "foo" could not be found in table "employee"');
-          done();
-        });
+      it('should return error on #count() when column does not exist', function () {
+        assert.isRejected(employees.count({foo: 'bar'}), 'Column "foo" could not be found in table "employee"');
       });
 
-      it('should return error on #del() when column does not exist', function (done) {
-        employees.del({foo: 'bar'}, function (err) {
-          assert.strictEqual(err, 'Column "foo" could not be found in table "employee"');
-          done();
-        });
+      it('should return error on #del() when column does not exist', function () {
+        assert.isRejected(employees.del({foo: 'bar'}), 'Column "foo" could not be found in table "employee"');
       });
 
     });

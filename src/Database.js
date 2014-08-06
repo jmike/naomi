@@ -8,6 +8,10 @@ var events = require('events'),
 /**
  * Constructs a new Database, i.e. an object representing a relational database.
  * @param {Engine} engine a Naomi engine instance.
+ * @extends {EventEmitter}
+ * @emits Database#connect when connected to the database server.
+ * @emits Database#disconnect when disconnected from the database server.
+ * @emits Database#ready when metadata have been loaded.
  * @constructor
  */
 function Database(engine) {
@@ -20,7 +24,7 @@ function Database(engine) {
   this.setMaxListeners(99);
 
   this.on('connect', function () {
-    if (this.isReady) return; // already there
+    if (this.isReady) return; // exit
 
     this._fetchMeta()
       .bind(this)
@@ -37,8 +41,9 @@ util.inherits(Database, events.EventEmitter);
 
 /**
  * Attempts to connect to the database server.
- * @param {Function} [callback] a callback function to execute when connection has been established, i.e. function (err).
+ * @param {Function} [callback] an optional callback function, i.e. function (err).
  * @returns {Promise}
+ * @emits Database#connect
  */
 Database.prototype.connect = function (callback) {
   if (this.isConnected) { // already connected
@@ -57,9 +62,10 @@ Database.prototype.connect = function (callback) {
 
 /**
  * Gracefully closes any connection to the database server.
- * The instance will become practically useless after calling this method, unless calling connect() again.
- * @param {Function} [callback] a callback function to execute when connection has been closed, i.e. function (err).
+ * The database will become practically useless after calling this method.
+ * @param {Function} [callback] an optional callback function, i.e. function (err).
  * @returns {Promise}
+ * @emits Database#disconnect
  */
 Database.prototype.disconnect = function (callback) {
   if (!this.isConnected) { // already disconnected
@@ -82,28 +88,25 @@ Database.prototype.disconnect = function (callback) {
  * @param {String} sql a parameterized SQL statement.
  * @param {Array} [params] an array of parameter values.
  * @param {Object} [options] query options.
- * @param {Function} [callback] a callback function, i.e. function(error, records, meta) for SELECT statements and function(error, meta) for DML statements.
- * @throws {Error} if parameters are invalid.
+ * @param {Function} [callback] a callback function, i.e. function(err, records).
  * @returns {Promise}
  */
 Database.prototype.query = function (sql, params, options, callback) {
-  var type;
-
   // validate "sql" param
-  if (typeof sql !== 'string') {
-    throw new Error('You must specify a valid SQL statement');
+  if (!_.isString(sql)) {
+    return Promise.reject('Invalid or unspecified sql param').nodeify(callback);
   }
 
   // handle optional "params" param
   if (!_.isArray(params)) {
-    type = typeof(params);
 
     if (_.isPlainObject(params)) {
       options = params;
-    } else if (type === 'function') {
+    } else if (_.isFunction(params) === 'function') {
+      options = undefined;
       callback = params;
-    } else if (params !== undefined) {
-      throw new Error('Invalid parameters - expected an Array, received ' + type);
+    } else if (!_.isUndefined(params)) {
+      return Promise.reject('Invalid or unspecified query parameters').nodeify(callback);
     }
 
     params = [];
@@ -111,33 +114,22 @@ Database.prototype.query = function (sql, params, options, callback) {
 
   // handle optional "options" param
   if (!_.isPlainObject(options)) {
-    type = typeof(options);
 
-    if (type === 'function') {
+    if (_.isFunction(options)) {
       callback = options;
-    } else if (type !== 'undefined') {
-      throw new Error('Invalid options param - expected object, received ' + type);
+    } else if (!_.isUndefined(options)) {
+      return Promise.reject('Invalid or unspecified options param').nodeify(callback);
     }
 
     options = {};
   }
 
-  // handle optional "callback" param
-  type = typeof(callback);
-
-  if (type !== 'function') {
-    if (type !== 'undefined') {
-      throw new Error('Invalid callback param - expected function, received ' + type);
-    }
-
-    callback = defaultCallback;
+  // make sure db is connected
+  if (!this.isConnected) {
+    return Promise.reject('Connection is closed - did you forget to call #connect()?').nodeify(callback);
   }
 
-  if (!this.isConnected) { // make sure db is connected
-    return Promise.reject('Connection is closed - did you forget to call #connect()?')
-      .nodeify(callback);
-  }
-
+  // run the query
   return this.engine.query(sql, params, options).nodeify(callback);
 };
 
@@ -228,25 +220,26 @@ Database.prototype.getTableMeta = function (table) {
 };
 
 /**
- * Creates and returns a new data collection representing the designated table.
- * @param {String} table the name of an existing table in database.
- * @param {Object} [customProperties] the collection's custom properties.
+ * Returns a new data collection representing the designated table.
  * Please note: this function will not create a new table on database - it will merely reference an existing one.
+ * @param {String} table the name of an existing table in database.
+ * @param {Object} [props] the collection's custom properties.
+ * TODO: Fix description
  */
-Database.prototype.extend = function (table, customProperties) {
+Database.prototype.extend = function (table, props) {
   var collection;
 
   // validate "table" param
   if (typeof table !== 'string') {
-    throw new Error('Invalid table name - expected string, received ' + typeof(table));
+    throw new Error('Invalid or unspecified table name');
   }
 
   // create new collection
   collection = new Collection(this, table);
 
   // extend with custom properties
-  if (_.isPlainObject(customProperties)) {
-    collection = _.extend(collection, customProperties);
+  if (_.isPlainObject(props)) {
+    collection = _.extend(collection, props);
   }
 
   return collection;

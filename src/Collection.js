@@ -2,7 +2,7 @@ var _ = require('lodash'),
   Promise = require('bluebird');
 
 /**
- * Constructs a new Collection, i.e. an object representing a MySQL table.
+ * Constructs a new Collection, i.e. an object representing a relational database table.
  * @param {Database} db a Naomi database instance.
  * @param {String} table the name of a table in database.
  * @constructor
@@ -25,14 +25,6 @@ function Collection(db, table) {
   // check if db is already loaded
   if (db.isReady) this._loadMeta();
 }
-
-/**
- * Enqueues the designated function until db is ready.
- * @param {Function} fn
- */
-Collection.prototype._enqueue = function (fn) {
-  this.db.once('ready', fn);
-};
 
 /**
  * Loads metadata from database.
@@ -123,78 +115,83 @@ Collection.prototype.isIndexKey = function () {
 
 /**
  * Retrieves the designated record(s) from database.
- * @param {Boolean|Number|String|Date|Object|Array<Object>|Null} selector a selector to match the record(s) in database.
- * @param {Object} [options]
- * @param {Function} [callback] a callback function i.e. function(err, data).
+ * @param {Boolean|Number|String|Date|Object|Array<Object>|Null} selector a selector to match record(s) in database.
+ * @param {Object} [options] query options.
+ * @param {Function} [callback] an optional callback function i.e. function(err, records).
  * @throws {Error} if parameters are invalid.
  * @returns {Promise}
  */
 Collection.prototype.get = function (selector, options, callback) {
-  var query, type;
-
-  // postpone if not ready
-  if (!this.db.isReady) {
-    this._enqueue(this.get.bind(this, selector, options, callback));
-    return;
-  }
-
-  // make sure table exists
-  if (!this.db.hasTable(this.table)) {
-    return Promise.reject('Table "' + this.table + '" cannot be found in database')
-      .nodeify(callback);
-  }
+  var self = this,
+    resolver;
 
   // validate "selector" param
-  type = typeof(selector);
-
   if (
-    type !== 'boolean' &&
-    type !== 'number' &&
-    type !== 'string' &&
-    selector !== null &&
+    !_.isBoolean(selector) &&
+    !_.isNumber(selector) &&
+    !_.isString(selector) &&
     !_.isPlainObject(selector) &&
-    !Array.isArray(selector) &&
-    !_.isDate(selector)
+    !_.isArray(selector) &&
+    !_.isDate(selector) &&
+    !_.isNull(selector)
   ) {
-    throw new Error('Invalid selector parameter');
+    return Promise.reject('Invalid or unspecified selector param').nodeify(callback);
   }
 
   // handle optional "options" param
   if (!_.isPlainObject(options)) {
-    type = typeof(options);
 
-    if (type === 'function') {
+    if (_.isFunction(options)) {
       callback = options;
-    } else if (type !== 'undefined') {
-      throw new Error('Invalid options parameter - expected object, received ' + type);
+    } else if (!_.isUndefined(options)) {
+      return Promise.reject('Invalid or unspecified options param').nodeify(callback);
     }
 
     options = {};
   }
 
-  // validate "callback" param
-  type = typeof(callback);
+  // set the resolver function
+  resolver = function (resolve, reject) {
 
-  if (type !== 'function' && type !== 'undefined') {
-    throw new Error('Invalid callback parameter - expected function, received ' + type);
-  }
+    var query;
 
-  // compile select statement
-  try {
-    query = this.queryBuilder.compileSelectSQL(selector, options);
-  } catch (err) {
-    return callback(err.message);
-  }
+    // make sure table exists in database
+    if (!self.db.hasTable(self.table)) {
+      return reject('Table "' + self.table + '" cannot be found in database');
+    }
 
-  // run Forrest, run
-  return this.db.query(query.sql, query.params, callback);
+    // compile a parameterized SELECT query
+    try {
+      query = self.queryBuilder.compileSelectSQL(selector, options);
+    } catch (err) {
+      return reject(err.message);
+    }
+
+    // run the query
+    self.db.query(query.sql, query.params).then(function (records) {
+      resolve(records);
+    }).catch(function (err) {
+      reject(err);
+    });
+
+  };
+
+  return new Promise(function(resolve, reject) {
+    if (self.isReady) {
+      resolver(resolve, reject);
+    } else { // delay until ready
+      self.db.once('ready', function () {
+        resolver(resolve, reject);
+      });
+    }
+  }).nodeify(callback);
 };
 
 /**
  * Retrieves all record(s) from database.
  * This is no more that a handy alias to #get(null, options, callback).
- * @param {Object} [options]
- * @param {Function} [callback] a callback function i.e. function(err, data).
+ * @param {Object} [options] query options.
+ * @param {Function} [callback] an optional callback function i.e. function(err, records).
  * @returns {Promise}
  */
 Collection.prototype.getAll = function (options, callback) {
@@ -204,80 +201,81 @@ Collection.prototype.getAll = function (options, callback) {
 /**
  * Counts the designated record(s) in database.
  * @param {Boolean|Number|String|Date|Object|Array<Object>|Null} selector a selector to match the record(s) in database.
- * @param {Object} [options]
- * @param {Function} [callback] a callback function i.e. function(err, count).
+ * @param {Object} [options] query options.
+ * @param {Function} [callback] an optional callback function i.e. function(err, count).
  * @returns {Promise}
  */
 Collection.prototype.count = function (selector, options, callback) {
-  var query, type;
-
-  // postpone if not ready
-  if (!this.db.isReady) {
-    this._enqueue(this.count.bind(this, selector, callback));
-    return;
-  }
-
-  // make sure table exists
-  if (!this.db.hasTable(this.table)) {
-    return Promise.reject('Table "' + this.table + '" cannot be found in database')
-      .nodeify(callback);
-  }
+  var self = this,
+    resolver;
 
   // validate "selector" param
-  type = typeof(selector);
-
   if (
-    type !== 'boolean' &&
-    type !== 'number' &&
-    type !== 'string' &&
-    selector !== null &&
-    !_.isDate(selector) &&
+    !_.isBoolean(selector) &&
+    !_.isNumber(selector) &&
+    !_.isString(selector) &&
     !_.isPlainObject(selector) &&
-    !_.isArray(selector)
+    !_.isArray(selector) &&
+    !_.isDate(selector) &&
+    !_.isNull(selector)
   ) {
-    throw new Error('Invalid selector parameter');
+    return Promise.reject('Invalid or unspecified selector param').nodeify(callback);
   }
 
   // handle optional "options" param
   if (!_.isPlainObject(options)) {
-    type = typeof(options);
 
-    if (type === 'function') {
+    if (_.isFunction(options)) {
       callback = options;
-    } else if (type !== 'undefined') {
-      throw new Error('Invalid options parameter - expected object, received ' + type);
+    } else if (!_.isUndefined(options)) {
+      return Promise.reject('Invalid or unspecified options param').nodeify(callback);
     }
 
     options = {};
   }
 
-  // validate "callback" param
-  type = typeof(callback);
+  // set the resolver function
+  resolver = function (resolve, reject) {
 
-  if (type !== 'function' && type !== 'undefined') {
-    throw new Error('Invalid callback parameter - expected function, received ' + type);
-  }
+    var query;
 
-  // compile a parameterized SELECT COUNT statement
-  try {
-    query = this.queryBuilder.compileCountSQL(selector, options);
-  } catch (err) {
-    return callback(err.message);
-  }
+    // make sure table exists in database
+    if (!self.db.hasTable(self.table)) {
+      return reject('Table "' + self.table + '" cannot be found in database');
+    }
 
-  // run Forrest, run
-  return this.db.query(query.sql, query.params)
-    .then(function (records) {
-      return records[0].count; // we need only the number
-    })
-    .nodeify(callback);
+    // compile a parameterized COUNT query
+    try {
+      query = self.queryBuilder.compileCountSQL(selector, options);
+    } catch (err) {
+      return reject(err.message);
+    }
+
+    // run the query
+    self.db.query(query.sql, query.params).then(function (records) {
+      resolve(records[0].count);
+    }).catch(function (err) {
+      reject(err);
+    });
+
+  };
+
+  return new Promise(function(resolve, reject) {
+    if (self.isReady) {
+      resolver(resolve, reject);
+    } else { // delay until ready
+      self.db.once('ready', function () {
+        resolver(resolve, reject);
+      });
+    }
+  }).nodeify(callback);
 };
 
 /**
- * Counts all record(s) in database.
+ * Counts all record(s) in table.
  * This is no more than a handy alias to #count(null, options, callback).
- * @param {Object} [options]
- * @param {Function} [callback] a callback function i.e. function(err, data).
+ * @param {Object} [options] query options.
+ * @param {Function} [callback] an optional callback function i.e. function(err, count).
  * @returns {Promise}
  */
 Collection.prototype.countAll = function (options, callback) {
@@ -287,100 +285,120 @@ Collection.prototype.countAll = function (options, callback) {
 /**
  * Creates or updates the specified record in database.
  * @param {Array<Object>|Object} attrs the record attributes.
- * @param {Function} [callback] a callback function i.e. function(error, data).
+ * @param {Function} [callback] an optional callback function i.e. function(error, data).
  * @returns {Promise}
  */
 Collection.prototype.set = function (attrs, callback) {
-  var query;
+  var self = this,
+    resolver;
 
-  // postpone if not ready
-  if (!this.db.isReady) {
-    this._enqueue(this.set.bind(this, attrs, callback));
-    return;
-  }
+  // set the resolver function
+  resolver = function (resolve, reject) {
 
-  // make sure table exists
-  if (!this.db.hasTable(this.table)) {
-    return Promise.reject('Table "' + this.table + '" cannot be found in database')
-      .nodeify(callback);
-  }
+    var query;
 
-  // compile upsert statement
-  try {
-    query = this.queryBuilder.compileUpsertSQL(attrs);
-  } catch (err) {
-    return callback(err.message);
-  }
+    // make sure table exists in database
+    if (!self.db.hasTable(self.table)) {
+      return reject('Table "' + self.table + '" cannot be found in database');
+    }
 
-  return this.db.query(query.sql, query.params)
-    .nodeify(callback);
+    // compile an parameterized UPSERT query
+    try {
+     query = self.queryBuilder.compileUpsertSQL(attrs);
+    } catch (err) {
+      return reject(err.message);
+    }
+
+    // run the query
+    self.db.query(query.sql, query.params).then(function (data) {
+      resolve(data);
+    }).catch(function (err) {
+      reject(err);
+    });
+
+  };
+
+  return new Promise(function(resolve, reject) {
+    if (self.isReady) {
+      resolver(resolve, reject);
+    } else { // delay until ready
+      self.db.once('ready', function () {
+        resolver(resolve, reject);
+      });
+    }
+  }).nodeify(callback);
 };
 
 /**
  * Deletes the designated record(s) from database.
  * @param {Boolean|Number|String|Date|Object|Array.<Object>} selector a selector to match the record(s) in database.
- * @param {Object} [options]
- * @param {Function} callback a callback function i.e. function(error, data).
+ * @param {Object} [options] query options.
+ * @param {Function} [callback] an optional callback function i.e. function(error, data).
+ * @returns {Promise}
  */
 Collection.prototype.del = function (selector, options, callback) {
-  var query, type;
-
-  // postpone if not ready
-  if (!this.db.isReady) {
-    this._enqueue(this.del.bind(this, selector, callback));
-    return;
-  }
-
-  // make sure table exists
-  if (!this.db.hasTable(this.table)) {
-    return Promise.reject('Table "' + this.table + '" cannot be found in database')
-      .nodeify(callback);
-  }
+    var self = this,
+    resolver;
 
   // validate "selector" param
-  type = typeof(selector);
-
   if (
-    type !== 'boolean' &&
-    type !== 'number' &&
-    type !== 'string' &&
+    !_.isBoolean(selector) &&
+    !_.isNumber(selector) &&
+    !_.isString(selector) &&
     !_.isPlainObject(selector) &&
-    !Array.isArray(selector) &&
+    !_.isArray(selector) &&
     !_.isDate(selector)
   ) {
-    throw new Error('Invalid selector parameter');
+    return Promise.reject('Invalid or unspecified selector param').nodeify(callback);
   }
 
   // handle optional "options" param
   if (!_.isPlainObject(options)) {
-    type = typeof(options);
 
-    if (type === 'function') {
+    if (_.isFunction(options)) {
       callback = options;
-    } else if (type !== 'undefined') {
-      throw new Error('Invalid options parameter - expected object, received ' + type);
+    } else if (!_.isUndefined(options)) {
+      return Promise.reject('Invalid or unspecified options param').nodeify(callback);
     }
 
     options = {};
   }
 
-  // validate "callback" param
-  type = typeof(callback);
+  // set the resolver function
+  resolver = function (resolve, reject) {
 
-  if (type !== 'function' && type !== 'undefined') {
-    throw new Error('Invalid callback parameter - expected function, received ' + type);
-  }
+    var query;
 
-  // compile a parameterized DELETE statement
-  // compile upsert statement
-  try {
-    query = this.queryBuilder.compileDeleteSQL(selector, options);
-  } catch (err) {
-    return callback(err.message);
-  }
+    // make sure table exists in database
+    if (!self.db.hasTable(self.table)) {
+      return reject('Table "' + self.table + '" cannot be found in database');
+    }
 
-  return this.db.query(query.sql, query.params)
-    .nodeify(callback);
+    // compile a parameterized DELETE query
+    try {
+      query = self.queryBuilder.compileDeleteSQL(selector, options);
+    } catch (err) {
+      return reject(err.message);
+    }
+
+    // run the query
+    self.db.query(query.sql, query.params).then(function (data) {
+      resolve(data);
+    }).catch(function (err) {
+      reject(err);
+    });
+
+  };
+
+  return new Promise(function(resolve, reject) {
+    if (self.isReady) {
+      resolver(resolve, reject);
+    } else { // delay until ready
+      self.db.once('ready', function () {
+        resolver(resolve, reject);
+      });
+    }
+  }).nodeify(callback);
 };
 
 // /**

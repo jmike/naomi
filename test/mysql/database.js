@@ -1,16 +1,23 @@
 // load environmental variables
 require('dotenv').load();
 
-var assert = require('chai').assert,
+var chai = require('chai'),
+  chaiAsPromised = require('chai-as-promised'),
   naomi = require('../../src/naomi'),
-  db = naomi.create('MYSQL', {
-    host: process.env.DATABASE_HOST,
-    port: parseInt(process.env.DATABASE_PORT, 10),
-    user: process.env.DATABASE_USERNAME,
-    password: process.env.DATABASE_PASSWORD,
-    database: process.env.DATABASE_SCHEMA
-  });
+  assert, db;
 
+// enable promises assertion
+chai.use(chaiAsPromised);
+assert = chai.assert;
+
+// init database
+db = naomi.create('MYSQL', {
+  host: process.env.DATABASE_HOST,
+  port: parseInt(process.env.DATABASE_PORT, 10),
+  user: process.env.DATABASE_USERNAME,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_SCHEMA
+});
 
 describe('MySQL:Database', function () {
 
@@ -19,44 +26,31 @@ describe('MySQL:Database', function () {
     describe('#query()', function () {
 
       it('should throw an error when sql statement is invalid', function () {
-        assert.throws(function () { db.query(); }, /sql/i);
-        assert.throws(function () { db.query(1); }, /sql/i);
-        assert.throws(function () { db.query(true); }, /sql/i);
-        assert.throws(function () { db.query({}); }, /sql/i);
-        assert.throws(function () { db.query([]); }, /sql/i);
-        assert.throws(function () { db.query(null); }, /sql/i);
+        assert.isRejected(db.query(), /sql/i);
+        assert.isRejected(db.query(1), /sql/i);
+        assert.isRejected(db.query(true), /sql/i);
+        assert.isRejected(db.query({}), /sql/i);
+        assert.isRejected(db.query([]), /sql/i);
+        assert.isRejected(db.query(null), /sql/i);
       });
 
       it('should throw an error when params array is invalid', function () {
-        assert.throws(function () { db.query('SELECT 1;', 1); }, /invalid parameters/i);
-        assert.throws(function () { db.query('SELECT 1;', true); }, /invalid parameters/i);
-        assert.throws(function () { db.query('SELECT 1;', 'foo'); }, /invalid parameters/i);
-        assert.throws(function () { db.query('SELECT 1;', null); }, /invalid parameters/i);
+        assert.isRejected(db.query('SELECT 1;', 1), /parameters/i);
+        assert.isRejected(db.query('SELECT 1;', true), /parameters/i);
+        assert.isRejected(db.query('SELECT 1;', 'foo'), /parameters/i);
+        assert.isRejected(db.query('SELECT 1;', null), /parameters/i);
       });
 
       it('should throw an error when options is invalid', function () {
-        assert.throws(function () { db.query('SELECT 1;', [], 1); }, /invalid options/i);
-        assert.throws(function () { db.query('SELECT 1;', [], true); }, /invalid options/i);
-        assert.throws(function () { db.query('SELECT 1;', [], 'foo'); }, /invalid options/i);
-        assert.throws(function () { db.query('SELECT 1;', [], []); }, /invalid options/i);
-        assert.throws(function () { db.query('SELECT 1;', [], null); }, /invalid options/i);
+        assert.isRejected(db.query('SELECT 1;', [], 1), /options/i);
+        assert.isRejected(db.query('SELECT 1;', [], true), /options/i);
+        assert.isRejected(db.query('SELECT 1;', [], 'foo'), /options/i);
+        assert.isRejected(db.query('SELECT 1;', [], []), /options/i);
+        assert.isRejected(db.query('SELECT 1;', [], null), /options/i);
       });
 
-      it('should throw an error when callback is invalid', function () {
-        assert.throws(function () { db.query('SELECT 1;', [], {}, 1); }, /invalid callback/i);
-        assert.throws(function () { db.query('SELECT 1;', [], {}, true); }, /invalid callback/i);
-        assert.throws(function () { db.query('SELECT 1;', [], {}, 'foo'); }, /invalid callback/i);
-        assert.throws(function () { db.query('SELECT 1;', [], {}, []); }, /invalid callback/i);
-        assert.throws(function () { db.query('SELECT 1;', [], {}, {}); }, /invalid callback/i);
-        assert.throws(function () { db.query('SELECT 1;', [], {}, null); }, /invalid callback/i);
-      });
-
-      it('should return connection error on valid SQL statement', function (done) {
-        db.query('SELECT 1;', function (err) {
-          assert.isString(err);
-          assert.equal(err, 'Connection is closed - did you forget to call #connect()?');
-          done();
-        });
+      it('should return connection error on valid SQL statement', function () {
+        assert.isRejected(db.query('SELECT 1;'), 'Connection is closed - did you forget to call #connect()?');
       });
 
     });
