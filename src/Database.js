@@ -2,7 +2,7 @@ var events = require('events'),
   util = require('util'),
   _ = require('lodash'),
   Promise = require('bluebird'),
-  Collection = require('./Collection');
+  Table = require('./Table');
 
 /**
  * Constructs a new Database, i.e. an object representing a relational database.
@@ -219,29 +219,29 @@ Database.prototype.getTableMeta = function (table) {
 };
 
 /**
- * Returns a new data collection representing the designated table.
+ * Returns a new Table, extended with the supplied methods.
  * Please note: this function will not create a new table on database - it will merely reference an existing one.
- * @param {String} table the name of an existing table in database.
- * @param {Object} [props] the collection's custom properties.
- * TODO: Fix description
+ * @param {String} name the name of the table in database.
+ * @param {Object} [props] the table's custom methods and properties.
+ * @returns {Table}
  */
-Database.prototype.extend = function (table, props) {
-  var collection;
+Database.prototype.extend = function (name, props) {
+  var table;
 
-  // validate "table" param
-  if (typeof table !== 'string') {
+  // validate "name" param
+  if (typeof name !== 'string') {
     throw new Error('Invalid or unspecified table name');
   }
 
-  // create new collection
-  collection = new Collection(this, table);
+  // create new table
+  table = new Table(this, name);
 
   // extend with custom properties
   if (_.isPlainObject(props)) {
-    collection = _.extend(collection, props);
+    table = _.extend(table, props);
   }
 
-  return collection;
+  return table;
 };
 
 /**

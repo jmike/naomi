@@ -19,7 +19,7 @@ db = naomi.create('MYSQL', {
   database: process.env.DATABASE_SCHEMA
 });
 
-describe('MySQL:Collection', function () {
+describe('MySQL:Table', function () {
 
   describe('@connected', function () {
 
@@ -204,7 +204,7 @@ describe('MySQL:Collection', function () {
 
     });
 
-    describe('companies collection', function () {
+    describe('companies table', function () {
 
       var companies;
 

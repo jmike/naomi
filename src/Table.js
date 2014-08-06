@@ -2,14 +2,14 @@ var _ = require('lodash'),
   Promise = require('bluebird');
 
 /**
- * Constructs a new Collection, i.e. an object representing a relational database table.
+ * Constructs a new Table, i.e. an object representing a relational database table.
  * @param {Database} db a Naomi database instance.
- * @param {String} table the name of a table in database.
+ * @param {String} name the name of the table in database.
  * @constructor
  */
-function Collection(db, table) {
+function Table(db, name) {
   this.db = db;
-  this.table = table;
+  this.name = name;
 
   this.columns = {};
   this.primaryKey = [];
@@ -30,8 +30,8 @@ function Collection(db, table) {
  * Loads metadata from database.
  * @private
  */
-Collection.prototype._loadMeta = function () {
-  var meta = this.db.getTableMeta(this.table);
+Table.prototype._loadMeta = function () {
+  var meta = this.db.getTableMeta(this.name);
 
   if (meta) {
     this.columns = meta.columns;
@@ -42,15 +42,15 @@ Collection.prototype._loadMeta = function () {
 };
 
 /**
- * Indicates whether the specified column exists in the collection.
+ * Indicates whether the specified column exists in table
  * Please note: this method is meant to be called after the database is ready.
  * @param {String} column the name of the column.
  * @returns {Boolean}
  * @example
  *
- * collection.hasColumn('name');
+ * table('name');
  */
-Collection.prototype.hasColumn = function (column) {
+Table.prototype.hasColumn = function (column) {
   return this.columns.hasOwnProperty(column);
 };
 
@@ -62,9 +62,9 @@ Collection.prototype.hasColumn = function (column) {
  * @returns {Boolean}
  * @example
  *
- * collection.isPrimaryKey('id');
+ * table('id');
  */
-Collection.prototype.isPrimaryKey = function () {
+Table.prototype.isPrimaryKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0);
   return _.xor(this.primaryKey, columns).length === 0;
 };
@@ -77,9 +77,9 @@ Collection.prototype.isPrimaryKey = function () {
  * @returns {Boolean}
  * @example
  *
- * collection.isUniqueKey('pid');
+ * table('pid');
  */
-Collection.prototype.isUniqueKey = function () {
+Table.prototype.isUniqueKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0),
     verdict = false;
 
@@ -99,9 +99,9 @@ Collection.prototype.isUniqueKey = function () {
  * @returns {Boolean}
  * @example
  *
- * collection.isIndexKey('firstName', 'lastName');
+ * table('firstName', 'lastName');
  */
-Collection.prototype.isIndexKey = function () {
+Table.prototype.isIndexKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0),
     verdict = false;
 
@@ -121,7 +121,7 @@ Collection.prototype.isIndexKey = function () {
  * @throws {Error} if parameters are invalid.
  * @returns {Promise}
  */
-Collection.prototype.get = function (selector, options, callback) {
+Table.prototype.get = function (selector, options, callback) {
   var self = this,
     resolver;
 
@@ -156,8 +156,8 @@ Collection.prototype.get = function (selector, options, callback) {
     var query;
 
     // make sure table exists in database
-    if (!self.db.hasTable(self.table)) {
-      return reject('Table "' + self.table + '" cannot be found in database');
+    if (!self.db.hasTable(self.name)) {
+      return reject('Table "' + self.name + '" cannot be found in database');
     }
 
     // compile a parameterized SELECT query
@@ -194,7 +194,7 @@ Collection.prototype.get = function (selector, options, callback) {
  * @param {Function} [callback] an optional callback function i.e. function(err, records).
  * @returns {Promise}
  */
-Collection.prototype.getAll = function (options, callback) {
+Table.prototype.getAll = function (options, callback) {
   return this.get(null, options, callback);
 };
 
@@ -205,7 +205,7 @@ Collection.prototype.getAll = function (options, callback) {
  * @param {Function} [callback] an optional callback function i.e. function(err, count).
  * @returns {Promise}
  */
-Collection.prototype.count = function (selector, options, callback) {
+Table.prototype.count = function (selector, options, callback) {
   var self = this,
     resolver;
 
@@ -240,8 +240,8 @@ Collection.prototype.count = function (selector, options, callback) {
     var query;
 
     // make sure table exists in database
-    if (!self.db.hasTable(self.table)) {
-      return reject('Table "' + self.table + '" cannot be found in database');
+    if (!self.db.hasTable(self.name)) {
+      return reject('Table "' + self.name + '" cannot be found in database');
     }
 
     // compile a parameterized COUNT query
@@ -278,7 +278,7 @@ Collection.prototype.count = function (selector, options, callback) {
  * @param {Function} [callback] an optional callback function i.e. function(err, count).
  * @returns {Promise}
  */
-Collection.prototype.countAll = function (options, callback) {
+Table.prototype.countAll = function (options, callback) {
   return this.count(null, options, callback);
 };
 
@@ -288,7 +288,7 @@ Collection.prototype.countAll = function (options, callback) {
  * @param {Function} [callback] an optional callback function i.e. function(error, data).
  * @returns {Promise}
  */
-Collection.prototype.set = function (attrs, callback) {
+Table.prototype.set = function (attrs, callback) {
   var self = this,
     resolver;
 
@@ -298,8 +298,8 @@ Collection.prototype.set = function (attrs, callback) {
     var query;
 
     // make sure table exists in database
-    if (!self.db.hasTable(self.table)) {
-      return reject('Table "' + self.table + '" cannot be found in database');
+    if (!self.db.hasTable(self.name)) {
+      return reject('Table "' + self.name + '" cannot be found in database');
     }
 
     // compile an parameterized UPSERT query
@@ -336,7 +336,7 @@ Collection.prototype.set = function (attrs, callback) {
  * @param {Function} [callback] an optional callback function i.e. function(error, data).
  * @returns {Promise}
  */
-Collection.prototype.del = function (selector, options, callback) {
+Table.prototype.del = function (selector, options, callback) {
     var self = this,
     resolver;
 
@@ -370,8 +370,8 @@ Collection.prototype.del = function (selector, options, callback) {
     var query;
 
     // make sure table exists in database
-    if (!self.db.hasTable(self.table)) {
-      return reject('Table "' + self.table + '" cannot be found in database');
+    if (!self.db.hasTable(self.name)) {
+      return reject('Table "' + self.name + '" cannot be found in database');
     }
 
     // compile a parameterized DELETE query
@@ -407,7 +407,7 @@ Collection.prototype.del = function (selector, options, callback) {
 //  * @param {Boolean|Number|String|Date|Object|Array.<Object>} [selector] selector to match the record(s) in database.
 //  * @param {Function} callback a callback function i.e. function(error, data).
 //  */
-// Collection.prototype.getRelated = function (table, selector, callback) {
+// Table.prototype.getRelated = function (table, selector, callback) {
 //   var self = this,
 //     sql, params, path, whereClause;
 //
@@ -417,9 +417,9 @@ Collection.prototype.del = function (selector, options, callback) {
 //     return;
 //   }
 //
-//   // make sure collection table exists in db
-//   if (!this.db.hasTable(this.table)) return callback(
-//     new Error('Table "' + this.table + '" cannot be found in database')
+//   // make sure table exists in db
+//   if (!this.db.hasTable(this.name)) return callback(
+//     new Error('Table "' + this.name + '" cannot be found in database')
 //   );
 //
 //   // make sure related table exists in db
@@ -481,4 +481,4 @@ Collection.prototype.del = function (selector, options, callback) {
 //   this.db.query(sql, params, callback);
 // };
 
-module.exports = Collection;
+module.exports = Table;
