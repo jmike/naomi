@@ -179,25 +179,6 @@ QueryBuilder.prototype._compileOrderClause = function (order) {
   return sql.join(', ');
 };
 
-
-/**
- * Compiles and returns a SQL limit clause, based on the given limit.
- * @param {String|Number} limit a String or a Number representing a positive integer, e.g. '10' or 2.
- * @returns {Number}
- * @throws {Error} if limit is unspecified or invalid.
- * @private
- */
-QueryBuilder.prototype._compileLimitClause = function (limit) {
-  var n = parseInt(limit, 10);
-
-  if (n % 1 !== 0 || n < 1) {
-    throw new Error('Invalid limit expression - expecting a String or Number representing a positive integer');
-  }
-
-  return n;
-};
-
-
 /**
  * Compiles and returns a SQL offset clause, based on the given offset.
  * @param {String|Number} offset a String or a Number representing a non-negative integer, e.g. '10' or 2.

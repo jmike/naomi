@@ -42,27 +42,27 @@ Table.prototype._loadMeta = function () {
 };
 
 /**
- * Indicates whether the specified column exists in table
- * Please note: this method is meant to be called after the database is ready.
- * @param {String} column the name of the column.
+ * Indicates whether the specified column exists in table,
+ * This method will always return false until database is ready.
+ * @param {String} name the name of the column.
  * @returns {Boolean}
  * @example
  *
- * table('name');
+ * table.hasColumn('id');
  */
-Table.prototype.hasColumn = function (column) {
-  return this.columns.hasOwnProperty(column);
+Table.prototype.hasColumn = function (name) {
+  return this.columns.hasOwnProperty(name);
 };
 
 /**
  * Indicates whether the specified column(s) represent a primary key.
  * Primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function.
- * Please note: this method is meant to be called after the database is ready.
+ * This method will always return false until database is ready.
  * @param {...String} columns the name of the columns.
  * @returns {Boolean}
  * @example
  *
- * table('id');
+ * table.isPrimaryKey('id');
  */
 Table.prototype.isPrimaryKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0);
@@ -72,12 +72,12 @@ Table.prototype.isPrimaryKey = function () {
 /**
  * Indicates whether the specified column(s) represent a unique key.
  * Unique keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params.
- * Please note: this method is meant to be called after the database is ready.
+ * This method will always return false until database is ready.
  * @param {...String} columns the name of the columns.
  * @returns {Boolean}
  * @example
  *
- * table('pid');
+ * table.isUniqueKey('pid');
  */
 Table.prototype.isUniqueKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0),
@@ -94,12 +94,12 @@ Table.prototype.isUniqueKey = function () {
 /**
  * Indicates whether the specified column(s) represent an index key.
  * Index keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params.
- * Please note: this method is meant to be called after the database is ready.
+ * This method will always return false until database is ready.
  * @param {...String} columns the name of the columns.
  * @returns {Boolean}
  * @example
  *
- * table('firstName', 'lastName');
+ * table.isIndexKey('firstName', 'lastName');
  */
 Table.prototype.isIndexKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0),
@@ -111,6 +111,140 @@ Table.prototype.isIndexKey = function () {
   });
 
   return verdict;
+};
+
+/**
+ * Parses the given expression, as part of a selector, and returns an object to use in a SQL expression.
+ * @param {Object} expr an object with a single property, where key represents the operator.
+ * @returns {Object}
+ * @throws {Error} if selector is unspecified or invalid.
+ * @private
+ */
+Table.prototype._parseExpression = function (expr) {
+  var operators = ['=', '==', '===', '!=', '!==', '<>', '>', '>=', '<', '<=', '~'],
+    keys = Object.keys(expr);
+
+  if (keys.length !== 1) throw new Error('Invalid expression in selector: object must contain exactly one key-value property');
+  if (operators.indexOf(keys[0]) === -1) throw new Error('Unable to parse unknown operator "' + keys[0] + '"');
+
+  return expr;
+};
+
+/**
+ * Parses the given input and returns an object (or an array of objects) to use in a SQL where clause.
+ * @param Boolean|Number|String|Date|Object|Array.<Object>} selector
+ * @returns {Object|Array<Object>}
+ * @throws {Error} if selector is unspecified or invalid.
+ * @private
+ */
+Table.prototype._parseSelector = function (selector) {
+  var obj = {};
+
+  if (_.isPlainObject(selector)) { // standard selector type
+    _.forOwn(selector, function (v, k) {
+      if (!this.hasColumn(k)) throw new Error('Column "' + k + '" cannot not be found in table "' + this.name + '"');
+
+      if (_.isPlainObject(v)) {
+        selector[k] = this._parseExpression(v);
+      }
+    }, this);
+
+    return selector;
+  }
+
+  if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) { // plain value selector
+    if (this.primaryKey.length !== 1) throw new Error('Primary key is compound or non existent, thus Boolean, Number, String and Date selectors are useless');
+
+    obj[this.collection.primaryKey[0]] = selector;
+
+    return obj;
+  }
+
+  if (_.isArray(selector)) {
+    return selector.map(function (e) {
+      return this._parseSelector(e);
+    }, this);
+  }
+
+  throw new Error('Invalid or unspecified selector param');
+};
+
+/**
+ * Parses the given input and returns an object (or an array of objects) to use in a SQL order clause.
+ * @param {String|Object|Array<Object>} order the order input, e.g. 'name', {'name': 'desc'}, [{'name': 'desc'}, 'id'].
+ * @returns {Object|Array<Object>}
+ * @throws {Error} if order is unspecified or invalid.
+ * @private
+ */
+Table.prototype._parseOrder = function (order) {
+  var re = /^(asc|desc)$/i,
+    keys, k, v;
+
+  if (_.isPlainObject(order)) { // standard format
+    keys = Object.keys(order);
+
+    if (keys.length !== 1) throw new Error('Invalid order parameter: object must contain exactly one key-value property');
+
+    k = keys[0];
+    v = order[k];
+
+    if (!this.hasColumn(k)) throw new Error('Column "' + k + '" cannot be found in table "' + this.name + '"');
+    if (!re.test(v)) throw new Error('Value in order expression should match either "asc" or "desc"');
+
+    return order;
+  }
+
+  if (_.isString(order)) {
+    k = order;
+    v = 'asc'; // set value to 'asc' by default
+
+    order = {}; // reset order
+    order[k] = v;
+
+    return this._parseOrder(order);
+  }
+
+  if (_.isArray(order)) {
+    return order.map(function (e) {
+      return this._parseOrder(e);
+    }, this);
+  }
+
+  throw new Error('Invalid or unspecified order parameter');
+};
+
+/**
+ * Parses the given input and returns a number to use in a SQL limit clause.
+ * @param {String|Number} limit a String or a Number representing a positive integer, e.g. '10' or 2.
+ * @return {Number}
+ * @throws {Error} if limit is unspecified or invalid.
+ * @private
+ */
+Table.prototype._parseLimit = function (limit) {
+  var n = parseInt(limit, 10);
+
+  if (n % 1 !== 0 || n < 1) {
+    throw new Error('Invalid or unspecified limit param: expecting a String or Number representing a positive integer');
+  }
+
+  return n;
+};
+
+/**
+ * Parses the given input and returns a number to use in a SQL offset clause.
+ * @param {String|Number} offset a String or a Number representing a non-negative integer, e.g. '10' or 2.
+ * @returns {Number}
+ * @throws {Error} if offset is unspecified or invalid.
+ * @private
+ */
+Table.prototype._parseOffset = function (offset) {
+  var n = parseInt(offset, 10);
+
+  if (n % 1 !== 0 || n < 0) {
+    throw new Error('Invalid or unspecified offset param: expecting a String or Number representing a non-negative integer');
+  }
+
+  return n;
 };
 
 /**
