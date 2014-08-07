@@ -16,7 +16,7 @@ function Table(db, name) {
   this.uniqueKeys = {};
   this.indexKeys = {};
 
-  this.queryBuilder = new db.engine.QueryBuilder(this);
+  this.queryBuilder = new db._engine.QueryBuilder(this);
 
   db.on('ready', function () {
     this._loadMeta();

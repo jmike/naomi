@@ -14,8 +14,8 @@ var events = require('events'),
  * @constructor
  */
 function Database(engine) {
-  this.engine = engine;
-  this.tables = {};
+  this._engine = engine;
+  this._tables = {};
   this.isConnected = false;
   this.isReady = false;
 
@@ -28,7 +28,7 @@ function Database(engine) {
     this._fetchMeta()
       .bind(this)
       .then(function (tables) {
-        this.tables = tables;
+        this._tables = tables;
         this.isReady = true;
         this.emit('ready');
       });
@@ -49,7 +49,7 @@ Database.prototype.connect = function (callback) {
     return Promise.resolve().nodeify(callback);
   }
 
-  return this.engine.connect()
+  return this._engine.connect()
     .bind(this)
     .then(function () {
       this.isConnected = true;
@@ -71,7 +71,7 @@ Database.prototype.disconnect = function (callback) {
     return Promise.resolve().nodeify(callback);
   }
 
-  this.engine.disconnect()
+  this._engine.disconnect()
     .bind(this)
     .then(function () {
       this.isConnected = false;
@@ -129,7 +129,7 @@ Database.prototype.query = function (sql, params, options, callback) {
   }
 
   // run the query
-  return this.engine.query(sql, params, options).nodeify(callback);
+  return this._engine.query(sql, params, options).nodeify(callback);
 };
 
 /**
@@ -139,10 +139,10 @@ Database.prototype.query = function (sql, params, options, callback) {
  */
 Database.prototype._fetchMeta = function () {
   return Promise.props({
-    tables: this.engine.getTables(),
-    columns: this.engine.getColumns(),
-    indices: this.engine.getIndices(),
-    foreignKeys: this.engine.getForeignKeys()
+    tables: this._engine.getTables(),
+    columns: this._engine.getColumns(),
+    indices: this._engine.getIndices(),
+    foreignKeys: this._engine.getForeignKeys()
   }).then(function(result) {
     var tables = {};
 
@@ -200,12 +200,12 @@ Database.prototype._fetchMeta = function () {
 
 /**
  * Indicates whether the designated table exists in database.
- * Please note: this method is meant to be called after the database is ready.
- * @param {String} table the name of the table.
+ * This method will always return false until database is ready.
+ * @param {String} tableName the name of the table.
  * @returns {Boolean}
  */
-Database.prototype.hasTable = function (table) {
-  return this.isReady && this.tables.hasOwnProperty(table);
+Database.prototype.hasTable = function (tableName) {
+  return this.isReady && this._tables.hasOwnProperty(tableName);
 };
 
 /**
@@ -215,7 +215,7 @@ Database.prototype.hasTable = function (table) {
  * @returns {Object|Null}
  */
 Database.prototype.getTableMeta = function (table) {
-  return this.tables[table] || null;
+  return this._tables[table] || null;
 };
 
 /**
@@ -260,7 +260,7 @@ Database.prototype.findPath = function (tableA, tableB, path, solutions) {
 
   // main logic (this is Sparta)
   if (_.last(path) !== tableB) { // are we there yet?
-    _.forOwn(this.tables[tableA].related, function (columns, table) {
+    _.forOwn(this._tables[tableA].related, function (columns, table) {
       var arr = path.slice(0);
 
       if (arr.indexOf(table) === -1) { // avoid running in circles
