@@ -1,11 +1,16 @@
 var mysql = require('mysql'),
   _ = require('lodash'),
   Promise = require('bluebird'),
-  QueryBuilder = require('./QueryBuilder');
+  QueryBuilder = require('./mysql/QueryBuilder');
 
 /**
- * Constructs a new MySQL Engine, i.e. a handy MySQL client.
+ * Constructs a new MySQL database Engine.
  * @param {Object} options connection options.
+ * @param {String} options.host the hostname of the database.
+ * @param {String|Number} options.port the port number of the database.
+ * @param {String} options.user the user to authenticate to the database.
+ * @param {String} options.password the password of the user.
+ * @param {String} options.database the name of the database, a.k.a. the schema.
  * @see {@link https://github.com/felixge/node-mysql#connection-options} for a list of connection options to use.
  * @constructor
  */
@@ -13,23 +18,25 @@ function Engine(options) {
   this._options = options;
 }
 
-// expose query builder as an Engine property
-Engine.prototype.QueryBuilder = QueryBuilder;
+/**
+ * Returns a query builder object to easily compose common MySQL queries.
+ * @returns {QueryBuilder}
+ */
+Engine.prototype.getQueryBuilder = function () {
+  return QueryBuilder;
+};
 
 /**
  * Connects to database using the connection options given at construction time.
  * @returns {Promise}
  */
 Engine.prototype.connect = function () {
-  var self = this,
-    resolver;
+  var self = this;
 
-  resolver = function (resolve) {
+  return Promise.try(function () {
     self._pool = mysql.createPool(self._options);
-    resolve();
-  };
-
-  return new Promise(resolver);
+    return;
+  });
 };
 
 /**
@@ -56,7 +63,8 @@ Engine.prototype.disconnect = function () {
  * Runs the given SQL statement to the database.
  * @param {String} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
- * @param {Object} options query options, i.e. {nestTables: true} to handle overlapping column names.
+ * @param {Object} options query options.
+ * @param {Boolean} [options.nestTables=false] set to true to handle overlapping column names.
  * @returns {Promise}
  */
 Engine.prototype.query = function (sql, params, options) {
@@ -79,19 +87,17 @@ Engine.prototype.query = function (sql, params, options) {
 
         connection.release(); // always
 
-        if (err) {
-          reject(err);
+        if (err) return reject(err);
 
-        } else if (_.isArray(records)) { // SELECT statement
-          resolve(records);
+        if (_.isArray(records)) return resolve(records); // SELECT statement
 
-        } else { // DML statement
-          data = {
-            insertId: records.insertId,
-            affectedRows: records.affectedRows
-          };
-          resolve(data);
-        }
+        // DML statement
+        data = {
+          insertId: records.insertId,
+          affectedRows: records.affectedRows
+        };
+
+        resolve(data);
 
       });
     });
@@ -101,7 +107,7 @@ Engine.prototype.query = function (sql, params, options) {
 };
 
 /**
- * Retrieves tables in database.
+ * Retrieves tables from database.
  * @returns {Promise}
  */
 Engine.prototype.getTables = function () {
@@ -121,7 +127,7 @@ Engine.prototype.getTables = function () {
 };
 
 /**
- * Retrieves columns in database.
+ * Retrieves columns from database.
  * @returns {Promise}
  */
 Engine.prototype.getColumns = function () {
@@ -148,7 +154,7 @@ Engine.prototype.getColumns = function () {
 };
 
 /**
- * Returns indices in database.
+ * Retrieves indices from database.
  * @returns {Promise}
  */
 Engine.prototype.getIndices = function () {
@@ -171,7 +177,7 @@ Engine.prototype.getIndices = function () {
 };
 
 /**
- * Returns foreign keys in database.
+ * Retrieves foreign keys from database.
  * @returns {Promise}
  */
 Engine.prototype.getForeignKeys = function () {

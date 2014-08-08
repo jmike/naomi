@@ -28,7 +28,7 @@ function loadFiles(directory) {
 // init mocha
 mocha = new Mocha({
   reporter: 'spec',
-  timeout: 500 // 10 secs
+  timeout: 10000 // 10 secs
 });
 
 // load the test files

@@ -259,19 +259,6 @@ Table.prototype.get = function (selector, options, callback) {
   var self = this,
     resolver;
 
-  // validate "selector" param
-  if (
-    !_.isBoolean(selector) &&
-    !_.isNumber(selector) &&
-    !_.isString(selector) &&
-    !_.isPlainObject(selector) &&
-    !_.isArray(selector) &&
-    !_.isDate(selector) &&
-    !_.isNull(selector)
-  ) {
-    return Promise.reject('Invalid or unspecified selector param').nodeify(callback);
-  }
-
   // handle optional "options" param
   if (!_.isPlainObject(options)) {
 
@@ -296,7 +283,12 @@ Table.prototype.get = function (selector, options, callback) {
 
     // compile a parameterized SELECT query
     try {
-      query = self.queryBuilder.compileSelectSQL(selector, options);
+      query = new self.QueryBuilder(self).select()
+        .where(self._parseSelector(selector))
+        .orderBy(self._parseOrder(options.order))
+        .limit(self._parseLimit(options.limit))
+        .offset(self._parseOffset(options.offset))
+        .compile();
     } catch (err) {
       return reject(err.message);
     }
@@ -343,19 +335,6 @@ Table.prototype.count = function (selector, options, callback) {
   var self = this,
     resolver;
 
-  // validate "selector" param
-  if (
-    !_.isBoolean(selector) &&
-    !_.isNumber(selector) &&
-    !_.isString(selector) &&
-    !_.isPlainObject(selector) &&
-    !_.isArray(selector) &&
-    !_.isDate(selector) &&
-    !_.isNull(selector)
-  ) {
-    return Promise.reject('Invalid or unspecified selector param').nodeify(callback);
-  }
-
   // handle optional "options" param
   if (!_.isPlainObject(options)) {
 
@@ -380,7 +359,12 @@ Table.prototype.count = function (selector, options, callback) {
 
     // compile a parameterized COUNT query
     try {
-      query = self.queryBuilder.compileCountSQL(selector, options);
+      query = new self.QueryBuilder(self).count()
+        .where(self._parseSelector(selector))
+        .orderBy(self._parseOrder(options.order))
+        .limit(self._parseLimit(options.limit))
+        .offset(self._parseOffset(options.offset))
+        .compile();
     } catch (err) {
       return reject(err.message);
     }
@@ -438,7 +422,9 @@ Table.prototype.set = function (attrs, callback) {
 
     // compile an parameterized UPSERT query
     try {
-     query = self.queryBuilder.compileUpsertSQL(attrs);
+     query = new self.QueryBuilder(self).upsert()
+        .value(attrs)
+        .compile();
     } catch (err) {
       return reject(err.message);
     }
@@ -474,18 +460,6 @@ Table.prototype.del = function (selector, options, callback) {
     var self = this,
     resolver;
 
-  // validate "selector" param
-  if (
-    !_.isBoolean(selector) &&
-    !_.isNumber(selector) &&
-    !_.isString(selector) &&
-    !_.isPlainObject(selector) &&
-    !_.isArray(selector) &&
-    !_.isDate(selector)
-  ) {
-    return Promise.reject('Invalid or unspecified selector param').nodeify(callback);
-  }
-
   // handle optional "options" param
   if (!_.isPlainObject(options)) {
 
@@ -510,7 +484,11 @@ Table.prototype.del = function (selector, options, callback) {
 
     // compile a parameterized DELETE query
     try {
-      query = self.queryBuilder.compileDeleteSQL(selector, options);
+      query = new self.QueryBuilder(self).del()
+        .where(self._parseSelector(selector))
+        .orderBy(self._parseOrder(options.order))
+        .limit(self._parseLimit(options.limit))
+        .compile();
     } catch (err) {
       return reject(err.message);
     }

@@ -210,22 +210,22 @@ Database.prototype.hasTable = function (tableName) {
 
 /**
  * Returns the designated table's metadata.
- * Please note: this method is meant to be called after the database is ready.
- * @param {String} table the name of the table.
- * @returns {Object|Null}
+ * This method will always return null until database is ready.
+ * @param {String} tableName the name of the table.
+ * @returns {Object|null}
  */
-Database.prototype.getTableMeta = function (table) {
-  return this._tables[table] || null;
+Database.prototype.getTableMeta = function (tableName) {
+  return this._tables[tableName] || null;
 };
 
 /**
- * Returns a new Table, extended with the supplied methods.
- * Please note: this function will not create a new table on database - it will merely reference an existing one.
+ * Returns a new Table, extended with the given properties and methods.
+ * This function will not create a new table on database - it will merely reference an existing one.
  * @param {String} name the name of the table in database.
- * @param {Object} [props] the table's custom methods and properties.
+ * @param {Object} [customProperties] the table's custom properties and methods.
  * @returns {Table}
  */
-Database.prototype.extend = function (name, props) {
+Database.prototype.extend = function (name, customProperties) {
   var table;
 
   // validate "name" param
@@ -237,8 +237,8 @@ Database.prototype.extend = function (name, props) {
   table = new Table(this, name);
 
   // extend with custom properties
-  if (_.isPlainObject(props)) {
-    table = _.extend(table, props);
+  if (_.isPlainObject(customProperties)) {
+    table = _.extend(table, customProperties);
   }
 
   return table;
