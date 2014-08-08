@@ -43,7 +43,6 @@ describe('Postgres database engine', function () {
         assert.property(meta, 'employees');
         assert.property(meta.employees, 'columns');
         assert.property(meta.employees.columns, 'id');
-        assert.property(meta.employees.columns.id, 'type');
         assert.isString(meta.employees.columns.id.type);
         assert.isNumber(meta.employees.columns.id.position);
         assert.isBoolean(meta.employees.columns.id.isNullable);

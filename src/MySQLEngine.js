@@ -63,13 +63,15 @@ Engine.prototype.disconnect = function () {
  * Runs the given SQL statement to the database.
  * @param {String} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
- * @param {Object} options query options.
- * @param {Boolean} [options.nestTables=false] set to true to handle overlapping column names.
+ * @param {Object} [options] query options.
+ * @param {Boolean} options.nestTables set to true to handle overlapping column names.
  * @returns {Promise}
  */
 Engine.prototype.query = function (sql, params, options) {
   var self = this,
     resolver;
+
+  options = options || {};
 
   resolver = function (resolve, reject) {
     self._pool.getConnection(function (err, connection) {
@@ -85,20 +87,21 @@ Engine.prototype.query = function (sql, params, options) {
       connection.query(sql, params, function(err, records) {
         var data;
 
-        connection.release(); // always
+        connection.release(); // release the connection or the sky will fall on your head
 
         if (err) return reject(err);
 
-        if (_.isArray(records)) return resolve(records); // SELECT statement
+        if (_.isArray(records)) { // SELECT statement
+          resolve(records);
 
-        // DML statement
-        data = {
-          insertId: records.insertId,
-          affectedRows: records.affectedRows
-        };
+        } else { // DML statement
+          data = {
+            insertId: records.insertId,
+            affectedRows: records.affectedRows
+          };
 
-        resolve(data);
-
+          resolve(data);
+        }
       });
     });
   };
@@ -107,10 +110,121 @@ Engine.prototype.query = function (sql, params, options) {
 };
 
 /**
+ * Retrieves meta-data from database.
+ * @returns {Promise}
+ *
+ * @example
+ * {
+ *   table1: {
+ *     columns: {
+ *       column1: {
+ *         type: "",
+ *         position: 1,
+ *         isNullable: true
+ *       },
+ *       column2: {..},
+ *       column3: {..}
+ *     },
+ *     primaryKey: ["column1", "column2"],
+ *     uniqueKeys: {
+ *       uniqueKey1: ["column2", "column3"]
+ *     },
+ *     indexKeys: {
+ *       indexKey1: ["column2", "column3"]
+ *     },
+ *     refTables: {
+ *       table2: [
+ *         {
+ *           column: "column1",
+ *           refColumn: "table2Column1"
+ *         },
+ *         {
+ *           column: "column2",
+ *           refColumn: "table2Column2"
+ *         }
+ *       ]
+ *     }
+ *   }
+ * }
+ */
+Engine.prototype.getMetaData = function () {
+  return Promise.props({
+    tables: this._getTables(),
+    columns: this._getColumns(),
+    indices: this._getIndices(),
+    foreignKeys: this._getForeignKeys()
+  }).then(function(result) {
+    var meta = {};
+
+    // add tables + empty properties
+    result.tables.forEach(function (table) {
+      meta[table] = {
+        columns: {},
+        primaryKey: [],
+        uniqueKeys: {},
+        indexKeys: {},
+        refTables: {}
+      };
+    });
+
+    // set columns in table(s)
+    result.columns.forEach(function (column) {
+      var table = meta[column.table];
+
+      table.columns[column.name] = {
+        type: column.type,
+        position: column.position,
+        isNullable: column.isNullable
+      };
+    });
+
+    // set indices in table(s)
+    result.indices.forEach(function (index) {
+      var table = meta[index.table];
+
+      if (index.key === 'PRIMARY') {
+        table.primaryKey.push(index.column);
+
+      } else if (index.isUnique) {
+        table.uniqueKeys[index.key] = table.uniqueKeys[index.key] || [];
+        table.uniqueKeys[index.key].push(index.column);
+
+      } else {
+        table.indexKeys[index.key] = table.indexKeys[index.key] || [];
+        table.indexKeys[index.key].push(index.column);
+      }
+    });
+
+    // set foreign keys in table(s)
+    result.foreignKeys.forEach(function (foreignKey) {
+      var table = meta[foreignKey.table];
+
+      table.refTables[foreignKey.refTable] = table.refTables[foreignKey.refTable] || [];
+      table.refTables[foreignKey.refTable].push({
+        column: foreignKey.column,
+        refColumn: foreignKey.refColumn
+      });
+
+      // do the other side of the relation
+      table = meta[foreignKey.refTable];
+
+      table.refTables[foreignKey.table] = table.refTables[foreignKey.table] || [];
+      table.refTables[foreignKey.table].push({
+        column: foreignKey.refColumn,
+        refColumn: foreignKey.column
+      });
+    });
+
+    return meta;
+  });
+};
+
+/**
  * Retrieves tables from database.
  * @returns {Promise}
+ * @private
  */
-Engine.prototype.getTables = function () {
+Engine.prototype._getTables = function () {
   var schema = this._options.database,
     sql, params;
 
@@ -129,15 +243,15 @@ Engine.prototype.getTables = function () {
 /**
  * Retrieves columns from database.
  * @returns {Promise}
+ * @private
  */
-Engine.prototype.getColumns = function () {
-  var schema = this._options.database,
-    sql, params;
+Engine.prototype._getColumns = function () {
+  var sql, params;
 
   sql = 'SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ?;';
-  params = [schema];
+  params = [this._options.database];
 
-  return this.query(sql, params, {}).then(function (records) {
+  return this.query(sql, params).then(function (records) {
     return records.map(function (record) {
       return {
         name: record.COLUMN_NAME,
@@ -146,7 +260,7 @@ Engine.prototype.getColumns = function () {
         isNullable: record.IS_NULLABLE === 'YES',
         default: record.COLUMN_DEFAULT,
         collation: record.COLLATION_NAME,
-        comment: _.isEmpty(record.COLUMN_COMMENT) ? null : record.COLUMN_COMMENT,
+        comment: record.COLUMN_COMMENT === '' ? null : record.COLUMN_COMMENT,
         position: record.ORDINAL_POSITION - 1 // zero-indexed
       };
     });
@@ -156,13 +270,13 @@ Engine.prototype.getColumns = function () {
 /**
  * Retrieves indices from database.
  * @returns {Promise}
+ * @private
  */
-Engine.prototype.getIndices = function () {
-  var schema = this._options.database,
-    sql, params;
+Engine.prototype._getIndices = function () {
+  var sql, params;
 
   sql = 'SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE table_schema = ?;';
-  params = [schema];
+  params = [this._options.database];
 
   return this.query(sql, params, {}).then(function (records) {
     return records.map(function (record) {
@@ -179,8 +293,9 @@ Engine.prototype.getIndices = function () {
 /**
  * Retrieves foreign keys from database.
  * @returns {Promise}
+ * @private
  */
-Engine.prototype.getForeignKeys = function () {
+Engine.prototype._getForeignKeys = function () {
   var schema = this._options.database,
     sql, params;
 
