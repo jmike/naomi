@@ -1,7 +1,7 @@
 var chai = require('chai'),
   naomi = require('../src/naomi'),
   MySQLEngine = require('../src/MySQLEngine'),
-  // PostgresEngine = require('../src/PostgresEngine'),
+  PostgresEngine = require('../src/PostgresEngine'),
   assert = chai.assert;
 
 describe('naomi', function () {
@@ -39,10 +39,10 @@ describe('naomi', function () {
       assert.instanceOf(db._engine, MySQLEngine);
     });
 
-    // it('returns a new POSTGRES Database', function () {
-    //   var db = naomi.create('POSTGRES');
-    //   assert.instanceOf(db._engine, PostgresEngine);
-    // });
+    it('returns a new POSTGRES Database when "postgres" type is specified', function () {
+      var db = naomi.create('postgres');
+      assert.instanceOf(db._engine, PostgresEngine);
+    });
 
   });
 

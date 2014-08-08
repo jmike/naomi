@@ -15,7 +15,8 @@ var events = require('events'),
  */
 function Database(engine) {
   this._engine = engine;
-  this._tables = {};
+  this._meta = {};
+
   this.isConnected = false;
   this.isReady = false;
 
@@ -25,10 +26,10 @@ function Database(engine) {
   this.on('connect', function () {
     if (this.isReady) return; // exit
 
-    this._fetchMeta()
+    engine.getMetaData()
       .bind(this)
-      .then(function (tables) {
-        this._tables = tables;
+      .then(function (meta) {
+        this._meta = meta;
         this.isReady = true;
         this.emit('ready');
       });
@@ -40,7 +41,7 @@ util.inherits(Database, events.EventEmitter);
 
 /**
  * Attempts to connect to the database server.
- * @param {Function} [callback] an optional callback function, i.e. function (err).
+ * @param {Function} [callback] an optional callback function, i.e. function (err) {}.
  * @returns {Promise}
  * @emits Database#connect
  */
@@ -61,8 +62,8 @@ Database.prototype.connect = function (callback) {
 
 /**
  * Gracefully closes any connection to the database server.
- * The database will become practically useless after calling this method.
- * @param {Function} [callback] an optional callback function, i.e. function (err).
+ * The instance will become practically useless after calling this method.
+ * @param {Function} [callback] an optional callback function, i.e. function (err) {}.
  * @returns {Promise}
  * @emits Database#disconnect
  */
@@ -133,89 +134,23 @@ Database.prototype.query = function (sql, params, options, callback) {
 };
 
 /**
- * Extracts and returns metadata from database server.
- * @returns {Promise}
- * @private
- */
-Database.prototype._fetchMeta = function () {
-  return Promise.props({
-    tables: this._engine.getTables(),
-    columns: this._engine.getColumns(),
-    indices: this._engine.getIndices(),
-    foreignKeys: this._engine.getForeignKeys()
-  }).then(function(result) {
-    var tables = {};
-
-    // init tables object
-    result.tables.forEach(function (table) {
-      tables[table] = {
-        columns: {},
-        primaryKey: [],
-        uniqueKeys: {},
-        indexKeys: {},
-        related: {}
-      };
-    });
-
-    // set columns in table(s)
-    result.columns.forEach(function (column) {
-      var table = tables[column.table];
-      table.columns[column.name] = column;
-    });
-
-    // set indices in table(s)
-    result.indices.forEach(function (index) {
-      var table = tables[index.table];
-
-      if (index.key === 'PRIMARY') {
-        table.primaryKey.push(index.column);
-
-      } else if (index.isUnique) {
-        table.uniqueKeys[index.key] = table.uniqueKeys[index.key] || [];
-        table.uniqueKeys[index.key].push(index.column);
-
-      } else {
-        table.indexKeys[index.key] = table.indexKeys[index.key] || [];
-        table.indexKeys[index.key].push(index.column);
-      }
-    });
-
-    // set foreign keys in table(s)
-    result.foreignKeys.forEach(function (foreignKey) {
-      var table = tables[foreignKey.table];
-
-      table.related[foreignKey.refTable] = table.related[foreignKey.refTable] || {};
-      table.related[foreignKey.refTable][foreignKey.refColumn] = foreignKey.column;
-
-      // do the other side of the relation
-      table = tables[foreignKey.refTable];
-
-      table.related[foreignKey.table] = table.related[foreignKey.table] || {};
-      table.related[foreignKey.table][foreignKey.column] = foreignKey.refColumn;
-    });
-
-    return tables;
-  });
-};
-
-/**
  * Indicates whether the designated table exists in database.
- * This method will always return false until database is ready.
+ * This method will always return false until the database is ready.
  * @param {String} tableName the name of the table.
  * @returns {Boolean}
  */
 Database.prototype.hasTable = function (tableName) {
-  return this.isReady && this._tables.hasOwnProperty(tableName);
+  return this.isReady && this._meta.hasOwnProperty(tableName);
 };
 
 /**
  * Returns the designated table's metadata.
- * This method will always return null until database is ready.
+ * This method will always return null until the database is ready.
  * @param {String} tableName the name of the table.
  * @returns {Object|null}
  */
 Database.prototype.getTableMeta = function (tableName) {
-  return this._tables[tableName] || null;
+  return this._meta[tableName] || null;
 };
 
 /**
@@ -260,7 +195,7 @@ Database.prototype.findPath = function (tableA, tableB, path, solutions) {
 
   // main logic (this is Sparta)
   if (_.last(path) !== tableB) { // are we there yet?
-    _.forOwn(this._tables[tableA].related, function (columns, table) {
+    _.forOwn(this._meta[tableA].related, function (columns, table) {
       var arr = path.slice(0);
 
       if (arr.indexOf(table) === -1) { // avoid running in circles
