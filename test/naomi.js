@@ -39,7 +39,7 @@ describe('naomi', function () {
       assert.instanceOf(db._engine, MySQLEngine);
     });
 
-    it('returns a new POSTGRES Database when "postgres" type is specified', function () {
+    it('returns a new Postgres Database when "postgres" type is specified', function () {
       var db = naomi.create('postgres');
       assert.instanceOf(db._engine, PostgresEngine);
     });
