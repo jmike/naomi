@@ -2,30 +2,63 @@ var events = require('events'),
   util = require('util'),
   _ = require('lodash'),
   Promise = require('bluebird'),
+  MySQLEngine = require('./MySQLEngine'),
+  PostgresEngine = require('./PostgresEngine'),
   Table = require('./Table');
 
 /**
- * Constructs a new Database, i.e. an object representing a relational database.
- * @param {Engine} engine a Naomi engine instance.
- * @extends {EventEmitter}
- * @emits Database#connect when connected to the database server.
- * @emits Database#disconnect when disconnected from the database server.
- * @emits Database#ready when metadata have been loaded.
- * @constructor
+ * Constructs a new database of the designated type.
+ * Please note that additional connection options may apply depending on the database type.
+ * @see {@link https://github.com/felixge/node-mysql#connection-options} for MySQL options.
+ * @see {@link https://github.com/brianc/node-postgres/wiki/Client#constructor} for Postgres options.
+ * @param {String} type the database type, i.e. 'mysql', 'postgres'.
+ * @param {Object} [options] connection options.
+ * @param {String} [options.host] the hostname of the database.
+ * @param {String|Number} [options.port] the port number of the database.
+ * @param {String} [options.user] the user to authenticate to the database.
+ * @param {String} [options.password] the password of the user.
+ * @param {String} [options.database] the name of the database.
+ * @returns {Database}
+ * @throws {Error} if params are invalid or unspecified.
+ * @static
  */
-function Database(engine) {
-  this._engine = engine;
-  this._meta = {};
+function Database(type, options) {
+  var engine;
 
+  // handle "type" param
+  if (_.isString(type)) {
+    type = type.toLowerCase();
+  } else {
+    throw new Error('Invalid or unspecified database type');
+  }
+
+  // handle optional "options" param
+  if (_.isUndefined(options)) {
+    options = {};
+  } else if (!_.isPlainObject(options)) {
+    throw new Error('Invalid database options: expected a plain object, received ' + typeof(options));
+  }
+
+  // init database engine
+  if (type === 'mysql') {
+    engine = new MySQLEngine(options);
+  } else if (type === 'postgres') {
+    engine = new PostgresEngine(options);
+  } else {
+    throw new Error('Unknown database type: expected one of "mysql" or "postgres", received "' + type + '"');
+  }
+
+  this.type = type;
   this.isConnected = false;
   this.isReady = false;
+  this._engine = engine;
+  this._meta = {};
 
   events.EventEmitter.call(this);
   this.setMaxListeners(99);
 
+  // loads metadata from database server
   this.on('connect', function () {
-    if (this.isReady) return; // exit
-
     engine.getMetaData()
       .bind(this)
       .then(function (meta) {

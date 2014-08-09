@@ -10,23 +10,24 @@ describe('naomi', function () {
 
     it('throws an error when database type is unspecified', function () {
       assert.throws(function () {
-        naomi.create('');
+        naomi.create();
       }, /invalid or unspecified database type/i);
     });
 
     it('throws an error when database type is invalid', function () {
-      assert.throws(function () {
-        naomi.create('invalid');
-      }, /invalid or unspecified database type/i);
-      assert.throws(function () {
-        naomi.create(123);
-      }, /invalid or unspecified database type/i);
-      assert.throws(function () {
-        naomi.create(false);
-      }, /invalid or unspecified database type/i);
-      assert.throws(function () {
-        naomi.create({});
-      }, /invalid or unspecified database type/i);
+      assert.throws(function () { naomi.create('invalid'); }, /unknown database type/i);
+    });
+
+    it('throws an error when database type is Number', function () {
+      assert.throws(function () { naomi.create(123); }, /invalid or unspecified database type/i);
+    });
+
+    it('throws an error when database type is Boolean', function () {
+      assert.throws(function () { naomi.create(false); }, /invalid or unspecified database type/i);
+    });
+
+    it('throws an error when database type is Object', function () {
+      assert.throws(function () { naomi.create({}); }, /invalid or unspecified database type/i);
     });
 
     it('returns a new MySQL Database when "mysql" type is specified', function () {
