@@ -90,13 +90,6 @@ describe('Database', function () {
         });
       });
 
-      it('throws an error when params array is null', function (done) {
-        db.query('SELECT 1;', null).catch(function (err) {
-          assert.match(err, /parameters/i);
-          done();
-        });
-      });
-
       it('throws an error when options is Number', function (done) {
         db.query('SELECT 1;', [], 1).catch(function (err) {
           assert.match(err, /options/i);
@@ -171,7 +164,7 @@ describe('Database', function () {
 
     describe('#isReady', function () {
 
-      it('is false by default', function () {
+      it('returns false', function () {
         assert.strictEqual(db.isReady, false);
       });
 
@@ -179,7 +172,7 @@ describe('Database', function () {
 
     describe('#isConnected', function () {
 
-      it('is false by default', function () {
+      it('returns false', function () {
         assert.strictEqual(db.isConnected, false);
       });
 
