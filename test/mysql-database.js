@@ -27,6 +27,39 @@ describe('MySQL Database', function () {
       db.disconnect(done);
     });
 
+    it('has valid metadata', function () {
+      var meta = db._meta;
+      assert.isObject(meta);
+      assert.property(meta, 'employees');
+      assert.property(meta.employees, 'columns');
+      assert.property(meta.employees.columns, 'id');
+      assert.isString(meta.employees.columns.id.type);
+      assert.isNumber(meta.employees.columns.id.position);
+      assert.isBoolean(meta.employees.columns.id.isNullable);
+      assert.property(meta.employees.columns, 'firstname');
+      assert.property(meta.employees.columns, 'lastname');
+      assert.property(meta.employees.columns, 'age');
+      assert.property(meta.employees.columns, 'country_id');
+      assert.isArray(meta.employees.primaryKey);
+      assert.lengthOf(meta.employees.primaryKey, 1);
+      assert.strictEqual(meta.employees.primaryKey[0], 'id');
+      assert.isObject(meta.employees.uniqueKeys);
+      assert.property(meta.employees.uniqueKeys, 'unique_idx');
+      assert.isArray(meta.employees.uniqueKeys.unique_idx);
+      assert.lengthOf(meta.employees.uniqueKeys.unique_idx, 2);
+      assert.include(meta.employees.uniqueKeys.unique_idx, 'firstname');
+      assert.include(meta.employees.uniqueKeys.unique_idx, 'lastname');
+      assert.isObject(meta.employees.indexKeys);
+      assert.property(meta.employees.indexKeys, 'age_idx');
+      assert.property(meta.employees.indexKeys, 'country_idx');
+      assert.isObject(meta.employees.refTables);
+      assert.property(meta.employees.refTables, 'company_employees');
+      assert.isArray(meta.employees.refTables.company_employees);
+      assert.lengthOf(meta.employees.refTables.company_employees, 1);
+      assert.strictEqual(meta.employees.refTables.company_employees[0].column, 'id');
+      assert.strictEqual(meta.employees.refTables.company_employees[0].refColumn, 'employee_id');
+    });
+
     describe('#getTableMeta()', function () {
 
       it('denotes relation between "companies" and "employees"', function () {
