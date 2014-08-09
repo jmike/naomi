@@ -84,6 +84,7 @@ Engine.prototype.query = function (sql, params, options) {
         };
       }
 
+      // console.log(sql, params);
       connection.query(sql, params, function(err, records) {
         var data;
 
@@ -248,7 +249,7 @@ Engine.prototype._getTables = function () {
 Engine.prototype._getColumns = function () {
   var sql, params;
 
-  sql = 'SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_schema = ?;';
+  sql = 'SELECT * FROM information_schema.COLUMNS WHERE table_schema = ?;';
   params = [this._options.database];
 
   return this.query(sql, params).then(function (records) {
@@ -275,7 +276,7 @@ Engine.prototype._getColumns = function () {
 Engine.prototype._getIndices = function () {
   var sql, params;
 
-  sql = 'SELECT * FROM INFORMATION_SCHEMA.STATISTICS WHERE table_schema = ?;';
+  sql = 'SELECT * FROM information_schema.STATISTICS WHERE table_schema = ?;';
   params = [this._options.database];
 
   return this.query(sql, params, {}).then(function (records) {

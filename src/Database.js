@@ -184,18 +184,21 @@ Database.prototype.extend = function (name, customProperties) {
  * Please note: this method is meant to be called after the database is ready.
  * @param {String} tableA the name of the table A.
  * @param {String} tableB the name of the table B.
- * @returns {Array<String>}
+ * @returns {Array<String>, null}
  */
 Database.prototype.findPath = function (tableA, tableB, path, solutions) {
+  // check if database is ready
+  if (!this.isReady) return null;
+
   // handle optional "path" param
   path = path || [tableA];
 
   // handle optional "solutions" param
   solutions = solutions || [];
 
-  // main logic (this is Sparta)
+  // this is Sparta...
   if (_.last(path) !== tableB) { // are we there yet?
-    _.forOwn(this._meta[tableA].related, function (columns, table) {
+    _.forOwn(this._meta[tableA].refTables, function (columns, table) {
       var arr = path.slice(0);
 
       if (arr.indexOf(table) === -1) { // avoid running in circles
@@ -208,10 +211,8 @@ Database.prototype.findPath = function (tableA, tableB, path, solutions) {
     solutions.push(path);
   }
 
-  // make sure solutions is not empty
-  if (_.isEmpty(solutions)) {
-    return null;
-  }
+  // check if solutions is empty
+  if (solutions.length === 0) return null;
 
   // return shortest path
   return _.min(solutions, function(solution) {

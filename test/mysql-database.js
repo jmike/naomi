@@ -7,225 +7,75 @@ var chai = require('chai'),
 
 // init database
 db = naomi.create('mysql', {
-  host: process.env.DATABASE_HOST,
-  port: parseInt(process.env.DATABASE_PORT, 10),
-  user: process.env.DATABASE_USERNAME,
-  password: process.env.DATABASE_PASSWORD,
-  database: process.env.DATABASE_SCHEMA
+  host: process.env.MYSQL_HOST,
+  port: parseInt(process.env.MYSQL_PORT, 10),
+  user: process.env.MYSQL_USERNAME,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_SCHEMA
 });
 
 describe('MySQL Database', function () {
 
-  describe('@disconnected', function () {
+  before(function (done) {
+    db.once('ready', done);
+    db.connect();
+  });
 
-    describe('#query()', function () {
+  after(function (done) {
+    db.disconnect(done);
+  });
 
-      it('throws an error when sql statement is unspecified', function (done) {
-        db.query().catch(function (err) {
-          assert.match(err, /sql/i);
-          done();
-        });
-      });
+  it('has metadata that denote relation between "companies" and "employees" table', function () {
+    var companies = db.getTableMeta('companies'),
+      company_employees = db.getTableMeta('company_employees'),
+      employees = db.getTableMeta('employees');
 
-      it('throws an error when sql statement is Number', function (done) {
-        db.query(1).catch(function (err) {
-          assert.match(err, /sql/i);
-          done();
-        });
-      });
+    assert.isObject(company_employees.refTables);
+    assert.lengthOf(Object.keys(company_employees.refTables), 2);
 
-      it('throws an error when sql statement is Boolean', function (done) {
-        db.query(true).catch(function (err) {
-          assert.match(err, /sql/i);
-          done();
-        });
-      });
+    assert.property(company_employees.refTables, 'companies');
+    assert.isArray(company_employees.refTables.companies);
+    assert.isObject(company_employees.refTables.companies[0]);
+    assert.propertyVal(company_employees.refTables.companies[0], 'column', 'company_id');
+    assert.propertyVal(company_employees.refTables.companies[0], 'refColumn', 'id');
 
-      it('throws an error when sql statement is Object', function (done) {
-        db.query({}).catch(function (err) {
-          assert.match(err, /sql/i);
-          done();
-        });
-      });
+    assert.property(companies.refTables, 'company_employees');
+    assert.isArray(companies.refTables.company_employees);
+    assert.propertyVal(companies.refTables.company_employees[0], 'column', 'id');
+    assert.propertyVal(companies.refTables.company_employees[0], 'refColumn', 'company_id');
 
-      it('throws an error when sql statement is Array', function (done) {
-        db.query([]).catch(function (err) {
-          assert.match(err, /sql/i);
-          done();
-        });
-      });
+    assert.property(company_employees.refTables, 'employees');
+    assert.isArray(company_employees.refTables.employees);
+    assert.propertyVal(company_employees.refTables.employees[0], 'column', 'employee_id');
+    assert.propertyVal(company_employees.refTables.employees[0], 'refColumn', 'id');
 
-      it('throws an error when sql statement is null', function (done) {
-        db.query(null).catch(function (err) {
-          assert.match(err, /sql/i);
-          done();
-        });
-      });
-
-      it('throws an error when params array is Number', function (done) {
-        db.query('SELECT 1;', 1).catch(function (err) {
-          assert.match(err, /parameters/i);
-          done();
-        });
-      });
-
-      it('throws an error when params array is Boolean', function (done) {
-        db.query('SELECT 1;', true).catch(function (err) {
-          assert.match(err, /parameters/i);
-          done();
-        });
-      });
-
-      it('throws an error when params array is String', function (done) {
-        db.query('SELECT 1;', 'foo').catch(function (err) {
-          assert.match(err, /parameters/i);
-          done();
-        });
-      });
-
-      it('throws an error when params array is null', function (done) {
-        db.query('SELECT 1;', null).catch(function (err) {
-          assert.match(err, /parameters/i);
-          done();
-        });
-      });
-
-      it('throws an error when params array is null', function (done) {
-        db.query('SELECT 1;', null).catch(function (err) {
-          assert.match(err, /parameters/i);
-          done();
-        });
-      });
-
-      it('throws an error when options is Number', function (done) {
-        db.query('SELECT 1;', [], 1).catch(function (err) {
-          assert.match(err, /options/i);
-          done();
-        });
-      });
-
-      it('throws an error when options is Boolean', function (done) {
-        db.query('SELECT 1;', [], true).catch(function (err) {
-          assert.match(err, /options/i);
-          done();
-        });
-      });
-
-      it('throws an error when options is String', function (done) {
-        db.query('SELECT 1;', [], 'foo').catch(function (err) {
-          assert.match(err, /options/i);
-          done();
-        });
-      });
-
-      it('throws an error when options is Array', function (done) {
-        db.query('SELECT 1;', [], []).catch(function (err) {
-          assert.match(err, /options/i);
-          done();
-        });
-      });
-
-      it('throws an error when options is null', function (done) {
-        db.query('SELECT 1;', [], null).catch(function (err) {
-          assert.match(err, /options/i);
-          done();
-        });
-      });
-
-      it('throws a connection error on valid SQL statement', function (done) {
-        db.query('SELECT 1;').catch(function (err) {
-          assert.strictEqual(err, 'Connection is closed - did you forget to call #connect()?');
-          done();
-        });
-      });
-
-    });
-
-    describe('#extend()', function () {
-
-      it('throws an error when table name is unspecified', function () {
-        assert.throws(function () { db.extend(); });
-      });
-
-      it('throws an error when table name is Number', function () {
-        assert.throws(function () { db.extend(1); });
-      });
-
-      it('throws an error when table name is Boolean', function () {
-        assert.throws(function () { db.extend(true); });
-      });
-
-      it('throws an error when table name is Object', function () {
-        assert.throws(function () { db.extend({}); });
-      });
-
-      it('throws an error when table name is Array', function () {
-        assert.throws(function () { db.extend([]); });
-      });
-
-      it('throws an error when table name is null', function () {
-        assert.throws(function () { db.extend(null); });
-      });
-
-    });
-
+    assert.property(employees.refTables, 'company_employees');
+    assert.isArray(employees.refTables.company_employees);
+    assert.propertyVal(employees.refTables.company_employees[0], 'column', 'id');
+    assert.propertyVal(employees.refTables.company_employees[0], 'refColumn', 'employee_id');
   });
 
   // describe('@connected', function () {
 
-  //   before(function (done) {
-  //     db.once('ready', done);
-  //     db.connect();
-  //   });
-
-  //   after(function (done) {
-  //     db.disconnect(done);
-  //   });
-
-  //   it('Tables "company" and "employee" should be related', function () {
-  //     var company = db.getTableMeta('company'),
-  //       companyEmployee = db.getTableMeta('companyEmployee'),
-  //       employee = db.getTableMeta('employee');
-
-  //     assert.isObject(companyEmployee.related);
-  //     assert.lengthOf(Object.keys(companyEmployee.related), 2);
-
-  //     assert.property(companyEmployee.related, 'company');
-  //     assert.isObject(companyEmployee.related.company);
-  //     assert.propertyVal(companyEmployee.related.company, 'id', 'companyId');
-
-  //     assert.property(company.related, 'companyEmployee');
-  //     assert.isObject(company.related.companyEmployee);
-  //     assert.propertyVal(company.related.companyEmployee, 'companyId', 'id');
-
-  //     assert.property(companyEmployee.related, 'employee');
-  //     assert.isObject(companyEmployee.related.employee);
-  //     assert.propertyVal(companyEmployee.related.employee, 'id', 'employeeId');
-
-  //     assert.property(employee.related, 'companyEmployee');
-  //     assert.isObject(employee.related.companyEmployee);
-  //     assert.propertyVal(employee.related.companyEmployee, 'employeeId', 'id');
-  //   });
-
   //   describe('#findPath()', function () {
 
-  //     it('should return a valid path from "employee" to "company"', function () {
-  //       var path = db.findPath('employee', 'company');
+  //     it('should return a valid path from "employees" to "companies"', function () {
+  //       var path = db.findPath('employees', 'companies');
   //       assert.isArray(path);
-  //       assert.strictEqual(path[0], 'employee');
-  //       assert.strictEqual(path[1], 'companyEmployee');
-  //       assert.strictEqual(path[2], 'company');
+  //       assert.strictEqual(path[0], 'employees');
+  //       assert.strictEqual(path[1], 'company_employees');
+  //       assert.strictEqual(path[2], 'companies');
   //     });
 
-  //     it('should return a valid path from "employee" to "country"', function () {
-  //       var path = db.findPath('employee', 'country');
+  //     it('should return a valid path from "employees" to "country"', function () {
+  //       var path = db.findPath('employees', 'country');
   //       assert.isArray(path);
-  //       assert.strictEqual(path[0], 'employee');
+  //       assert.strictEqual(path[0], 'employees');
   //       assert.strictEqual(path[1], 'country');
   //     });
 
-  //     it('should return null from "employee" to "irrelevant"', function () {
-  //       var path = db.findPath('employee', 'irrelevant');
+  //     it('should return null from "employees" to "irrelevant"', function () {
+  //       var path = db.findPath('employees', 'irrelevant');
   //       assert.isNull(path);
   //     });
 
