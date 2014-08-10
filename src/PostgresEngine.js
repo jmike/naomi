@@ -1,8 +1,6 @@
 var pg = require('pg.js'),
   createPool = require('generic-pool').Pool,
-  _ = require('lodash'),
   Promise = require('bluebird');
-  // QueryBuilder = require('./QueryBuilder');
 
 /**
  * Constructs a new Postgres database Engine.
@@ -22,14 +20,6 @@ function Engine(options) {
   this._options = options;
   this._pool = null;
 }
-
-/**
- * Returns a query builder object to easily compose common MySQL queries.
- * @returns {QueryBuilder}
- */
-Engine.prototype.getQueryBuilder = function () {
-  return QueryBuilder;
-};
 
 /**
  * Connects to database using the connection options given at construction time.

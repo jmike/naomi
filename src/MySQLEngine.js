@@ -1,7 +1,6 @@
 var mysql = require('mysql'),
   _ = require('lodash'),
-  Promise = require('bluebird'),
-  QueryBuilder = require('./mysql/QueryBuilder');
+  Promise = require('bluebird');
 
 /**
  * Constructs a new MySQL database Engine.
@@ -17,14 +16,6 @@ var mysql = require('mysql'),
 function Engine(options) {
   this._options = options;
 }
-
-/**
- * Returns a query builder object to easily compose common MySQL queries.
- * @returns {QueryBuilder}
- */
-Engine.prototype.getQueryBuilder = function () {
-  return QueryBuilder;
-};
 
 /**
  * Connects to database using the connection options given at construction time.
