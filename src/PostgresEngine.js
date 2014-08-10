@@ -80,6 +80,22 @@ Engine.prototype.disconnect = function () {
   });
 };
 
+/**
+ * Converts "?" chars to "$1", "$2", etc, in the order they appear in the give SQL statement.
+ * This it to provide a compatibility layer with MySQL engine and have a uniform language for params.
+ * @param {String} sql a parameterized SQL statement, using "?" to denote param.
+ * @return {String}
+ * @private
+ */
+Engine.prototype._prepareSQL = function (sql) {
+  var re = /\?/g,
+    i = 0;
+
+  return sql.replace(re, function () {
+    i++;
+    return '$' + i;
+  });
+};
 
 /**
  * Runs the given SQL statement to the database.
@@ -91,6 +107,8 @@ Engine.prototype.disconnect = function () {
 Engine.prototype.query = function (sql, params) {
   var self = this,
     resolver;
+
+  sql = this._prepareSQL(sql);
 
   resolver = function (resolve, reject) {
     self._pool.acquire(function(err, client) {

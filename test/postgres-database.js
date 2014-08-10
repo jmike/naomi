@@ -144,52 +144,27 @@ describe('Postgres Database', function () {
 
     describe('#query()', function () {
 
-      // it('accepts a single sql param and returns records', function (done) {
-      //   var sql = 'SELECT id FROM `employees`;';
-      //   db.query(sql).then(function (records) {
-      //     assert.isArray(records);
-      //     assert.isObject(records[0]);
-      //     assert.property(records[0], 'id');
-      //     done();
-      //   });
-      // });
+      it('accepts a single sql param and returns records', function (done) {
+        var sql = 'SELECT id FROM "employees";';
+        db.query(sql).then(function (records) {
+          assert.isArray(records);
+          assert.isObject(records[0]);
+          assert.property(records[0], 'id');
+          done();
+        });
+      });
 
-      // it('accepts sql + array of params and returns records', function (done) {
-      //   var sql = 'SELECT id FROM `employees` WHERE firstname = ? AND lastname = ?;',
-      //     params = ['Jordan', 'Belfort'];
+      it('accepts sql + array of params and returns records', function (done) {
+        var sql = 'SELECT id FROM "employees" WHERE firstname = ? AND lastname = ?;',
+          params = ['Jordan', 'Belfort'];
 
-      //   db.query(sql, params).then(function (records) {
-      //     assert.isArray(records);
-      //     assert.isObject(records[0]);
-      //     assert.property(records[0], 'id', 1);
-      //     done();
-      //   });
-      // });
-
-      // it('accepts sql + array of params + options and returns records', function (done) {
-      //   var sql = 'SELECT id FROM `employees` WHERE firstname = ? AND lastname = ?;',
-      //     params = ['Jordan', 'Belfort'];
-
-      //   db.query(sql, params, {nestTables: true}).then(function (records) {
-      //     assert.isArray(records);
-      //     assert.isObject(records[0]);
-      //     assert.isObject(records[0].employees);
-      //     assert.property(records[0].employees, 'id', 1);
-      //     done();
-      //   });
-      // });
-
-      // it('accepts sql + options and returns records', function (done) {
-      //   var sql = 'SELECT 1 AS \'num\';';
-
-      //   db.query(sql, {nestTables: true}).then(function (records) {
-      //     assert.isArray(records);
-      //     assert.isObject(records[0]);
-      //     assert.isObject(records[0]['']);
-      //     assert.property(records[0][''], 'num', 1);
-      //     done();
-      //   });
-      // });
+        db.query(sql, params).then(function (records) {
+          assert.isArray(records);
+          assert.isObject(records[0]);
+          assert.property(records[0], 'id', 1);
+          done();
+        });
+      });
 
     });
 
