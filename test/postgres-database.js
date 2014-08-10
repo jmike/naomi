@@ -6,15 +6,15 @@ var chai = require('chai'),
   db;
 
 // init database
-db = naomi.create('mysql', {
-  host: process.env.MYSQL_HOST,
-  port: parseInt(process.env.MYSQL_PORT, 10),
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_SCHEMA
+db = naomi.create('postgres', {
+  host: process.env.POSTGRES_HOST,
+  port: parseInt(process.env.POSTGRES_PORT, 10),
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+  database: process.env.POSTGRES_SCHEMA
 });
 
-describe('MySQL Database', function () {
+describe('Postgres Database', function () {
 
   describe('@connected', function () {
 
@@ -43,13 +43,13 @@ describe('MySQL Database', function () {
       assert.lengthOf(meta.employees.primaryKey, 1);
       assert.strictEqual(meta.employees.primaryKey[0], 'id');
       assert.isObject(meta.employees.uniqueKeys);
-      assert.property(meta.employees.uniqueKeys, 'unique_idx');
-      assert.isArray(meta.employees.uniqueKeys.unique_idx);
-      assert.lengthOf(meta.employees.uniqueKeys.unique_idx, 2);
-      assert.include(meta.employees.uniqueKeys.unique_idx, 'firstname');
-      assert.include(meta.employees.uniqueKeys.unique_idx, 'lastname');
-      assert.isObject(meta.employees.indexKeys);
-      assert.property(meta.employees.indexKeys, 'age_idx');
+      assert.property(meta.employees.uniqueKeys, 'employees_name_uidx');
+      assert.isArray(meta.employees.uniqueKeys.employees_name_uidx);
+      assert.lengthOf(meta.employees.uniqueKeys.employees_name_uidx, 2);
+      assert.include(meta.employees.uniqueKeys.employees_name_uidx, 'firstname');
+      assert.include(meta.employees.uniqueKeys.employees_name_uidx, 'lastname');
+      // assert.isObject(meta.employees.indexKeys);
+      // assert.property(meta.employees.indexKeys, 'employees_age_idx');
       assert.isObject(meta.employees.refTables);
       assert.property(meta.employees.refTables, 'company_employees');
       assert.isArray(meta.employees.refTables.company_employees);
@@ -144,52 +144,52 @@ describe('MySQL Database', function () {
 
     describe('#query()', function () {
 
-      it('accepts a single sql param and returns records', function (done) {
-        var sql = 'SELECT id FROM `employees`;';
-        db.query(sql).then(function (records) {
-          assert.isArray(records);
-          assert.isObject(records[0]);
-          assert.property(records[0], 'id');
-          done();
-        });
-      });
+      // it('accepts a single sql param and returns records', function (done) {
+      //   var sql = 'SELECT id FROM `employees`;';
+      //   db.query(sql).then(function (records) {
+      //     assert.isArray(records);
+      //     assert.isObject(records[0]);
+      //     assert.property(records[0], 'id');
+      //     done();
+      //   });
+      // });
 
-      it('accepts sql + array of params and returns records', function (done) {
-        var sql = 'SELECT id FROM `employees` WHERE firstname = ? AND lastname = ?;',
-          params = ['Jordan', 'Belfort'];
+      // it('accepts sql + array of params and returns records', function (done) {
+      //   var sql = 'SELECT id FROM `employees` WHERE firstname = ? AND lastname = ?;',
+      //     params = ['Jordan', 'Belfort'];
 
-        db.query(sql, params).then(function (records) {
-          assert.isArray(records);
-          assert.isObject(records[0]);
-          assert.property(records[0], 'id', 1);
-          done();
-        });
-      });
+      //   db.query(sql, params).then(function (records) {
+      //     assert.isArray(records);
+      //     assert.isObject(records[0]);
+      //     assert.property(records[0], 'id', 1);
+      //     done();
+      //   });
+      // });
 
-      it('accepts sql + array of params + options and returns records', function (done) {
-        var sql = 'SELECT id FROM `employees` WHERE firstname = ? AND lastname = ?;',
-          params = ['Jordan', 'Belfort'];
+      // it('accepts sql + array of params + options and returns records', function (done) {
+      //   var sql = 'SELECT id FROM `employees` WHERE firstname = ? AND lastname = ?;',
+      //     params = ['Jordan', 'Belfort'];
 
-        db.query(sql, params, {nestTables: true}).then(function (records) {
-          assert.isArray(records);
-          assert.isObject(records[0]);
-          assert.isObject(records[0].employees);
-          assert.property(records[0].employees, 'id', 1);
-          done();
-        });
-      });
+      //   db.query(sql, params, {nestTables: true}).then(function (records) {
+      //     assert.isArray(records);
+      //     assert.isObject(records[0]);
+      //     assert.isObject(records[0].employees);
+      //     assert.property(records[0].employees, 'id', 1);
+      //     done();
+      //   });
+      // });
 
-      it('accepts sql + options and returns records', function (done) {
-        var sql = 'SELECT 1 AS \'num\';';
+      // it('accepts sql + options and returns records', function (done) {
+      //   var sql = 'SELECT 1 AS \'num\';';
 
-        db.query(sql, {nestTables: true}).then(function (records) {
-          assert.isArray(records);
-          assert.isObject(records[0]);
-          assert.isObject(records[0]['']);
-          assert.property(records[0][''], 'num', 1);
-          done();
-        });
-      });
+      //   db.query(sql, {nestTables: true}).then(function (records) {
+      //     assert.isArray(records);
+      //     assert.isObject(records[0]);
+      //     assert.isObject(records[0]['']);
+      //     assert.property(records[0][''], 'num', 1);
+      //     done();
+      //   });
+      // });
 
     });
 

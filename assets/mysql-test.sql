@@ -29,7 +29,8 @@ CREATE TABLE `companies` (
   `name` varchar(45) NOT NULL,
   `country_id` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `country_idx` (`country_id`)
+  KEY `country_idx` (`country_id`),
+  CONSTRAINT `fk_companies_countries` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -110,12 +111,9 @@ CREATE TABLE `employees` (
   `firstname` varchar(45) NOT NULL,
   `lastname` varchar(45) NOT NULL,
   `age` tinyint(3) unsigned DEFAULT NULL,
-  `country_id` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_idx` (`firstname`,`lastname`),
-  KEY `age_idx` (`age`),
-  KEY `country_idx` (`country_id`),
-  CONSTRAINT `fk_employee_country` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `age_idx` (`age`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -125,7 +123,7 @@ CREATE TABLE `employees` (
 
 LOCK TABLES `employees` WRITE;
 /*!40000 ALTER TABLE `employees` DISABLE KEYS */;
-INSERT INTO `employees` VALUES (1,'Jordan','Belfort',38,1),(2,'Donnie','Azoff',36,1);
+INSERT INTO `employees` VALUES (1,'Jordan','Belfort',38),(2,'Donnie','Azoff',36);
 /*!40000 ALTER TABLE `employees` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -186,4 +184,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-08-09 16:51:15
+-- Dump completed on 2014-08-10 14:37:36
