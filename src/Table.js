@@ -1,80 +1,78 @@
-var _ = require('lodash'),
-  Promise = require('bluebird');
+var Promise = require('bluebird'),
+  _ = require('lodash'),
+  MySQLQueryBuilder = require('./MySQLQueryBuilder'),
+  operators = ['=', '==', '===', '!=', '!==', '<>', '>', '>=', '<', '<=', '~'];
 
-/**
- * Constructs a new Table, i.e. an object representing a relational database table.
- * @param {Database} db a Naomi database instance.
- * @param {String} name the name of the table in database.
- * @constructor
- */
-function Table(db, name) {
-  this.db = db;
+function Table (db, name) {
   this.name = name;
+  this.db = db;
 
-  this.columns = {};
-  this.primaryKey = [];
-  this.uniqueKeys = {};
-  this.indexKeys = {};
+  this._columns = {};
+  this._primaryKey = [];
+  this._uniqueKeys = {};
+  this._indexKeys = {};
 
-  this.queryBuilder = new db._engine.QueryBuilder(this);
+  if (db.type === 'mysql') {
+    this._queryBuilder = new MySQLQueryBuilder(name);
+  }
 
-  db.on('ready', function () {
+  // load metadata
+  if (db.isReady) {
     this._loadMeta();
-  }.bind(this));
-
-  // check if db is already loaded
-  if (db.isReady) this._loadMeta();
+  } else { // async
+    db.on('ready', this._loadMeta.bind(this));
+  }
 }
 
 /**
- * Loads metadata from database.
+ * Loads table metadata from database.
  * @private
  */
 Table.prototype._loadMeta = function () {
   var meta = this.db.getTableMeta(this.name);
 
   if (meta) {
-    this.columns = meta.columns;
-    this.primaryKey = meta.primaryKey;
-    this.uniqueKeys = meta.uniqueKeys;
-    this.indexKeys = meta.indexKeys;
+    this._columns = meta.columns;
+    this._primaryKey = meta.primaryKey;
+    this._uniqueKeys = meta.uniqueKeys;
+    this._indexKeys = meta.indexKeys;
   }
 };
 
 /**
  * Indicates whether the specified column exists in table,
  * This method will always return false until database is ready.
- * @param {String} name the name of the column.
- * @returns {Boolean}
+ * @param {string} name the name of the column.
+ * @returns {boolean}
  * @example
  *
  * table.hasColumn('id');
  */
 Table.prototype.hasColumn = function (name) {
-  return this.columns.hasOwnProperty(name);
+  return this._columns.hasOwnProperty(name);
 };
 
 /**
  * Indicates whether the specified column(s) represent a primary key.
  * Primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function.
  * This method will always return false until database is ready.
- * @param {...String} columns the name of the columns.
- * @returns {Boolean}
+ * @param {...string} columns the name of the columns.
+ * @returns {boolean}
  * @example
  *
  * table.isPrimaryKey('id');
  */
 Table.prototype.isPrimaryKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0);
-  return _.xor(this.primaryKey, columns).length === 0;
+  return _.xor(this._primaryKey, columns).length === 0;
 };
 
 /**
  * Indicates whether the specified column(s) represent a unique key.
  * Unique keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params.
  * This method will always return false until database is ready.
- * @param {...String} columns the name of the columns.
- * @returns {Boolean}
+ * @param {...string} columns the name of the columns.
+ * @returns {boolean}
  * @example
  *
  * table.isUniqueKey('pid');
@@ -83,7 +81,7 @@ Table.prototype.isUniqueKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0),
     verdict = false;
 
-  _.forOwn(this.uniqueKeys, function (v) {
+  _.forOwn(this._uniqueKeys, function (v) {
     verdict = _.xor(v, columns).length === 0;
     return !verdict; // exit once verdict is true (return false breaks the loop)
   });
@@ -95,8 +93,8 @@ Table.prototype.isUniqueKey = function () {
  * Indicates whether the specified column(s) represent an index key.
  * Index keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params.
  * This method will always return false until database is ready.
- * @param {...String} columns the name of the columns.
- * @returns {Boolean}
+ * @param {...string} columns the name of the columns.
+ * @returns {boolean}
  * @example
  *
  * table.isIndexKey('firstName', 'lastName');
@@ -105,7 +103,7 @@ Table.prototype.isIndexKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0),
     verdict = false;
 
-  _.forOwn(this.indexKeys, function (v) {
+  _.forOwn(this._indexKeys, function (v) {
     verdict = _.xor(v, columns).length === 0;
     return !verdict; // exit once verdict is true (return false breaks the loop)
   });
@@ -115,25 +113,29 @@ Table.prototype.isIndexKey = function () {
 
 /**
  * Parses the given expression, as part of a selector, and returns an object to use in a SQL expression.
- * @param {Object} expr an object with a single property, where key represents the operator.
- * @returns {Object}
+ * @param {object} expr an object with a single property, where key represents the operator.
+ * @returns {object}
  * @throws {Error} if selector is unspecified or invalid.
  * @private
  */
 Table.prototype._parseExpression = function (expr) {
-  var operators = ['=', '==', '===', '!=', '!==', '<>', '>', '>=', '<', '<=', '~'],
-    keys = Object.keys(expr);
+  var keys = Object.keys(expr);
 
-  if (keys.length !== 1) throw new Error('Invalid expression in selector: object must contain exactly one key-value property');
-  if (operators.indexOf(keys[0]) === -1) throw new Error('Unable to parse unknown operator "' + keys[0] + '"');
+  if (keys.length !== 1) {
+    throw new Error('Invalid expression in selector: object must contain exactly one property');
+  }
+
+  if (operators.indexOf(keys[0]) === -1) {
+    throw new Error('Unknown operator "' + keys[0] + '" in selector expression');
+  }
 
   return expr;
 };
 
 /**
  * Parses the given input and returns an object (or an array of objects) to use in a SQL where clause.
- * @param Boolean|Number|String|Date|Object|Array.<Object>} selector
- * @returns {Object|Array<Object>}
+ * @param {(boolean|number|string|date|object|Array.<object>|null)} selector a selector to match records in database.
+ * @returns {(Array.<object>|null)}
  * @throws {Error} if selector is unspecified or invalid.
  * @private
  */
@@ -142,39 +144,56 @@ Table.prototype._parseSelector = function (selector) {
 
   if (_.isPlainObject(selector)) { // standard selector type
     _.forOwn(selector, function (v, k) {
-      if (!this.hasColumn(k)) throw new Error('Column "' + k + '" cannot not be found in table "' + this.name + '"');
+
+      if (!this.hasColumn(k)) {
+        throw new Error('Invalid selector: column "' + k + '" cannot not be found in table "' + this.name + '"');
+      }
 
       if (_.isPlainObject(v)) {
         selector[k] = this._parseExpression(v);
+      } else { // plain value
+        selector[k] = {'=': v};
       }
+
     }, this);
 
-    return selector;
+    return [selector];
   }
 
   if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) { // plain value selector
-    if (this.primaryKey.length !== 1) throw new Error('Primary key is compound or non existent, thus Boolean, Number, String and Date selectors are useless');
 
-    obj[this.collection.primaryKey[0]] = selector;
+    if (this._primaryKey.length !== 1) {
+      throw new Error('Invalid selector: primary key is compound or non existent, thus plain value selectors are useless');
+    }
 
-    return obj;
+    obj[this._primaryKey[0]] = {'=': selector};
+    return [obj];
   }
 
   if (_.isArray(selector)) {
     return selector.map(function (e) {
-      return this._parseSelector(e);
+      return this._parseSelector(e)[0];
     }, this);
   }
 
-  throw new Error('Invalid or unspecified selector param');
+  if (_.isNull(selector)) {
+    return null;
+  }
+
+  throw new Error('Invalid selector');
 };
 
 /**
- * Parses the given input and returns an object (or an array of objects) to use in a SQL order clause.
- * @param {String|Object|Array<Object>} order the order input, e.g. 'name', {'name': 'desc'}, [{'name': 'desc'}, 'id'].
- * @returns {Object|Array<Object>}
+ * Parses the given input and returns an array of objects to use in a SQL order clause.
+ * @param {(string|object|Array.<object>|null)} [order] the order input.
+ * @returns {(Array.<object>|null)}
  * @throws {Error} if order is unspecified or invalid.
  * @private
+ *
+ * @example
+ * tables._parseOrder('id');
+ * tables._parseOrder({'id': 'desc'});
+ * tables._parseOrder([{'name': 'desc'}, 'id']);
  */
 Table.prototype._parseOrder = function (order) {
   var re = /^(asc|desc)$/i,
@@ -183,15 +202,22 @@ Table.prototype._parseOrder = function (order) {
   if (_.isPlainObject(order)) { // standard format
     keys = Object.keys(order);
 
-    if (keys.length !== 1) throw new Error('Invalid order parameter: object must contain exactly one key-value property');
+    if (keys.length !== 1) {
+      throw new Error('Invalid order: object must contain exactly one property');
+    }
 
     k = keys[0];
     v = order[k];
 
-    if (!this.hasColumn(k)) throw new Error('Column "' + k + '" cannot be found in table "' + this.name + '"');
-    if (!re.test(v)) throw new Error('Value in order expression should match either "asc" or "desc"');
+    if (!this.hasColumn(k)) {
+      throw new Error('Invalid order: column "' + k + '" cannot be found in table "' + this.name + '"');
+    }
 
-    return order;
+    if (!re.test(v)) {
+      throw new Error('Invalid order: value in order expression should match either "asc" or "desc"');
+    }
+
+    return [order];
   }
 
   if (_.isString(order)) {
@@ -206,53 +232,120 @@ Table.prototype._parseOrder = function (order) {
 
   if (_.isArray(order)) {
     return order.map(function (e) {
-      return this._parseOrder(e);
+      return this._parseOrder(e)[0];
     }, this);
   }
 
-  throw new Error('Invalid or unspecified order parameter');
+  if (_.isNull(order)) {
+    return null;
+  }
+
+  throw new Error('Invalid order: expected string, plain object or Array, received "' + typeof(order) + '"');
 };
 
 /**
  * Parses the given input and returns a number to use in a SQL limit clause.
- * @param {String|Number} limit a String or a Number representing a positive integer, e.g. '10' or 2.
- * @return {Number}
+ * @param {(string|number|null)} limit a String or a Number representing a positive integer.
+ * @return {(number|null)}
  * @throws {Error} if limit is unspecified or invalid.
  * @private
+ *
+ * @example
+ * tables._parseLimit('10');
+ * tables._parseLimit(20);
  */
 Table.prototype._parseLimit = function (limit) {
-  var n = parseInt(limit, 10);
 
-  if (n % 1 !== 0 || n < 1) {
-    throw new Error('Invalid or unspecified limit param: expecting a String or Number representing a positive integer');
+  if (_.isString(limit)) {
+    return this._parseLimit(parseInt(limit, 10));
   }
 
-  return n;
+  if (_.isNumber(limit)) {
+
+    if (limit % 1 !== 0 || limit < 1) {
+      throw new Error('Invalid limit: expected a positive integer');
+    }
+
+    return limit;
+  }
+
+  if (_.isNull(limit)) {
+    return null;
+  }
+
+  throw new Error('Invalid limit: expected object or string, received "' + typeof(limit) + '"');
 };
 
 /**
  * Parses the given input and returns a number to use in a SQL offset clause.
- * @param {String|Number} offset a String or a Number representing a non-negative integer, e.g. '10' or 2.
- * @returns {Number}
+ * @param {(string|number|null)} [offset] a String or a Number representing a non-negative integer, e.g. '10' or 2.
+ * @returns {(number|null)}
  * @throws {Error} if offset is unspecified or invalid.
  * @private
+ *
+ * @example
+ * tables._parseOffset('10');
+ * tables._parseOffset(20);
  */
 Table.prototype._parseOffset = function (offset) {
-  var n = parseInt(offset, 10);
 
-  if (n % 1 !== 0 || n < 0) {
-    throw new Error('Invalid or unspecified offset param: expecting a String or Number representing a non-negative integer');
+  if (_.isString(offset)) {
+    return this._parseLimit(parseInt(offset, 10));
   }
 
-  return n;
+  if (_.isNumber(offset)) {
+
+    if (offset % 1 !== 0 || offset < 0) {
+      throw new Error('Invalid offset: expected a non-negative integer');
+    }
+
+    return offset;
+  }
+
+  if (_.isNull(offset)) {
+    return null;
+  }
+
+  throw new Error('Invalid offset: expected object or string, received "' + typeof(offset) + '"');
+};
+
+/**
+ * Parses the given object and returns an array of values to use in a SQL INSERT statement.
+ * @param {(object|Array.<object>)} values
+ * @returns {Array.<object>}
+ * @throws {Error} if values are unspecified or invalid.
+ * @private
+ */
+Table.prototype._parseValues = function (values) {
+  var diff;
+
+  if (_.isPlainObject(values)) {
+    diff = _.difference(Object.keys(values), Object.keys(this._columns));
+
+    if (diff.length !== 0) {
+      throw new Error('Invalid values: column ' + diff[0] + ' does not exist in table ' + this.name);
+    }
+
+    return [values];
+  }
+
+  if (_.isArray(values)) {
+    return values.map(function (e) {
+      return this._parseValues(e)[0];
+    }, this);
+  }
+
+  throw new Error('Invalid values: expected object or array of objects, received ' + typeof(offset));
 };
 
 /**
  * Retrieves the designated record(s) from database.
- * @param {Boolean|Number|String|Date|Object|Array<Object>|Null} selector a selector to match record(s) in database.
- * @param {Object} [options] query options.
- * @param {Function} [callback] an optional callback function i.e. function(err, records).
- * @throws {Error} if parameters are invalid.
+ * @param {(boolean|number|string|date|object|Array.<object>|null)} selector a selector to match record(s) in database.
+ * @param {object} [options] query options.
+ * @param {(string|Object|Array.<object|string>)} [options.order] an order expression to sort records.
+ * @param {(number|string)} [options.limit=1000] max number of records to return from database, must be a positive integer, i.e. limit > 0.
+ * @param {(number|string)} [options.offset=0] number of records to skip from database, must be a non-negative integer, i.e. offset >= 0.
+ * @param {function} [callback] an optional callback function i.e. function(err, records).
  * @returns {Promise}
  */
 Table.prototype.get = function (selector, options, callback) {
@@ -265,7 +358,8 @@ Table.prototype.get = function (selector, options, callback) {
     if (_.isFunction(options)) {
       callback = options;
     } else if (!_.isUndefined(options)) {
-      return Promise.reject('Invalid or unspecified options param').nodeify(callback);
+      return Promise.reject('Invalid options: expected plain object, received "' + typeof(options) + '"')
+        .nodeify(callback);
     }
 
     options = {};
@@ -281,14 +375,15 @@ Table.prototype.get = function (selector, options, callback) {
       return reject('Table "' + self.name + '" cannot be found in database');
     }
 
-    // compile a parameterized SELECT query
+    // compile a parameterized query
     try {
-      query = new self.QueryBuilder(self).select()
-        .where(self._parseSelector(selector))
-        .orderBy(self._parseOrder(options.order))
-        .limit(self._parseLimit(options.limit))
-        .offset(self._parseOffset(options.offset))
-        .compile();
+      query = self._queryBuilder.select({
+        columns: Object.keys(self._columns),
+        selector: self._parseSelector(selector || null),
+        order: self._parseOrder(options.order || null),
+        limit: self._parseLimit(options.limit || 1000),
+        offset: self._parseOffset(options.offset || null)
+      });
     } catch (err) {
       return reject(err.message);
     }
@@ -303,7 +398,7 @@ Table.prototype.get = function (selector, options, callback) {
   };
 
   return new Promise(function(resolve, reject) {
-    if (self.isReady) {
+    if (self.db.isReady) {
       resolver(resolve, reject);
     } else { // delay until ready
       self.db.once('ready', function () {
@@ -326,9 +421,12 @@ Table.prototype.getAll = function (options, callback) {
 
 /**
  * Counts the designated record(s) in database.
- * @param {Boolean|Number|String|Date|Object|Array<Object>|Null} selector a selector to match the record(s) in database.
- * @param {Object} [options] query options.
- * @param {Function} [callback] an optional callback function i.e. function(err, count).
+ * @param {(boolean|number|string|date|object|Array.<object>|null)} selector a selector to match record(s) in database.
+ * @param {object} [options] query options.
+ * @param {(string|Object|Array.<object|string>)} [options.order] an order expression to sort records.
+ * @param {(number|string)} [options.limit=1000] max number of records to return from database, must be a positive integer, i.e. limit > 0.
+ * @param {(number|string)} [options.offset=0] number of records to skip from database, must be a non-negative integer, i.e. offset >= 0.
+ * @param {function} [callback] an optional callback function i.e. function(err, records).
  * @returns {Promise}
  */
 Table.prototype.count = function (selector, options, callback) {
@@ -341,7 +439,8 @@ Table.prototype.count = function (selector, options, callback) {
     if (_.isFunction(options)) {
       callback = options;
     } else if (!_.isUndefined(options)) {
-      return Promise.reject('Invalid or unspecified options param').nodeify(callback);
+      return Promise.reject('Invalid options: expected plain object, received "' + typeof(options) + '"')
+        .nodeify(callback);
     }
 
     options = {};
@@ -357,14 +456,15 @@ Table.prototype.count = function (selector, options, callback) {
       return reject('Table "' + self.name + '" cannot be found in database');
     }
 
-    // compile a parameterized COUNT query
+    // compile a parameterized query
     try {
-      query = new self.QueryBuilder(self).count()
-        .where(self._parseSelector(selector))
-        .orderBy(self._parseOrder(options.order))
-        .limit(self._parseLimit(options.limit))
-        .offset(self._parseOffset(options.offset))
-        .compile();
+      query = self._queryBuilder.count({
+        columns: Object.keys(self._columns),
+        selector: self._parseSelector(selector || null),
+        order: self._parseOrder(options.order || null),
+        limit: self._parseLimit(options.limit || 1000),
+        offset: self._parseOffset(options.offset || null)
+      });
     } catch (err) {
       return reject(err.message);
     }
@@ -379,7 +479,7 @@ Table.prototype.count = function (selector, options, callback) {
   };
 
   return new Promise(function(resolve, reject) {
-    if (self.isReady) {
+    if (self.db.isReady) {
       resolver(resolve, reject);
     } else { // delay until ready
       self.db.once('ready', function () {
@@ -391,9 +491,11 @@ Table.prototype.count = function (selector, options, callback) {
 
 /**
  * Counts all record(s) in table.
- * This is no more than a handy alias to #count(null, options, callback).
- * @param {Object} [options] query options.
- * @param {Function} [callback] an optional callback function i.e. function(err, count).
+ * @param {object} [options] query options.
+ * @param {(string|Object|Array.<object|string>)} [options.order] an order expression to sort records.
+ * @param {(number|string)} [options.limit=1000] max number of records to return from database, must be a positive integer, i.e. limit > 0.
+ * @param {(number|string)} [options.offset=0] number of records to skip from database, must be a non-negative integer, i.e. offset >= 0.
+ * @param {function} [callback] an optional callback function i.e. function(err, records).
  * @returns {Promise}
  */
 Table.prototype.countAll = function (options, callback) {
@@ -401,59 +503,12 @@ Table.prototype.countAll = function (options, callback) {
 };
 
 /**
- * Creates or updates the specified record in database.
- * @param {Array<Object>|Object} attrs the record attributes.
- * @param {Function} [callback] an optional callback function i.e. function(error, data).
- * @returns {Promise}
- */
-Table.prototype.set = function (attrs, callback) {
-  var self = this,
-    resolver;
-
-  // set the resolver function
-  resolver = function (resolve, reject) {
-
-    var query;
-
-    // make sure table exists in database
-    if (!self.db.hasTable(self.name)) {
-      return reject('Table "' + self.name + '" cannot be found in database');
-    }
-
-    // compile an parameterized UPSERT query
-    try {
-     query = new self.QueryBuilder(self).upsert()
-        .value(attrs)
-        .compile();
-    } catch (err) {
-      return reject(err.message);
-    }
-
-    // run the query
-    self.db.query(query.sql, query.params).then(function (data) {
-      resolve(data);
-    }).catch(function (err) {
-      reject(err);
-    });
-
-  };
-
-  return new Promise(function(resolve, reject) {
-    if (self.isReady) {
-      resolver(resolve, reject);
-    } else { // delay until ready
-      self.db.once('ready', function () {
-        resolver(resolve, reject);
-      });
-    }
-  }).nodeify(callback);
-};
-
-/**
  * Deletes the designated record(s) from database.
- * @param {Boolean|Number|String|Date|Object|Array.<Object>} selector a selector to match the record(s) in database.
- * @param {Object} [options] query options.
- * @param {Function} [callback] an optional callback function i.e. function(error, data).
+ * @param {(boolean|number|string|date|object|Array.<object>|null)} selector a selector to match record(s) in database.
+ * @param {object} [options] query options.
+ * @param {(string|Object|Array.<object|string>)} [options.order] an order expression to sort records.
+ * @param {(number|string)} [options.limit=1000] max number of records to delete from database, must be a positive integer, i.e. limit > 0.
+ * @param {function} [callback] an optional callback function i.e. function(err, data).
  * @returns {Promise}
  */
 Table.prototype.del = function (selector, options, callback) {
@@ -466,7 +521,8 @@ Table.prototype.del = function (selector, options, callback) {
     if (_.isFunction(options)) {
       callback = options;
     } else if (!_.isUndefined(options)) {
-      return Promise.reject('Invalid or unspecified options param').nodeify(callback);
+      return Promise.reject('Invalid options: expected plain object, received "' + typeof(options) + '"')
+        .nodeify(callback);
     }
 
     options = {};
@@ -482,13 +538,13 @@ Table.prototype.del = function (selector, options, callback) {
       return reject('Table "' + self.name + '" cannot be found in database');
     }
 
-    // compile a parameterized DELETE query
+    // compile a parameterized query
     try {
-      query = new self.QueryBuilder(self).del()
-        .where(self._parseSelector(selector))
-        .orderBy(self._parseOrder(options.order))
-        .limit(self._parseLimit(options.limit))
-        .compile();
+      query = self._queryBuilder.delete({
+        selector: self._parseSelector(selector || null),
+        order: self._parseOrder(options.order || null),
+        limit: self._parseLimit(options.limit || 1000)
+      });
     } catch (err) {
       return reject(err.message);
     }
@@ -499,11 +555,63 @@ Table.prototype.del = function (selector, options, callback) {
     }).catch(function (err) {
       reject(err);
     });
-
   };
 
   return new Promise(function(resolve, reject) {
-    if (self.isReady) {
+    if (self.db.isReady) {
+      resolver(resolve, reject);
+    } else { // delay until ready
+      self.db.once('ready', function () {
+        resolver(resolve, reject);
+      });
+    }
+  }).nodeify(callback);
+};
+
+/**
+ * Creates or updates (if already exists) the specified record(s) in database.
+ * @param {(object|Array.<object>)} attrs the record attributes to create or update.
+ * @param {function} [callback] an optional callback function i.e. function(err, data).
+ * @returns {Promise}
+ */
+Table.prototype.set = function (attrs, callback) {
+  var self = this,
+    resolver, values, columns;
+
+  // set the resolver function
+  resolver = function (resolve, reject) {
+
+    var query;
+
+    // make sure table exists in database
+    if (!self.db.hasTable(self.name)) {
+      return reject('Table "' + self.name + '" cannot be found in database');
+    }
+
+    // compile a parameterized query
+    try {
+      values = self._parseValues(attrs);
+      columns = Object.keys(values[0]); // assumes all objects have the same properties
+
+      query = self._queryBuilder.upsert({
+        columns: columns,
+        values: values,
+        updateColumns: _.difference(columns, this._primaryKey)
+      });
+    } catch (err) {
+      return reject(err.message);
+    }
+
+    // run the query
+    self.db.query(query.sql, query.params).then(function (data) {
+      resolve(data);
+    }).catch(function (err) {
+      reject(err);
+    });
+  };
+
+  return new Promise(function(resolve, reject) {
+    if (self.db.isReady) {
       resolver(resolve, reject);
     } else { // delay until ready
       self.db.once('ready', function () {
