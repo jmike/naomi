@@ -2,6 +2,9 @@ require('dotenv').load(); // load environmental variables
 
 var chai = require('chai'),
   naomi = require('../src/naomi'),
+  Database = require('../src/Database'),
+  MySQLEngine = require('../src/MySQLEngine'),
+  PostgresEngine = require('../src/PostgresEngine'),
   assert = chai.assert,
   db;
 
@@ -17,6 +20,45 @@ db = naomi.create('mysql', {
 describe('Database', function () {
 
   describe('@disconnected', function () {
+
+    describe('#constructor()', function () {
+
+      it('throws an error when database type is unspecified', function () {
+        assert.throws(function () { new Database(); }, /invalid or unspecified database type/i);
+      });
+
+      it('throws an error when database type is invalid', function () {
+        assert.throws(function () { new Database('invalid'); }, /unknown database type/i);
+      });
+
+      it('throws an error when database type is Number', function () {
+        assert.throws(function () { new Database(123); }, /invalid or unspecified database type/i);
+      });
+
+      it('throws an error when database type is Boolean', function () {
+        assert.throws(function () { new Database(false); }, /invalid or unspecified database type/i);
+      });
+
+      it('throws an error when database type is Object', function () {
+        assert.throws(function () { new Database({}); }, /invalid or unspecified database type/i);
+      });
+
+      it('returns a MySQL Database when "mysql" type is specified', function () {
+        var db = new Database('mysql');
+        assert.instanceOf(db._engine, MySQLEngine);
+      });
+
+      it('returns a Postgres Database when "postgres" type is specified', function () {
+        var db = new Database('postgres');
+        assert.instanceOf(db._engine, PostgresEngine);
+      });
+
+      it('accepts type param in both uppercase and lowercase letters, e.g. "MySQL"', function () {
+        var db = new Database('MySQL');
+        assert.instanceOf(db._engine, MySQLEngine);
+      });
+
+    });
 
     describe('#query()', function () {
 

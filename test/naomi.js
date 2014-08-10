@@ -1,48 +1,15 @@
 var chai = require('chai'),
   naomi = require('../src/naomi'),
-  MySQLEngine = require('../src/MySQLEngine'),
-  PostgresEngine = require('../src/PostgresEngine'),
+  Database = require('../src/Database'),
   assert = chai.assert;
 
 describe('naomi', function () {
 
   describe('#create()', function () {
 
-    it('throws an error when database type is unspecified', function () {
-      assert.throws(function () {
-        naomi.create();
-      }, /invalid or unspecified database type/i);
-    });
-
-    it('throws an error when database type is invalid', function () {
-      assert.throws(function () { naomi.create('invalid'); }, /unknown database type/i);
-    });
-
-    it('throws an error when database type is Number', function () {
-      assert.throws(function () { naomi.create(123); }, /invalid or unspecified database type/i);
-    });
-
-    it('throws an error when database type is Boolean', function () {
-      assert.throws(function () { naomi.create(false); }, /invalid or unspecified database type/i);
-    });
-
-    it('throws an error when database type is Object', function () {
-      assert.throws(function () { naomi.create({}); }, /invalid or unspecified database type/i);
-    });
-
-    it('returns a new MySQL Database when "mysql" type is specified', function () {
+    it('returns a new Database when type is valid', function () {
       var db = naomi.create('mysql');
-      assert.instanceOf(db._engine, MySQLEngine);
-    });
-
-    it('accepts type param in both uppercase and lowercase letters, e.g. "MySQL"', function () {
-      var db = naomi.create('MySQL');
-      assert.instanceOf(db._engine, MySQLEngine);
-    });
-
-    it('returns a new Postgres Database when "postgres" type is specified', function () {
-      var db = naomi.create('postgres');
-      assert.instanceOf(db._engine, PostgresEngine);
+      assert.instanceOf(db, Database);
     });
 
   });
