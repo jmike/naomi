@@ -4,7 +4,7 @@
 
 -- Dumped from database version 9.3.5
 -- Dumped by pg_dump version 9.3.1
--- Started on 2014-08-10 10:05:00 EEST
+-- Started on 2014-08-10 10:48:58 EEST
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -299,7 +299,9 @@ ALTER TABLE ONLY "regions" ALTER COLUMN "id" SET DEFAULT "nextval"('"regions_id_
 -- Data for Name: companies; Type: TABLE DATA; Schema: public; Owner: jmike
 --
 
-INSERT INTO "companies" VALUES (1, 'Stratton Oakmont', 1);
+COPY "companies" ("id", "name", "country_id") FROM stdin;
+1	Stratton Oakmont	1
+\.
 
 
 --
@@ -317,7 +319,9 @@ SELECT pg_catalog.setval('"companies_id_seq"', 1, true);
 -- Data for Name: company_employees; Type: TABLE DATA; Schema: public; Owner: jmike
 --
 
-INSERT INTO "company_employees" VALUES (1, 1, 1);
+COPY "company_employees" ("id", "company_id", "employee_id") FROM stdin;
+1	1	1
+\.
 
 
 --
@@ -335,7 +339,9 @@ SELECT pg_catalog.setval('"company_employees_id_seq"', 1, true);
 -- Data for Name: countries; Type: TABLE DATA; Schema: public; Owner: jmike
 --
 
-INSERT INTO "countries" VALUES (1, 'USA', 1);
+COPY "countries" ("id", "name", "region_id") FROM stdin;
+1	USA	1
+\.
 
 
 --
@@ -353,7 +359,9 @@ SELECT pg_catalog.setval('"countries_id_seq"', 2, true);
 -- Data for Name: employees; Type: TABLE DATA; Schema: public; Owner: jmike
 --
 
-INSERT INTO "employees" VALUES (1, 'Jordan', 'Belfort', 38, 1);
+COPY "employees" ("id", "firstname", "lastname", "age", "country_id") FROM stdin;
+1	Jordan	Belfort	38	1
+\.
 
 
 --
@@ -371,7 +379,9 @@ SELECT pg_catalog.setval('"employees_id_seq"', 1, true);
 -- Data for Name: regions; Type: TABLE DATA; Schema: public; Owner: jmike
 --
 
-INSERT INTO "regions" VALUES (1, 'North America');
+COPY "regions" ("id", "name") FROM stdin;
+1	North America
+\.
 
 
 --
@@ -552,7 +562,7 @@ GRANT ALL ON SCHEMA "public" TO "jmike";
 GRANT ALL ON SCHEMA "public" TO PUBLIC;
 
 
--- Completed on 2014-08-10 10:05:01 EEST
+-- Completed on 2014-08-10 10:48:58 EEST
 
 --
 -- PostgreSQL database dump complete
