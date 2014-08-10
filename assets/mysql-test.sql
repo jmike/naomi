@@ -1,6 +1,6 @@
 CREATE DATABASE  IF NOT EXISTS `naomi_test` /*!40100 DEFAULT CHARACTER SET utf8 */;
 USE `naomi_test`;
--- MySQL dump 10.13  Distrib 5.6.13, for osx10.6 (i386)
+-- MySQL dump 10.13  Distrib 5.6.17, for osx10.6 (i386)
 --
 -- Host: 127.0.0.1    Database: naomi_test
 -- ------------------------------------------------------
@@ -18,117 +18,113 @@ USE `naomi_test`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `company`
+-- Table structure for table `companies`
 --
 
-DROP TABLE IF EXISTS `company`;
+DROP TABLE IF EXISTS `companies`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `company` (
+CREATE TABLE `companies` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(45) NOT NULL,
-  `countryId` int(10) unsigned DEFAULT NULL,
+  `country_id` int(10) unsigned DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `country_idx` (`countryId`),
-  CONSTRAINT `fk_company_country` FOREIGN KEY (`countryId`) REFERENCES `country` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `country_idx` (`country_id`),
+  CONSTRAINT `fk_companies_countries` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `company`
+-- Dumping data for table `companies`
 --
 
-LOCK TABLES `company` WRITE;
-/*!40000 ALTER TABLE `company` DISABLE KEYS */;
-INSERT INTO `company` VALUES (1,'Stratton Oakmont',1);
-/*!40000 ALTER TABLE `company` ENABLE KEYS */;
+LOCK TABLES `companies` WRITE;
+/*!40000 ALTER TABLE `companies` DISABLE KEYS */;
+INSERT INTO `companies` VALUES (1,'Stratton Oakmont',1);
+/*!40000 ALTER TABLE `companies` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `companyEmployee`
+-- Table structure for table `company_employees`
 --
 
-DROP TABLE IF EXISTS `companyEmployee`;
+DROP TABLE IF EXISTS `company_employees`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `companyEmployee` (
+CREATE TABLE `company_employees` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `companyId` int(10) unsigned NOT NULL,
-  `employeeId` int(10) unsigned NOT NULL,
+  `company_id` int(10) unsigned NOT NULL,
+  `employee_id` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `company_idx` (`companyId`),
-  KEY `employee_idx` (`employeeId`),
-  CONSTRAINT `fk_companyEmployee_company` FOREIGN KEY (`companyId`) REFERENCES `company` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_companyEmployee_employee` FOREIGN KEY (`employeeId`) REFERENCES `employee` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `company_idx` (`company_id`),
+  KEY `employee_idx` (`employee_id`),
+  CONSTRAINT `fk_companyEmployee_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_companyEmployee_employee` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `companyEmployee`
+-- Dumping data for table `company_employees`
 --
 
-LOCK TABLES `companyEmployee` WRITE;
-/*!40000 ALTER TABLE `companyEmployee` DISABLE KEYS */;
-INSERT INTO `companyEmployee` VALUES (1,1,1);
-/*!40000 ALTER TABLE `companyEmployee` ENABLE KEYS */;
+LOCK TABLES `company_employees` WRITE;
+/*!40000 ALTER TABLE `company_employees` DISABLE KEYS */;
+/*!40000 ALTER TABLE `company_employees` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `country`
+-- Table structure for table `countries`
 --
 
-DROP TABLE IF EXISTS `country`;
+DROP TABLE IF EXISTS `countries`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `country` (
+CREATE TABLE `countries` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
-  `regionId` int(10) unsigned NOT NULL,
+  `region_id` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `region_idx` (`regionId`),
-  CONSTRAINT `fk_country_region` FOREIGN KEY (`regionId`) REFERENCES `region` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `region_idx` (`region_id`),
+  CONSTRAINT `fk_country_region` FOREIGN KEY (`region_id`) REFERENCES `regions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `country`
+-- Dumping data for table `countries`
 --
 
-LOCK TABLES `country` WRITE;
-/*!40000 ALTER TABLE `country` DISABLE KEYS */;
-INSERT INTO `country` VALUES (1,'USA',1);
-/*!40000 ALTER TABLE `country` ENABLE KEYS */;
+LOCK TABLES `countries` WRITE;
+/*!40000 ALTER TABLE `countries` DISABLE KEYS */;
+INSERT INTO `countries` VALUES (1,'USA',1);
+/*!40000 ALTER TABLE `countries` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `employee`
+-- Table structure for table `employees`
 --
 
-DROP TABLE IF EXISTS `employee`;
+DROP TABLE IF EXISTS `employees`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `employee` (
+CREATE TABLE `employees` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `firstName` varchar(45) NOT NULL,
-  `lastName` varchar(45) NOT NULL,
+  `firstname` varchar(45) NOT NULL,
+  `lastname` varchar(45) NOT NULL,
   `age` tinyint(3) unsigned DEFAULT NULL,
-  `countryId` int(10) unsigned NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_idx` (`firstName`,`lastName`),
-  KEY `age_idx` (`age`),
-  KEY `country_idx` (`countryId`),
-  CONSTRAINT `fk_employee_country` FOREIGN KEY (`countryId`) REFERENCES `country` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  UNIQUE KEY `unique_idx` (`firstname`,`lastname`),
+  KEY `age_idx` (`age`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `employee`
+-- Dumping data for table `employees`
 --
 
-LOCK TABLES `employee` WRITE;
-/*!40000 ALTER TABLE `employee` DISABLE KEYS */;
-INSERT INTO `employee` VALUES (1,'Jordan','Belfort',1,1);
-/*!40000 ALTER TABLE `employee` ENABLE KEYS */;
+LOCK TABLES `employees` WRITE;
+/*!40000 ALTER TABLE `employees` DISABLE KEYS */;
+INSERT INTO `employees` VALUES (1,'Jordan','Belfort',38);
+/*!40000 ALTER TABLE `employees` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -155,13 +151,13 @@ LOCK TABLES `irrelevant` WRITE;
 UNLOCK TABLES;
 
 --
--- Table structure for table `region`
+-- Table structure for table `regions`
 --
 
-DROP TABLE IF EXISTS `region`;
+DROP TABLE IF EXISTS `regions`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `region` (
+CREATE TABLE `regions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
   PRIMARY KEY (`id`),
@@ -170,13 +166,13 @@ CREATE TABLE `region` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `region`
+-- Dumping data for table `regions`
 --
 
-LOCK TABLES `region` WRITE;
-/*!40000 ALTER TABLE `region` DISABLE KEYS */;
-INSERT INTO `region` VALUES (1,'North America');
-/*!40000 ALTER TABLE `region` ENABLE KEYS */;
+LOCK TABLES `regions` WRITE;
+/*!40000 ALTER TABLE `regions` DISABLE KEYS */;
+INSERT INTO `regions` VALUES (1,'North America');
+/*!40000 ALTER TABLE `regions` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -188,4 +184,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-05-18 18:43:35
+-- Dump completed on 2014-08-10 20:08:56
