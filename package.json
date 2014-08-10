@@ -23,8 +23,9 @@
     "pg.js": "~3.4.1"
   },
   "devDependencies": {
-    "mocha": "~1.20.1",
-    "chai": "~1.9.1"
+    "mocha": "~1.21.4",
+    "chai": "~1.9.1",
+    "latest": "~0.1.2"
   },
   "author": {
     "name": "Dimitrios C. Michalakos",
