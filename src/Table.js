@@ -546,13 +546,23 @@ Table.prototype.del = function (selector, options, callback) {
 
 /**
  * Creates or updates (if already exists) the specified record in database.
- * @param {object} attrs the record attributes.
+ * @param {(object|Array<object>)} attrs the record attributes.
  * @param {function} [callback] an optional callback function i.e. function(err, data).
  * @returns {Promise}
  */
 Table.prototype.set = function (attrs, callback) {
   var self = this,
     resolver;
+
+  if (_.isArray(attrs)) {
+    return Promise.map(attrs, function (obj) {
+      return this.set(obj);
+    }).all().nodeify(callback);
+  }
+
+  if (!_.isPlainObject(attrs)) {
+    throw new Error('Invalid records attributes: expected object or Array of objects, received ' + typeof(attrs));
+  }
 
   // set the resolver function
   resolver = function (resolve, reject) {
@@ -570,7 +580,7 @@ Table.prototype.set = function (attrs, callback) {
     // make sure columns exist in table
     arr = _.difference(Object.keys(attrs), Object.keys(self._columns));
     if (arr.length !== 0) {
-      return reject('Invalid attributes: column ' + arr[0] + ' does not exist in table ' + self.name);
+      return reject('Invalid record attributes: column ' + arr[0] + ' does not exist in table ' + self.name);
     }
 
     // set columns to update in case record already exists
