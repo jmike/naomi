@@ -1,6 +1,7 @@
 var Promise = require('bluebird'),
   _ = require('lodash'),
   MySQLQueryBuilder = require('./MySQLQueryBuilder'),
+  PostgresQueryBuilder = require('./PostgresQueryBuilder'),
   operators = ['=', '==', '===', '!=', '!==', '<>', '>', '>=', '<', '<=', '~'];
 
 function Table (db, name) {
@@ -14,6 +15,10 @@ function Table (db, name) {
 
   if (db.type === 'mysql') {
     this._queryBuilder = new MySQLQueryBuilder(name);
+  } else if (db.type === 'postgres') {
+    this._queryBuilder = new PostgresQueryBuilder(name);
+  } else {
+    throw new Error('Unsupported database type: ' + db.type);
   }
 
   // load metadata

@@ -15,7 +15,7 @@ function QueryBuilder(table) {
  * @param {String} str
  */
 QueryBuilder.prototype.escapeSQL = function (str) {
-  return '`' + str + '`';
+  return '"' + str + '"';
 };
 
 /**
@@ -160,7 +160,7 @@ QueryBuilder.prototype.count = function (props) {
     props = {};
   }
 
-  sql.push('SELECT COUNT(*) AS `count`');
+  sql.push('SELECT COUNT(*) AS "count"');
   sql.push('FROM ' + this.escapeSQL(this.table));
 
   if (props.selector != null) {
@@ -233,33 +233,35 @@ QueryBuilder.prototype.delete = function (props) {
  * @return {object} with "sql" and "params" properties.
  */
 QueryBuilder.prototype.upsert = function (props) {
-  var sql = [], params = [];
 
-  sql.push('INSERT INTO ' + this.escapeSQL(this.table));
+  throw new Error('Upsert not yet supported');
+  // var sql = [], params = [];
 
-  sql.push('(' + props.columns.map(function (column) {
-    return this.escapeSQL(column);
-  }, this).join(', ') + ')');
+  // sql.push('INSERT INTO ' + this.escapeSQL(this.table));
 
-  sql.push('VALUES');
+  // sql.push('(' + props.columns.map(function (column) {
+  //   return this.escapeSQL(column);
+  // }, this).join(', ') + ')');
 
-  sql.push(props.values.map(function(obj) {
-    return '(' + props.columns.map(function (k) {
-      params.push(obj[k]);
-      return '?';
-    }).join(', ') + ')';
-  }).join(', '));
+  // sql.push('VALUES');
 
-  sql.push('ON DUPLICATE KEY UPDATE');
+  // sql.push(props.values.map(function(obj) {
+  //   return '(' + props.columns.map(function (k) {
+  //     params.push(obj[k]);
+  //     return '?';
+  //   }).join(', ') + ')';
+  // }).join(', '));
 
-  sql.push(props.updateColumns.map(function (k) {
-    k = this.escapeSQL(k);
-    return k + ' = VALUES(' + k + ')';
-  }, this).join(', '));
+  // sql.push('ON DUPLICATE KEY UPDATE');
 
-  sql = sql.join(' ') + ';';
+  // sql.push(props.updateColumns.map(function (k) {
+  //   k = this.escapeSQL(k);
+  //   return k + ' = VALUES(' + k + ')';
+  // }, this).join(', '));
 
-  return {sql: sql, params: params};
+  // sql = sql.join(' ') + ';';
+
+  // return {sql: sql, params: params};
 };
 
 module.exports = QueryBuilder;
