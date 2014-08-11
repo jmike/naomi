@@ -348,8 +348,8 @@ Table.prototype._parseValues = function (values) {
  * @param {(boolean|number|string|date|object|Array.<object>|null)} selector a selector to match record(s) in database.
  * @param {object} [options] query options.
  * @param {(string|Object|Array.<object|string>)} [options.order] an order expression to sort records.
- * @param {(number|string)} [options.limit=1000] max number of records to return from database, must be a positive integer, i.e. limit > 0.
- * @param {(number|string)} [options.offset=0] number of records to skip from database, must be a non-negative integer, i.e. offset >= 0.
+ * @param {(number|string)} [options.limit] max number of records to return from database, must be a positive integer, i.e. limit > 0.
+ * @param {(number|string)} [options.offset] number of records to skip from database, must be a non-negative integer, i.e. offset >= 0.
  * @param {function} [callback] an optional callback function i.e. function(err, records).
  * @returns {Promise}
  */
@@ -386,7 +386,7 @@ Table.prototype.get = function (selector, options, callback) {
         columns: Object.keys(self._columns),
         selector: self._parseSelector(selector || null),
         order: self._parseOrder(options.order || null),
-        limit: self._parseLimit(options.limit || 1000),
+        limit: self._parseLimit(options.limit || null),
         offset: self._parseOffset(options.offset || null)
       });
     } catch (err) {
@@ -429,8 +429,8 @@ Table.prototype.getAll = function (options, callback) {
  * @param {(boolean|number|string|date|object|Array.<object>|null)} selector a selector to match record(s) in database.
  * @param {object} [options] query options.
  * @param {(string|Object|Array.<object|string>)} [options.order] an order expression to sort records.
- * @param {(number|string)} [options.limit=1000] max number of records to return from database, must be a positive integer, i.e. limit > 0.
- * @param {(number|string)} [options.offset=0] number of records to skip from database, must be a non-negative integer, i.e. offset >= 0.
+ * @param {(number|string)} [options.limit] max number of records to return from database, must be a positive integer, i.e. limit > 0.
+ * @param {(number|string)} [options.offset] number of records to skip from database, must be a non-negative integer, i.e. offset >= 0.
  * @param {function} [callback] an optional callback function i.e. function(err, records).
  * @returns {Promise}
  */
@@ -467,7 +467,7 @@ Table.prototype.count = function (selector, options, callback) {
         columns: Object.keys(self._columns),
         selector: self._parseSelector(selector || null),
         order: self._parseOrder(options.order || null),
-        limit: self._parseLimit(options.limit || 1000),
+        limit: self._parseLimit(options.limit || null),
         offset: self._parseOffset(options.offset || null)
       });
     } catch (err) {
@@ -498,8 +498,8 @@ Table.prototype.count = function (selector, options, callback) {
  * Counts all record(s) in table.
  * @param {object} [options] query options.
  * @param {(string|Object|Array.<object|string>)} [options.order] an order expression to sort records.
- * @param {(number|string)} [options.limit=1000] max number of records to return from database, must be a positive integer, i.e. limit > 0.
- * @param {(number|string)} [options.offset=0] number of records to skip from database, must be a non-negative integer, i.e. offset >= 0.
+ * @param {(number|string)} [options.limit] max number of records to return from database, must be a positive integer, i.e. limit > 0.
+ * @param {(number|string)} [options.offset] number of records to skip from database, must be a non-negative integer, i.e. offset >= 0.
  * @param {function} [callback] an optional callback function i.e. function(err, records).
  * @returns {Promise}
  */
@@ -512,7 +512,7 @@ Table.prototype.countAll = function (options, callback) {
  * @param {(boolean|number|string|date|object|Array.<object>|null)} selector a selector to match record(s) in database.
  * @param {object} [options] query options.
  * @param {(string|Object|Array.<object|string>)} [options.order] an order expression to sort records.
- * @param {(number|string)} [options.limit=1000] max number of records to delete from database, must be a positive integer, i.e. limit > 0.
+ * @param {(number|string)} [options.limit] max number of records to delete from database, must be a positive integer, i.e. limit > 0.
  * @param {function} [callback] an optional callback function i.e. function(err, data).
  * @returns {Promise}
  */
@@ -548,7 +548,7 @@ Table.prototype.del = function (selector, options, callback) {
       query = self._queryBuilder.delete({
         selector: self._parseSelector(selector || null),
         order: self._parseOrder(options.order || null),
-        limit: self._parseLimit(options.limit || 1000)
+        limit: self._parseLimit(options.limit || null)
       });
     } catch (err) {
       return reject(err.message);
