@@ -243,12 +243,10 @@ QueryBuilder.prototype.upsert = function (props) {
 
   sql.push('VALUES');
 
-  sql.push(props.values.map(function(obj) {
-    return '(' + props.columns.map(function (k) {
-      params.push(obj[k]);
-      return '?';
-    }).join(', ') + ')';
-  }).join(', '));
+  sql.push('(' + props.columns.map(function (k) {
+    params.push(props.values[k]);
+    return '?';
+  }).join(', ') + ')');
 
   sql.push('ON DUPLICATE KEY UPDATE');
 

@@ -51,42 +51,42 @@ describe('Postgres Table', function () {
       //   assert.isFalse(employees.isIndexKey('invalid-column'));
       // });
 
-      // it('is able to complete a CRUD [+ Count] operation', function (done) {
-      //   employees.set({ // insert
-      //     id: 2,
-      //     firstname: 'Donnie',
-      //     lastname: 'Azoff',
-      //     age: 36
-      //   }).then(function (data) {
-      //     assert.isObject(data);
-      //     return employees.get(2); // select
+      it('is able to complete a CRUD [+ Count] operation', function (done) {
+        employees.set({ // insert
+          id: 2,
+          firstname: 'Donnie',
+          lastname: 'Azoff',
+          age: 36
+        }).then(function (data) {
+          // assert.isObject(data);
+          return employees.get(2); // select
 
-      //   }).then(function (records) {
-      //     assert.isArray(records);
-      //     assert.lengthOf(records, 1);
-      //     return employees.countAll(); // count
+        }).then(function (records) {
+          assert.isArray(records);
+          assert.lengthOf(records, 1);
+          return employees.countAll(); // count
 
-      //   }).then(function (count) {
-      //     assert.strictEqual(count, 2);
-      //     return employees.set({ // update
-      //       id: 2,
-      //       firstname: 'Donnie',
-      //       lastname: 'Azoff',
-      //       age: 37
-      //     });
+        }).then(function (count) {
+          assert.strictEqual(count, 2);
+          return employees.set({ // update
+            id: 2,
+            firstname: 'Donnie',
+            lastname: 'Azoff',
+            age: 37
+          });
 
-      //   }).then(function (data) {
-      //     assert.isObject(data);
-      //     return employees.del(2); // delete
+        }).then(function (data) {
+          // assert.isObject(data);
+          return employees.del(2); // delete
 
-      //   }).then(function (data) {
-      //     assert.isObject(data);
-      //     done();
+        }).then(function (data) {
+          // assert.isObject(data);
+          done();
 
-      //   }).catch(function (err) {
-      //     throw err;
-      //   });
-      // });
+        }).catch(function (err) {
+          throw err;
+        });
+      });
 
       describe('#get()', function () {
 

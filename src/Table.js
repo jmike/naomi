@@ -315,35 +315,6 @@ Table.prototype._parseOffset = function (offset) {
 };
 
 /**
- * Parses the given object and returns an array of values to use in a SQL INSERT statement.
- * @param {(object|Array.<object>)} values
- * @returns {Array.<object>}
- * @throws {Error} if values are unspecified or invalid.
- * @private
- */
-Table.prototype._parseValues = function (values) {
-  var diff;
-
-  if (_.isPlainObject(values)) {
-    diff = _.difference(Object.keys(values), Object.keys(this._columns));
-
-    if (diff.length !== 0) {
-      throw new Error('Invalid values: column ' + diff[0] + ' does not exist in table ' + this.name);
-    }
-
-    return [values];
-  }
-
-  if (_.isArray(values)) {
-    return values.map(function (e) {
-      return this._parseValues(e)[0];
-    }, this);
-  }
-
-  throw new Error('Invalid values: expected object or array of objects, received ' + typeof(offset));
-};
-
-/**
  * Retrieves the designated record(s) from database.
  * @param {(boolean|number|string|date|object|Array.<object>|null)} selector a selector to match record(s) in database.
  * @param {object} [options] query options.
@@ -476,7 +447,7 @@ Table.prototype.count = function (selector, options, callback) {
 
     // run the query
     self.db.query(query.sql, query.params).then(function (records) {
-      resolve(records[0].count);
+      resolve(records[0].count | 0);
     }).catch(function (err) {
       reject(err);
     });
@@ -574,38 +545,71 @@ Table.prototype.del = function (selector, options, callback) {
 };
 
 /**
- * Creates or updates (if already exists) the specified record(s) in database.
- * @param {(object|Array.<object>)} attrs the record attributes to create or update.
+ * Creates or updates (if already exists) the specified record in database.
+ * @param {object} attrs the record attributes.
  * @param {function} [callback] an optional callback function i.e. function(err, data).
  * @returns {Promise}
  */
 Table.prototype.set = function (attrs, callback) {
   var self = this,
-    resolver, values, columns;
+    resolver;
 
   // set the resolver function
   resolver = function (resolve, reject) {
 
-    var query;
+    var query, columns, updateColumns, updateSelector, arr, obj;
 
     // make sure table exists in database
     if (!self.db.hasTable(self.name)) {
       return reject('Table "' + self.name + '" cannot be found in database');
     }
 
-    // compile a parameterized query
-    try {
-      values = self._parseValues(attrs);
-      columns = Object.keys(values[0]); // assumes all objects have the same properties
+    // extract column names from attrs
+    columns = Object.keys(attrs);
 
-      query = self._queryBuilder.upsert({
-        columns: columns,
-        values: values,
-        updateColumns: _.difference(columns, this._primaryKey)
-      });
-    } catch (err) {
-      return reject(err.message);
+    // make sure columns exist in table
+    arr = _.difference(Object.keys(attrs), Object.keys(self._columns));
+    if (arr.length !== 0) {
+      return reject('Invalid attributes: column ' + arr[0] + ' does not exist in table ' + self.name);
     }
+
+    // set columns to update in case record already exists
+    updateColumns = _.difference(Object.keys(attrs), self._primaryKey);
+
+    // set an update selector
+    updateSelector = [];
+
+    obj = {};
+    arr = _.intersection(columns, self._primaryKey);
+
+    if (arr.length === self._primaryKey.length) {
+      arr.forEach(function (k) {
+        obj[k] = {'=': attrs[k]};
+      });
+      updateSelector.push(obj);
+    }
+
+    _.forOwn(self._uniqueKeys, function (uniqueKey) {
+
+      obj = {};
+      arr = _.intersection(columns, uniqueKey);
+
+      if (arr.length === uniqueKey.length) {
+        arr.forEach(function (k) {
+          obj[k] = {'=': attrs[k]};
+        });
+        updateSelector.push(obj);
+      }
+
+    });
+
+    // compile a parameterized query
+    query = self._queryBuilder.upsert({
+      columns: columns,
+      values: attrs,
+      updateColumns: updateColumns,
+      updateSelector: updateSelector
+    });
 
     // run the query
     self.db.query(query.sql, query.params).then(function (data) {

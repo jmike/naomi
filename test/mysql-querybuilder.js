@@ -245,23 +245,13 @@ describe('MySQL QueryBuilder', function () {
     it('returns a valid SQL with columns + values + updateColumns specified', function () {
       var query = qb.upsert({
         columns: ['a', 'b', 'c'],
-        values: [
-          {a: 1, b: 2, c: 3},
-          {a: 11, b: 22, c: 33},
-          {a: 111, b: 222, c: 333}
-        ],
+        values: {a: 1, b: 2, c: 3},
         updateColumns: ['b', 'c']
       });
-      assert.strictEqual(query.sql, 'INSERT INTO `employees` (`a`, `b`, `c`) VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?) ON DUPLICATE KEY UPDATE `b` = VALUES(`b`), `c` = VALUES(`c`);');
+      assert.strictEqual(query.sql, 'INSERT INTO `employees` (`a`, `b`, `c`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `b` = VALUES(`b`), `c` = VALUES(`c`);');
       assert.strictEqual(query.params[0], 1);
       assert.strictEqual(query.params[1], 2);
       assert.strictEqual(query.params[2], 3);
-      assert.strictEqual(query.params[3], 11);
-      assert.strictEqual(query.params[4], 22);
-      assert.strictEqual(query.params[5], 33);
-      assert.strictEqual(query.params[6], 111);
-      assert.strictEqual(query.params[7], 222);
-      assert.strictEqual(query.params[8], 333);
     });
 
   });

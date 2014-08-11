@@ -233,35 +233,53 @@ QueryBuilder.prototype.delete = function (props) {
  * @return {object} with "sql" and "params" properties.
  */
 QueryBuilder.prototype.upsert = function (props) {
+  var sql = [], params = [],
+    where;
 
-  throw new Error('Upsert not yet supported');
-  // var sql = [], params = [];
+  sql.push('WITH upsert AS (UPDATE ' + this.escapeSQL(this.table) + ' SET');
 
-  // sql.push('INSERT INTO ' + this.escapeSQL(this.table));
+  sql.push(props.updateColumns.map(function (k) {
 
-  // sql.push('(' + props.columns.map(function (column) {
-  //   return this.escapeSQL(column);
-  // }, this).join(', ') + ')');
+    var column = this.escapeSQL(k), value = props.values[k];
 
-  // sql.push('VALUES');
+    params.push(value);
+    return column + ' = ?';
 
-  // sql.push(props.values.map(function(obj) {
-  //   return '(' + props.columns.map(function (k) {
-  //     params.push(obj[k]);
-  //     return '?';
-  //   }).join(', ') + ')';
-  // }).join(', '));
+  }, this).join(', '));
 
-  // sql.push('ON DUPLICATE KEY UPDATE');
+  if (props.updateSelector != null) {
+    where = this.whereClause(props.updateSelector);
 
-  // sql.push(props.updateColumns.map(function (k) {
-  //   k = this.escapeSQL(k);
-  //   return k + ' = VALUES(' + k + ')';
-  // }, this).join(', '));
+    sql.push(where.sql);
+    params.push.apply(params, where.params);
+  }
 
-  // sql = sql.join(' ') + ';';
+  sql.push('RETURNING *)');
 
-  // return {sql: sql, params: params};
+  sql.push('INSERT INTO ' + this.escapeSQL(this.table));
+
+  sql.push('(' + props.columns.map(function (k) {
+
+    return this.escapeSQL(k);
+
+  }, this).join(', ') + ')');
+
+  sql.push('SELECT');
+
+  sql.push(props.columns.map(function (k) {
+
+    var value = props.values[k];
+
+    params.push(value);
+    return '?';
+
+  }, this).join(', '));
+
+  sql.push('WHERE NOT EXISTS (SELECT * FROM upsert)');
+
+  sql = sql.join(' ') + ';';
+
+  return {sql: sql, params: params};
 };
 
 module.exports = QueryBuilder;
