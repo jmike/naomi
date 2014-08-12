@@ -556,7 +556,7 @@ Table.prototype.set = function (attrs, callback) {
 
   if (_.isArray(attrs)) {
     return Promise.map(attrs, function (obj) {
-      return this.set(obj);
+      return self.set(obj);
     }).all().nodeify(callback);
   }
 
