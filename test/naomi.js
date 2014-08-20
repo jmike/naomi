@@ -8,7 +8,7 @@ describe('naomi', function () {
   describe('#create()', function () {
 
     it('returns a new Database when type is valid', function () {
-      var db = naomi.create('mysql');
+      var db = naomi.create({type: 'mysql'});
       assert.instanceOf(db, Database);
     });
 

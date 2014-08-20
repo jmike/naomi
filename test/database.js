@@ -9,7 +9,8 @@ var chai = require('chai'),
   db;
 
 // init database
-db = naomi.create('mysql', {
+db = naomi.create({
+  type: 'mysql',
   host: process.env.DATABASE_HOST,
   port: parseInt(process.env.DATABASE_PORT, 10),
   user: process.env.DATABASE_USER,
@@ -23,38 +24,42 @@ describe('Database', function () {
 
     describe('#constructor()', function () {
 
+      it('throws an error when options are missing', function () {
+        assert.throws(function () { new Database(); }, /invalid database options/i);
+      });
+
       it('throws an error when database type is unspecified', function () {
-        assert.throws(function () { new Database(); }, /invalid or unspecified database type/i);
-      });
-
-      it('throws an error when database type is invalid', function () {
-        assert.throws(function () { new Database('invalid'); }, /unknown database type/i);
-      });
-
-      it('throws an error when database type is Number', function () {
-        assert.throws(function () { new Database(123); }, /invalid or unspecified database type/i);
-      });
-
-      it('throws an error when database type is Boolean', function () {
-        assert.throws(function () { new Database(false); }, /invalid or unspecified database type/i);
-      });
-
-      it('throws an error when database type is Object', function () {
         assert.throws(function () { new Database({}); }, /invalid or unspecified database type/i);
       });
 
+      it('throws an error when database type is invalid', function () {
+        assert.throws(function () { new Database({type: 'invalid'}); }, /unknown database type/i);
+      });
+
+      it('throws an error when database type is Number', function () {
+        assert.throws(function () { new Database({type: 123}); }, /invalid or unspecified database type/i);
+      });
+
+      it('throws an error when database type is Boolean', function () {
+        assert.throws(function () { new Database({type: false}); }, /invalid or unspecified database type/i);
+      });
+
+      it('throws an error when database type is Object', function () {
+        assert.throws(function () { new Database({type: {}}); }, /invalid or unspecified database type/i);
+      });
+
       it('returns a MySQL Database when "mysql" type is specified', function () {
-        var db = new Database('mysql');
+        var db = new Database({type: 'mysql'});
         assert.instanceOf(db._engine, MySQLEngine);
       });
 
       it('returns a Postgres Database when "postgres" type is specified', function () {
-        var db = new Database('postgres');
+        var db = new Database({type: 'postgres'});
         assert.instanceOf(db._engine, PostgresEngine);
       });
 
-      it('accepts type param in both uppercase and lowercase letters, e.g. "MySQL"', function () {
-        var db = new Database('MySQL');
+      it('accepts type option in both uppercase and lowercase letters, e.g. "MySQL"', function () {
+        var db = new Database({type: 'MySQL'});
         assert.instanceOf(db._engine, MySQLEngine);
       });
 

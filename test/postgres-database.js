@@ -6,7 +6,8 @@ var chai = require('chai'),
   db;
 
 // init database
-db = naomi.create('postgres', {
+db = naomi.create({
+  type: 'postgres',
   host: process.env.POSTGRES_HOST,
   port: parseInt(process.env.POSTGRES_PORT, 10),
   user: process.env.POSTGRES_USER,

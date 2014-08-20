@@ -3,9 +3,10 @@ require('dotenv').load(); // load environmental variables
 var chai = require('chai'),
   naomi = require('../src/naomi'),
   assert = chai.assert,
-  db, conn;
+  conn;
 
 conn = {
+  type: 'postgres',
   host: process.env.POSTGRES_HOST,
   port: parseInt(process.env.POSTGRES_PORT, 10),
   user: process.env.POSTGRES_USER,
@@ -17,7 +18,7 @@ describe('Postgres Table', function () {
 
   describe('@connected', function () {
 
-    var db = naomi.create('postgres', conn);
+    var db = naomi.create(conn);
 
     before(function (done) {
       db.once('ready', done);
@@ -136,7 +137,7 @@ describe('Postgres Table', function () {
 
     describe('#get()', function () {
 
-      var db = naomi.create('postgres', conn);
+      var db = naomi.create(conn);
 
       it('enqueues queries until db is ready', function (done) {
         var employees = db.extend('employees');
