@@ -1,18 +1,19 @@
 var pg = require('pg.js'),
   createPool = require('generic-pool').Pool,
-  Promise = require('bluebird');
+  Promise = require('bluebird'),
+  Transaction = require('./PostgresTransaction');
 
 /**
  * Constructs a new Postgres database Engine.
- * @param {Object} options connection options.
- * @param {String} options.host the hostname of the database.
+ * @param {object} options connection options.
+ * @param {string} options.host the hostname of the database.
  * @param {String|Number} options.port the port number of the database.
- * @param {String} options.user the user to authenticate to the database.
- * @param {String} options.password the password of the user.
- * @param {String} options.database the name of the database, a.k.a. the schema.
- * @param {Number} [options.poolSize=10] number of unique Client objects to maintain in the pool.
- * @param {Number} [options.poolIdleTimeout=30000] max milliseconds a client can go unused before it is removed from the pool and destroyed.
- * @param {Number} [options.reapIntervalMillis=1000] frequency to check for idle clients within the client pool.
+ * @param {string} options.user the user to authenticate to the database.
+ * @param {string} options.password the password of the user.
+ * @param {string} options.database the name of the database, a.k.a. the schema.
+ * @param {number} [options.poolSize=10] number of unique Client objects to maintain in the pool.
+ * @param {number} [options.poolIdleTimeout=30000] max milliseconds a client can go unused before it is removed from the pool and destroyed.
+ * @param {number} [options.reapIntervalMillis=1000] frequency to check for idle clients within the client pool.
  * @see {@link https://github.com/brianc/node-postgres/wiki/Client#constructor} for a list of connection options to use.
  * @constructor
  */
@@ -48,7 +49,6 @@ Engine.prototype.connect = function () {
       max: self._options.poolSize || 10,
       idleTimeoutMillis: self._options.poolIdleTimeout || 30000,
       reapIntervalMillis: self._options.reapIntervalMillis || 1000
-
     });
 
     return;
@@ -70,11 +70,39 @@ Engine.prototype.disconnect = function () {
   });
 };
 
+
+/**
+ * Acquires the first available client from pool.
+ * @param {function} [callback] an optional callback function.
+ * @return {Promise}
+ * @private
+ */
+Engine.prototype._acquireClient = function (callback) {
+  var self = this, resolver;
+
+  resolver = function (resolve, reject) {
+    self._pool.acquire(function(err, client) {
+      if (err) return reject(err);
+      resolve(client);
+    });
+  };
+
+  return new Promise(resolver).nodeify(callback);
+};
+
+/**
+ * Releases the designated client to pool.
+ * @private
+ */
+Engine.prototype._releaseClient = function (client) {
+  this._pool.release(client);
+};
+
 /**
  * Converts "?" chars to "$1", "$2", etc, in the order they appear in the give SQL statement.
  * This it to provide a compatibility layer with MySQL engine and have a uniform language for params.
- * @param {String} sql a parameterized SQL statement, using "?" to denote param.
- * @return {String}
+ * @param {string} sql a parameterized SQL statement, using "?" to denote param.
+ * @return {string}
  * @private
  */
 Engine.prototype._prepareSQL = function (sql) {
@@ -88,24 +116,23 @@ Engine.prototype._prepareSQL = function (sql) {
 };
 
 /**
- * Runs the given SQL statement to the database.
- * @param {String} sql a parameterized SQL statement.
+ * Runs the given SQL statement.
+ * @param {string} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
- * @param {Object} [options] query options - currently unused.
+ * @param {object} [options] query options - currently unused.
  * @returns {Promise}
  */
 Engine.prototype.query = function (sql, params) {
-  var self = this,
-    resolver;
+  var self = this, resolver;
 
   sql = this._prepareSQL(sql);
 
   resolver = function (resolve, reject) {
-    self._pool.acquire(function(err, client) {
+    self._acquireClient(function(err, client) {
       if (err) return reject(err);
 
       client.query(sql, params, function(err, result) {
-        self._pool.release(client);
+        self._releaseClient(client);
 
         if (err) {
           reject(err);
@@ -117,6 +144,14 @@ Engine.prototype.query = function (sql, params) {
   };
 
   return new Promise(resolver);
+};
+
+/**
+ * Initiates a new transaction.
+ * @returns {Promise} resolving to a Transaction instance.
+ */
+Engine.prototype.beginTransaction = function () {
+  return new Transaction(this).begin();
 };
 
 /**
@@ -157,7 +192,7 @@ Engine.prototype.query = function (sql, params) {
  *   }
  * }
  */
-Engine.prototype.getMetaData = function () {
+Engine.prototype.getMeta = function () {
   return Promise.props({
     tables: this._getTables(),
     columns: this._getColumns(),

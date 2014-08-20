@@ -32,17 +32,12 @@ function Database(options) {
 
   // extract + validate "type" option
   type = options.type;
-
-  if (_.isString(type)) {
-    type = type.toLowerCase();
-  } else {
-    throw new Error('Invalid or unspecified database type');
-  }
+  if (!_.isString(type)) throw new Error('Invalid or unspecified database type');
 
   // init database engine
-  if (type === 'mysql') {
+  if (/mysql/i.test(type)) {
     engine = new MySQLEngine(options);
-  } else if (type === 'postgres') {
+  } else if (/postgres/i.test(type)) {
     engine = new PostgresEngine(options);
   } else {
     throw new Error('Unknown database type: expected one of "mysql" or "postgres", received "' + type + '"');
@@ -59,7 +54,7 @@ function Database(options) {
 
   // loads metadata from database server
   this.on('connect', function () {
-    engine.getMetaData()
+    engine.getMeta()
       .bind(this)
       .then(function (meta) {
         this._meta = meta;
@@ -135,7 +130,7 @@ Database.prototype.query = function (sql, params, options, callback) {
 
     if (_.isPlainObject(params)) {
       options = params;
-    } else if (_.isFunction(params) === 'function') {
+    } else if (_.isFunction(params)) {
       options = undefined;
       callback = params;
     } else if (!_.isUndefined(params)) {
@@ -164,6 +159,15 @@ Database.prototype.query = function (sql, params, options, callback) {
 
   // run the query
   return this._engine.query(sql, params, options).nodeify(callback);
+};
+
+/**
+ * Begins a new transaction with this database.
+ * @param {Function} [callback] a callback function, i.e. function(err, records).
+ * @returns {Promise} resolving to a Transaction instance.
+ */
+Database.prototype.beginTransaction = function (callback) {
+  return this._engine.beginTransaction().nodeify(callback);
 };
 
 /**

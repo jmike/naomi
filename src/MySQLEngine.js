@@ -1,6 +1,7 @@
 var mysql = require('mysql'),
   _ = require('lodash'),
-  Promise = require('bluebird');
+  Promise = require('bluebird'),
+  Transaction = require('./MySQLTransaction');
 
 /**
  * Constructs a new MySQL database Engine.
@@ -15,6 +16,7 @@ var mysql = require('mysql'),
  */
 function Engine(options) {
   this._options = options;
+  this._pool = null;
 }
 
 /**
@@ -35,13 +37,11 @@ Engine.prototype.connect = function () {
  * @returns {Promise}
  */
 Engine.prototype.disconnect = function () {
-  var self = this,
-    resolver;
+  var self = this, resolver;
 
   resolver = function (resolve, reject) {
     self._pool.end(function (err) {
       if (err) return reject(err);
-
       resolve();
     });
   };
@@ -49,23 +49,48 @@ Engine.prototype.disconnect = function () {
   return new Promise(resolver);
 };
 
+/**
+ * Acquires the first available client from pool.
+ * @param {function} [callback] an optional callback function.
+ * @return {Promise}
+ * @private
+ */
+Engine.prototype._acquireClient = function (callback) {
+  var self = this, resolver;
+
+  resolver = function (resolve, reject) {
+    self._pool.getConnection(function (err, client) {
+      if (err) return reject(err);
+      resolve(client);
+    });
+  };
+
+  return new Promise(resolver).nodeify(callback);
+};
 
 /**
- * Runs the given SQL statement to the database.
+ * Releases the designated client to pool.
+ * @private
+ */
+Engine.prototype._releaseClient = function (client) {
+  client.release();
+};
+
+/**
+ * Runs the given SQL statement.
  * @param {String} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
- * @param {Object} [options] query options.
- * @param {Boolean} options.nestTables set to true to handle overlapping column names.
+ * @param {Object} [options] optional query options.
+ * @param {Boolean} [options.nestTables] set to true to handle overlapping column names.
  * @returns {Promise}
  */
 Engine.prototype.query = function (sql, params, options) {
-  var self = this,
-    resolver;
+  var self = this, resolver;
 
   options = options || {};
 
   resolver = function (resolve, reject) {
-    self._pool.getConnection(function (err, connection) {
+    self._acquireClient(function (err, client) {
       if (err) return reject(err);
 
       if (options.nestTables) {
@@ -75,11 +100,10 @@ Engine.prototype.query = function (sql, params, options) {
         };
       }
 
-      // console.log(sql, params);
-      connection.query(sql, params, function(err, records) {
+      client.query(sql, params, function(err, records) {
         var data;
 
-        connection.release(); // release the connection or the sky will fall on your head
+        self._releaseClient(client);
 
         if (err) return reject(err);
 
@@ -99,6 +123,14 @@ Engine.prototype.query = function (sql, params, options) {
   };
 
   return new Promise(resolver);
+};
+
+/**
+ * Initiates a new transaction.
+ * @returns {Promise} resolving to a Transaction instance.
+ */
+Engine.prototype.beginTransaction = function () {
+  return new Transaction(this).begin();
 };
 
 /**
@@ -139,7 +171,7 @@ Engine.prototype.query = function (sql, params, options) {
  *   }
  * }
  */
-Engine.prototype.getMetaData = function () {
+Engine.prototype.getMeta = function () {
   return Promise.props({
     tables: this._getTables(),
     columns: this._getColumns(),
