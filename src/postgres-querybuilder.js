@@ -189,5 +189,3 @@ module.exports = _.extend(require('./mysql-querybuilder'), {
   }
 
 });
-
-module.exports = QueryBuilder;

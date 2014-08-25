@@ -4,7 +4,7 @@ var chai = require('chai'),
   querybuilder = require('../src/mysql-querybuilder'),
   assert = chai.assert;
 
-describe('MySQL QueryBuilder', function () {
+describe('mysql-querybuilder', function () {
 
   describe('#select()', function () {
 
