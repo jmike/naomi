@@ -81,8 +81,8 @@ function where(input) {
  * @param {object} options query properties.
  * @param {string} options.table
  * @param {(Array.<string>|null)} [options.columns]
- * @param {(Array.<object>|null)} [options.where]
- * @param {(Array.<object>|null)} [options.orderBy]
+ * @param {(Array.<object>|null)} [options.selector]
+ * @param {(Array.<object>|null)} [options.order]
  * @param {(number|null)} [options.limit]
  * @param {(number|null)} [options.offset]
  * @returns {object} with "sql" and "params" properties.
@@ -122,16 +122,16 @@ exports.select = function (options) {
   sql.push('FROM ' + escapeSQL(options.table));
 
   // set WHERE clause
-  if (options.where) {
-    clause = where(options.where);
+  if (options.selector) {
+    clause = where(options.selector);
 
     sql.push(clause.sql);
     params.push.apply(params, clause.params);
   }
 
   // set ORDER BY clause
-  if (options.orderBy) {
-    clause = orderBy(options.orderBy);
+  if (options.order) {
+    clause = orderBy(options.order);
     sql.push(clause);
   }
 
@@ -155,7 +155,7 @@ exports.select = function (options) {
  * Compiles and returns a parameterized SELECT COUNT query.
  * @param {object} options query properties.
  * @param {string} options.table
- * @param {(Array.<object>|null)} [options.where]
+ * @param {(Array.<object>|null)} [options.selector]
  * @param {(number|null)} [options.limit]
  * @param {(number|null)} [options.offset]
  * @return {object} with "sql" and "params" properties.
@@ -177,8 +177,8 @@ exports.count = function (options) {
   sql.push('FROM ' + escapeSQL(options.table));
 
   // set WHERE clause
-  if (options.where) {
-    clause = where(options.where);
+  if (options.selector) {
+    clause = where(options.selector);
 
     sql.push(clause.sql);
     params.push.apply(params, clause.params);
@@ -204,8 +204,8 @@ exports.count = function (options) {
  * Compiles and returns a parameterized DELETE statement.
  * @param {object} options query properties.
  * @param {string} options.table
- * @param {(Array.<object>|null)} [options.where]
- * @param {(Array.<object>|null)} [options.orderBy]
+ * @param {(Array.<object>|null)} [options.selector]
+ * @param {(Array.<object>|null)} [options.order]
  * @param {(number|null)} [options.limit]
  * @return {object} with "sql" and "params" properties.
  * @throws {Error} If options is invalid or undefined.
@@ -226,16 +226,16 @@ exports.delete = function (options) {
   sql.push('FROM ' + escapeSQL(options.table));
 
   // set WHERE clause
-  if (options.where) {
-    clause = where(options.where);
+  if (options.selector) {
+    clause = where(options.selector);
 
     sql.push(clause.sql);
     params.push.apply(params, clause.params);
   }
 
   // set ORDER BY clause
-  if (options.orderBy) {
-    clause = orderBy(options.orderBy);
+  if (options.order) {
+    clause = orderBy(options.order);
     sql.push(clause);
   }
 
