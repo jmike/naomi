@@ -161,7 +161,8 @@ Database.prototype.query = function (sql, params, options, callback) {
 
   // make sure db is connected
   if (!this.isConnected) {
-    return Promise.reject('Connection is closed - did you forget to call #connect()?').nodeify(callback);
+    return Promise.reject('Connection is closed - did you forget to call #connect()?')
+      .nodeify(callback);
   }
 
   // execute the query
@@ -177,10 +178,21 @@ Database.prototype.query = function (sql, params, options, callback) {
  * @param {(object|Array.<object>)} [props.order] an order object to sort records.
  * @param {number} [props.limit] max number of records to return - must be a positive integer, i.e. limit > 0.
  * @param {number} [props.offset] number of records to skip - must be a non-negative integer, i.e. offset >= 0.
+ * @param {function} [callback] an optional callback function.
  * @returns {Promise}
  */
-Database.prototype.select = function (props) {
-  return this._engine.select(props);
+Database.prototype.select = function (props, callback) {
+  if (!_.isPlainObject(props)) {
+    return Promise.reject('Invalid query properties: expected plain object, received ' + typeof(props))
+      .nodeify(callback);
+  }
+
+  if (!this.isConnected) {
+    return Promise.reject('Connection is closed - did you forget to call #connect()?')
+      .nodeify(callback);
+  }
+
+  return this._engine.select(props).nodeify(callback);
 };
 
 /**
@@ -190,10 +202,21 @@ Database.prototype.select = function (props) {
  * @param {(object|Array.<object>)} [props.selector] a selector object to match specific records.
  * @param {number} [props.limit] max number of records to return - must be a positive integer, i.e. limit > 0.
  * @param {number} [props.offset] number of records to skip - must be a non-negative integer, i.e. offset >= 0.
+ * @param {function} [callback] an optional callback function.
  * @returns {Promise}
  */
-Database.prototype.count = function (props) {
-  return this._engine.count(props);
+Database.prototype.count = function (props, callback) {
+  if (!_.isPlainObject(props)) {
+    return Promise.reject('Invalid query properties: expected plain object, received ' + typeof(props))
+      .nodeify(callback);
+  }
+
+  if (!this.isConnected) {
+    return Promise.reject('Connection is closed - did you forget to call #connect()?')
+      .nodeify(callback);
+  }
+
+  return this._engine.count(props).nodeify(callback);
 };
 
 /**
@@ -203,10 +226,21 @@ Database.prototype.count = function (props) {
  * @param {(object|Array.<object>)} [props.selector] a selector object to match specific records.
  * @param {(object|Array.<object>)} [props.order] an order object to sort records.
  * @param {number} [props.limit] max number of records to return - must be a positive integer, i.e. limit > 0.
+ * @param {function} [callback] an optional callback function.
  * @returns {Promise}
  */
-Database.prototype.delete = function (props) {
-  return this._engine.delete(props);
+Database.prototype.delete = function (props, callback) {
+  if (!_.isPlainObject(props)) {
+    return Promise.reject('Invalid query properties: expected plain object, received ' + typeof(props))
+      .nodeify(callback);
+  }
+
+  if (!this.isConnected) {
+    return Promise.reject('Connection is closed - did you forget to call #connect()?')
+      .nodeify(callback);
+  }
+
+  return this._engine.delete(props).nodeify(callback);
 };
 
 /**
@@ -216,10 +250,21 @@ Database.prototype.delete = function (props) {
  * @param {object} props.values values to upsert.
  * @param {Array.<string>} [props.updateColumns] columns to update if record already exists - defaults to all columns.
  * @param {Array.<object>} [props.updateSelector] selector to test if records exists.
+ * @param {function} [callback] an optional callback function.
  * @returns {Promise}
  */
-Database.prototype.upsert = function (props) {
-  return this._engine.upsert(props);
+Database.prototype.upsert = function (props, callback) {
+  if (!_.isPlainObject(props)) {
+    return Promise.reject('Invalid query properties: expected plain object, received ' + typeof(props))
+      .nodeify(callback);
+  }
+
+  if (!this.isConnected) {
+    return Promise.reject('Connection is closed - did you forget to call #connect()?')
+      .nodeify(callback);
+  }
+
+  return this._engine.upsert(props).nodeify(callback);
 };
 
 /**
@@ -227,14 +272,24 @@ Database.prototype.upsert = function (props) {
  * @param {object} props query properties.
  * @param {string} props.table the name of the table to insert records to.
  * @param {object} props.values values to insert.
+ * @param {function} [callback] an optional callback function.
  * @returns {Promise}
  */
-Database.prototype.insert = function (props) {
-  return this._engine.insert(props);
+Database.prototype.insert = function (props, callback) {
+  if (!_.isPlainObject(props)) {
+    return Promise.reject('Invalid query properties: expected plain object, received ' + typeof(props))
+      .nodeify(callback);
+  }
+
+  if (!this.isConnected) {
+    return Promise.reject('Connection is closed - did you forget to call #connect()?').nodeify(callback);
+  }
+
+  return this._engine.insert(props).nodeify(callback);
 };
 
 /**
- * Initiates a new transaction.
+ * Begins a new transaction with this database.
  * @param {function} [callback] a callback function.
  * @returns {Promise} resolving to a new Transaction instance.
  */

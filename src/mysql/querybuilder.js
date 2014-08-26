@@ -336,24 +336,6 @@ module.exports = {
     sql = sql.join(' ') + ';';
 
     return {sql: sql, params: params};
-  },
-
-  /**
-   * Compiles and returns a BEGIN TRANSACTION statement.
-   * @return {string}
-   * @static
-   */
-  beginTransaction: function () {
-    return 'START TRANSACTION;';
-  },
-
-  /**
-   * Compiles and returns a COMMIT TRANSACTION statement.
-   * @return {string}
-   * @static
-   */
-  commitTransaction: function () {
-    return 'COMMIT;';
   }
 
 };
