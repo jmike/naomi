@@ -1,7 +1,8 @@
 var _ = require('lodash'),
-  operators = require('./operators.json');
+  operators = require('./operators.json'),
+  mysqlQueryBuilder = require('../mysql/querybuilder');
 
-module.exports = _.extend(require('../mysql/querybuilder'), {
+module.exports = _.extend(mysqlQueryBuilder, {
 
   /**
    * Escapes the given string to use safely in a SQL query.

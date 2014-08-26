@@ -1,8 +1,13 @@
 var Promise = require('bluebird'),
   _ = require('lodash');
 
-function Transaction (engine) {
-  this._engine = engine;
+/**
+ * Construct a new Transaction with the given Database,
+ * @param {Database} db
+ * @constructor
+ */
+function Transaction (db) {
+  this._db = db;
   this._client = null;
 }
 

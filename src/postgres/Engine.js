@@ -1,7 +1,7 @@
 var pg = require('pg.js'),
   createPool = require('generic-pool').Pool,
   Promise = require('bluebird'),
-  Transaction = require('./PostgresTransaction');
+  querybuilder = require('./querybuilder');
 
 /**
  * Constructs a new Postgres database Engine.
@@ -74,9 +74,8 @@ Engine.prototype.disconnect = function () {
  * Acquires the first available client from pool.
  * @param {function} [callback] an optional callback function.
  * @return {Promise} resolving to client.
- * @private
  */
-Engine.prototype._acquireClient = function (callback) {
+Engine.prototype.acquireClient = function (callback) {
   var self = this, resolver;
 
   resolver = function (resolve, reject) {
@@ -91,9 +90,8 @@ Engine.prototype._acquireClient = function (callback) {
 
 /**
  * Releases the designated client to pool.
- * @private
  */
-Engine.prototype._releaseClient = function (client) {
+Engine.prototype.releaseClient = function (client) {
   this._pool.release(client);
 };
 
@@ -102,9 +100,8 @@ Engine.prototype._releaseClient = function (client) {
  * This method provides a compatibility layer with MySQL engine, exposing a uniform language for params.
  * @param {string} sql a parameterized SQL statement, using "?" to denote param.
  * @return {string}
- * @private
  */
-Engine.prototype._prepareSQL = function (sql) {
+Engine.prototype.prepareSQL = function (sql) {
   var re = /\?/g,
     i = 0;
 
@@ -124,14 +121,14 @@ Engine.prototype._prepareSQL = function (sql) {
 Engine.prototype.query = function (sql, params) {
   var self = this, resolver;
 
-  sql = this._prepareSQL(sql);
+  sql = this.prepareSQL(sql);
 
   resolver = function (resolve, reject) {
-    self._acquireClient(function(err, client) {
+    self.acquireClient(function(err, client) {
       if (err) return reject(err);
 
       client.query(sql, params, function(err, result) {
-        self._releaseClient(client);
+        self.releaseClient(client);
 
         if (err) {
           reject(err);
@@ -143,6 +140,81 @@ Engine.prototype.query = function (sql, params) {
   };
 
   return new Promise(resolver);
+};
+
+/**
+ * Compiles and executes a SELECT query based on the supplied options.
+ * @see {@link querybuilder#select} for a list of query options to use.
+ * @param {object} options query properties.
+ * @returns {Promise}
+ */
+Engine.prototype.select = function (options) {
+  var self = this;
+
+  return Promise.try(function () {
+    var q = querybuilder.select(options);
+    return self.query(q.sql, q.params);
+  });
+};
+
+/**
+ * Compiles and executes a SELECT COUNT query based on the supplied options.
+ * @see {@link querybuilder#count} for a list of query options to use.
+ * @param {object} options query properties.
+ * @returns {Promise}
+ */
+Engine.prototype.count = function (options) {
+  var self = this;
+
+  return Promise.try(function () {
+    var q = querybuilder.count(options);
+    return self.query(q.sql, q.params);
+  });
+};
+
+/**
+ * Compiles and executes a DELETE query based on the supplied options.
+ * @see {@link querybuilder#delete} for a list of query options to use.
+ * @param {object} options query properties.
+ * @returns {Promise}
+ */
+Engine.prototype.delete = function (options) {
+  var self = this;
+
+  return Promise.try(function () {
+    var q = querybuilder.delete(options);
+    return self.query(q.sql, q.params);
+  });
+};
+
+/**
+ * Compiles and executes an UPSERT query based on the supplied options.
+ * @see {@link querybuilder#upsert} for a list of query options to use.
+ * @param {object} options query properties.
+ * @returns {Promise}
+ */
+Engine.prototype.upsert = function (options) {
+  var self = this;
+
+  return Promise.try(function () {
+    var q = querybuilder.upsert(options);
+    return self.query(q.sql, q.params);
+  });
+};
+
+/**
+ * Compiles and executes an UPSERT query based on the supplied options.
+ * @see {@link querybuilder#insert} for a list of query options to use.
+ * @param {object} options query properties.
+ * @returns {Promise}
+ */
+Engine.prototype.insert = function (options) {
+  var self = this;
+
+  return Promise.try(function () {
+    var q = querybuilder.insert(options);
+    return self.query(q.sql, q.params);
+  });
 };
 
 /**

@@ -1,7 +1,7 @@
 var mysql = require('mysql'),
   _ = require('lodash'),
   Promise = require('bluebird'),
-  Transaction = require('./MySQLTransaction');
+  querybuilder = require('./querybuilder');
 
 /**
  * Constructs a new MySQL database Engine.
@@ -53,9 +53,8 @@ Engine.prototype.disconnect = function () {
  * Acquires the first available client from pool.
  * @param {function} [callback] an optional callback function.
  * @return {Promise} resolving to client.
- * @private
  */
-Engine.prototype._acquireClient = function (callback) {
+Engine.prototype.acquireClient = function (callback) {
   var self = this, resolver;
 
   resolver = function (resolve, reject) {
@@ -70,9 +69,8 @@ Engine.prototype._acquireClient = function (callback) {
 
 /**
  * Releases the designated client to pool.
- * @private
  */
-Engine.prototype._releaseClient = function (client) {
+Engine.prototype.releaseClient = function (client) {
   client.release();
 };
 
@@ -90,7 +88,7 @@ Engine.prototype.query = function (sql, params, options) {
   options = options || {};
 
   resolver = function (resolve, reject) {
-    self._acquireClient(function (err, client) {
+    self.acquireClient(function (err, client) {
       if (err) return reject(err);
 
       if (options.nestTables) {
@@ -103,7 +101,7 @@ Engine.prototype.query = function (sql, params, options) {
       client.query(sql, params, function(err, records) {
         var data;
 
-        self._releaseClient(client);
+        self.releaseClient(client);
 
         if (err) return reject(err);
 
@@ -126,147 +124,78 @@ Engine.prototype.query = function (sql, params, options) {
 };
 
 /**
- * Escapes the given string to use safely in a SQL query.
- * @param {string} str
- * @returns {string}
- */
-Engine.prototype.escapeSQL = function (str) {
-  return '`' + str + '`';
-};
-
-/**
- * Compiles and returns a parameterized SQL where clause, based on the given selector.
- * @param {Array.<object>} selector
- * @returns {object} with two properties: "sql" and "params".
- * @private
- */
-Engine.prototype._compileWhere = function (selector) {
-  var sql = 'WHERE ',
-    params = [];
-
-  sql += selector.map(function (obj) {
-
-    return Object.keys(obj).map(function (k) {
-      var expr = obj[k],
-        column = this.escapeSQL(k),
-        operator,
-        value;
-
-      _.forOwn(expr, function (v, o) {
-        operator = operators[o]; // convert to sql equivalent operator
-        value = v;
-        return false; // exit
-      });
-
-      if (value === null && operator === '=') return column + ' IS NULL';
-      if (value === null && operator === '!=') return column + ' IS NOT NULL';
-
-      params.push(value);
-      return column + ' ' + operator + ' ?';
-
-    }, this).join(' AND ');
-
-  }, this).join(' OR ');
-
-  return {sql: sql, params: params};
-};
-
-/**
- * Compiles and returns a SQL order clause, based on the given order.
- * @param {Array.<object>} order
- * @returns {string}
- * @private
- */
-Engine.prototype._compileOrderBy = function (order) {
-  var sql = 'ORDER BY ';
-
-  sql += order.map(function (obj) {
-    var column, type;
-
-    _.forOwn(obj, function (v, k) {
-      column = this.escapeSQL(k);
-      type =  v.toUpperCase();
-      return false; // exit
-    }, this);
-
-    return column + ' ' + type;
-  }, this).join(', ');
-
-  return sql;
-};
-
-/**
- * Compiles and returns a parameterized SELECT query.
+ * Compiles and executes a SELECT query based on the supplied options.
+ * @see {@link querybuilder#select} for a list of query options to use.
  * @param {object} options query properties.
- * @param {string} options.table
- * @param {(Array.<string>|null)} [options.columns]
- * @param {(Array.<object>|null)} [options.selector]
- * @param {(Array.<object>|null)} [options.order]
- * @param {(number|null)} [options.limit]
- * @param {(number|null)} [options.offset]
- * @returns {object} with "sql" and "params" properties.
- * @throws {Error} If options is invalid or undefined.
- * @static
- *
- * @example output format:
- * {
- *   sql: 'SELECT name FROM table WHERE id = ?;',
- *   params: [1],
- * }
+ * @returns {Promise}
  */
 Engine.prototype.select = function (options) {
-  var sql = [], params = [], clause;
+  var self = this;
 
-  // validate "options" param
-  if (!_.isPlainObject(options)) {
-    throw new Error('Invalid SELECT query options, expected plain object, received ' + typeof(options));
-  }
+  return Promise.try(function () {
+    var q = querybuilder.select(options);
+    return self.query(q.sql, q.params);
+  });
+};
 
-  // init statement
-  sql.push('SELECT');
+/**
+ * Compiles and executes a SELECT COUNT query based on the supplied options.
+ * @see {@link querybuilder#count} for a list of query options to use.
+ * @param {object} options query properties.
+ * @returns {Promise}
+ */
+Engine.prototype.count = function (options) {
+  var self = this;
 
-  // set columns
-  if (options.columns) {
-    clause = options.columns.map(function (column) {
-      return this.escapeSQL(column);
-    }, this).join(', ');
-    sql.push(clause);
+  return Promise.try(function () {
+    var q = querybuilder.count(options);
+    return self.query(q.sql, q.params);
+  });
+};
 
-  } else {
-    sql.push('*');
-  }
+/**
+ * Compiles and executes a DELETE query based on the supplied options.
+ * @see {@link querybuilder#delete} for a list of query options to use.
+ * @param {object} options query properties.
+ * @returns {Promise}
+ */
+Engine.prototype.delete = function (options) {
+  var self = this;
 
-  // set FROM clause
-  sql.push('FROM ' + this.escapeSQL(options.table));
+  return Promise.try(function () {
+    var q = querybuilder.delete(options);
+    return self.query(q.sql, q.params);
+  });
+};
 
-  // set WHERE clause
-  if (options.selector) {
-    clause = this.where(options.selector);
+/**
+ * Compiles and executes an UPSERT query based on the supplied options.
+ * @see {@link querybuilder#upsert} for a list of query options to use.
+ * @param {object} options query properties.
+ * @returns {Promise}
+ */
+Engine.prototype.upsert = function (options) {
+  var self = this;
 
-    sql.push(clause.sql);
-    params.push.apply(params, clause.params);
-  }
+  return Promise.try(function () {
+    var q = querybuilder.upsert(options);
+    return self.query(q.sql, q.params);
+  });
+};
 
-  // set ORDER BY clause
-  if (options.order) {
-    clause = this.orderBy(options.order);
-    sql.push(clause);
-  }
+/**
+ * Compiles and executes an UPSERT query based on the supplied options.
+ * @see {@link querybuilder#insert} for a list of query options to use.
+ * @param {object} options query properties.
+ * @returns {Promise}
+ */
+Engine.prototype.insert = function (options) {
+  var self = this;
 
-  // set LIMIT clause
-  if (options.limit) {
-    sql.push('LIMIT ' + options.limit);
-  }
-
-  // set OFFSET clause
-  if (options.offset) {
-    sql.push('OFFSET ' + options.offset);
-  }
-
-  // finish it
-  sql = sql.join(' ') + ';';
-
-  return {sql: sql, params: params};
+  return Promise.try(function () {
+    var q = querybuilder.insert(options);
+    return self.query(q.sql, q.params);
+  });
 };
 
 /**
