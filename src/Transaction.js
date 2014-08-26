@@ -79,19 +79,21 @@ Transaction.prototype.query = function (sql, params, options, callback) {
 
 /**
  * Begins this transaction.
+ * @param {function} [callback] an optional callback function.
  * @return {Promise} resolving to this transaction instance.
  */
-Transaction.prototype.begin = function () {
-  return Promise.resolve(this);
+Transaction.prototype.begin = function (callback) {
+  return Promise.resolve(this).nodeify(callback);
 };
 
 /**
  * Commits this transaction.
  * Please note: transaction will become effectively useless after calling this method.
+ * @param {function} [callback] an optional callback function.
  * @return {Promise} resolving to this transaction instance.
  */
-Transaction.prototype.commit = function () {
-  return Promise.resolve(this);
+Transaction.prototype.commit = function (callback) {
+  return Promise.resolve(this).nodeify(callback);
 };
 
 module.exports = Transaction;

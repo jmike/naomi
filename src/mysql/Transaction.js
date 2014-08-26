@@ -1,7 +1,16 @@
 var Promise = require('bluebird'),
-  _ = require('lodash');
+  _ = require('lodash'),
+  AbstractTransaction = require('../Transaction');
 
-var Transaction = _.extend(require('../Transaction'));
+/**
+ * Constructs a new MySQL transaction.
+ * @extends {AbstractTransaction}
+ */
+function Transaction () {
+  AbstractTransaction.apply(this, arguments);
+}
+
+Transaction.prototype = Object.create(AbstractTransaction.prototype);
 
 Transaction.prototype._query = function (sql, params, options) {
   var self = this, resolver;
@@ -14,17 +23,29 @@ Transaction.prototype._query = function (sql, params, options) {
   }
 
   resolver = function (resolve, reject) {
-    self._client.query(sql, params, function(err, result) {
-      if (err) return reject(err);
-      resolve(result.rows);
-    });
-  };
+    self._client.query(sql, params, function(err, records) {
+      var data;
 
-  return new Promise(resolver);
+      if (err) return reject(err);
+
+      if (_.isArray(records)) { // SELECT statement
+        resolve(records);
+
+      } else { // DML statement
+        data = {
+          insertId: records.insertId,
+          affectedRows: records.affectedRows
+        };
+
+        resolve(data);
+      }
+    });
+
+  };
 };
 
-Transaction.prototype.begin = function () {
-  return this._engine._acquireClient()
+Transaction.prototype.begin = function (callback) {
+  return this._engine.acquireClient()
     .bind(this)
     .then(function (client) {
       this._client = client;
@@ -32,17 +53,19 @@ Transaction.prototype.begin = function () {
     })
     .then(function () {
       return this;
-    });
+    })
+    .nodeify(callback);
 };
 
-Transaction.prototype.commit = function () {
+Transaction.prototype.commit = function (callback) {
   return this.query('COMMIT;')
     .bind(this)
     .then (function () {
-      this._engine._releaseClient(this._client);
+      this._engine.releaseClient(this._client);
       this._client = null;
       return this;
-    });
+    })
+    .nodeify(callback);
 };
 
 module.exports = Transaction;
