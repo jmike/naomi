@@ -1,7 +1,7 @@
 var _ = require('lodash'),
-  operators = require('./postgres-operators.json');
+  operators = require('./operators.json');
 
-module.exports = _.extend(require('./mysql-querybuilder'), {
+module.exports = _.extend(require('../mysql/querybuilder'), {
 
   /**
    * Escapes the given string to use safely in a SQL query.
@@ -18,8 +18,9 @@ module.exports = _.extend(require('./mysql-querybuilder'), {
    * @param {Array.<object>} selector
    * @returns {object} with two properties: "sql" and "params".
    * @static
+   * @private
    */
-  where: function (selector) {
+  _where: function (selector) {
     var sql = 'WHERE ',
       params = [];
 
@@ -77,7 +78,7 @@ module.exports = _.extend(require('./mysql-querybuilder'), {
 
     // set WHERE clause
     if (options.selector) {
-      clause = this.where(options.selector);
+      clause = this._where(options.selector);
 
       sql.push(clause.sql);
       params.push.apply(params, clause.params);
@@ -134,7 +135,7 @@ module.exports = _.extend(require('./mysql-querybuilder'), {
 
     // set UPDATE WHERE clause
     if (options.updateSelector) {
-      clause = this.where(options.updateSelector);
+      clause = this._where(options.updateSelector);
       sql.push(clause.sql);
       params.push.apply(params, clause.params);
     }

@@ -1,7 +1,7 @@
 require('dotenv').load(); // load environmental variables
 
 var chai = require('chai'),
-  querybuilder = require('../src/mysql-querybuilder'),
+  querybuilder = require('../src/mysql/querybuilder'),
   assert = chai.assert;
 
 describe('mysql-querybuilder', function () {

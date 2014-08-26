@@ -1,5 +1,5 @@
 var _ = require('lodash'),
-  operators = require('./mysql-operators.json');
+  operators = require('./operators.json');
 
 module.exports = {
 
@@ -18,8 +18,9 @@ module.exports = {
    * @param {Array.<object>} selector
    * @returns {object} with two properties: "sql" and "params".
    * @static
+   * @private
    */
-  where: function (selector) {
+  _where: function (selector) {
     var sql = 'WHERE ',
       params = [];
 
@@ -56,7 +57,7 @@ module.exports = {
    * @returns {string}
    * @static
    */
-  orderBy: function (order) {
+  _orderBy: function (order) {
     var sql = 'ORDER BY ';
 
     sql += order.map(function (obj) {
@@ -120,7 +121,7 @@ module.exports = {
 
     // set WHERE clause
     if (options.selector) {
-      clause = this.where(options.selector);
+      clause = this._where(options.selector);
 
       sql.push(clause.sql);
       params.push.apply(params, clause.params);
@@ -128,7 +129,7 @@ module.exports = {
 
     // set ORDER BY clause
     if (options.order) {
-      clause = this.orderBy(options.order);
+      clause = this._orderBy(options.order);
       sql.push(clause);
     }
 
@@ -175,7 +176,7 @@ module.exports = {
 
     // set WHERE clause
     if (options.selector) {
-      clause = this.where(options.selector);
+      clause = this._where(options.selector);
 
       sql.push(clause.sql);
       params.push.apply(params, clause.params);
@@ -224,7 +225,7 @@ module.exports = {
 
     // set WHERE clause
     if (options.selector) {
-      clause = this.where(options.selector);
+      clause = this._where(options.selector);
 
       sql.push(clause.sql);
       params.push.apply(params, clause.params);
@@ -232,7 +233,7 @@ module.exports = {
 
     // set ORDER BY clause
     if (options.order) {
-      clause = this.orderBy(options.order);
+      clause = this._orderBy(options.order);
       sql.push(clause);
     }
 

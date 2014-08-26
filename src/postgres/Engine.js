@@ -70,11 +70,10 @@ Engine.prototype.disconnect = function () {
   });
 };
 
-
 /**
  * Acquires the first available client from pool.
  * @param {function} [callback] an optional callback function.
- * @return {Promise}
+ * @return {Promise} resolving to client.
  * @private
  */
 Engine.prototype._acquireClient = function (callback) {
@@ -99,8 +98,8 @@ Engine.prototype._releaseClient = function (client) {
 };
 
 /**
- * Converts "?" chars to "$1", "$2", etc, in the order they appear in the give SQL statement.
- * This it to provide a compatibility layer with MySQL engine and have a uniform language for params.
+ * Converts "?" to "$1", "$2", etc, according to the order they appear in the given SQL statement.
+ * This method provides a compatibility layer with MySQL engine, exposing a uniform language for params.
  * @param {string} sql a parameterized SQL statement, using "?" to denote param.
  * @return {string}
  * @private
@@ -120,7 +119,7 @@ Engine.prototype._prepareSQL = function (sql) {
  * @param {string} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
  * @param {object} [options] query options - currently unused.
- * @returns {Promise}
+ * @returns {Promise} resolving to the query results.
  */
 Engine.prototype.query = function (sql, params) {
   var self = this, resolver;
@@ -148,7 +147,7 @@ Engine.prototype.query = function (sql, params) {
 
 /**
  * Initiates a new transaction.
- * @returns {Promise} resolving to a Transaction instance.
+ * @returns {Promise} resolving to a new Transaction.
  */
 Engine.prototype.beginTransaction = function () {
   return new Transaction(this).begin();
@@ -156,9 +155,9 @@ Engine.prototype.beginTransaction = function () {
 
 /**
  * Retrieves meta-data from database.
- * @returns {Promise}
+ * @returns {Promise} resolving to a meta-data object.
  *
- * @example
+ * @example meta-data object
  * {
  *   table1: {
  *     columns: {
@@ -261,7 +260,7 @@ Engine.prototype.getMeta = function () {
 };
 
 /**
- * Retrieves tables from database.
+ * Retrieves table names from database.
  * @returns {Promise}
  * @private
  */
@@ -281,7 +280,7 @@ Engine.prototype._getTables = function () {
 };
 
 /**
- * Retrieves columns from database.
+ * Retrieves column properties from database.
  * @returns {Promise}
  * @private
  */
@@ -310,7 +309,7 @@ Engine.prototype._getColumns = function () {
 };
 
 /**
- * Retrieves constraints from database.
+ * Retrieves constraint properties from database.
  * @returns {Promise}
  * @private
  */
@@ -336,7 +335,7 @@ Engine.prototype._getConstraints = function () {
 };
 
 /**
- * Retrieves foreign keys from database.
+ * Retrieves foreign key properties from database.
  * @returns {Promise}
  * @private
  */

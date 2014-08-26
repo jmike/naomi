@@ -5,12 +5,12 @@ var mysql = require('mysql'),
 
 /**
  * Constructs a new MySQL database Engine.
- * @param {Object} options connection options.
- * @param {String} options.host the hostname of the database.
- * @param {String|Number} options.port the port number of the database.
- * @param {String} options.user the user to authenticate to the database.
- * @param {String} options.password the password of the user.
- * @param {String} options.database the name of the database, a.k.a. the schema.
+ * @param {object} options connection options.
+ * @param {string} options.host the hostname of the database.
+ * @param {(string|number)} options.port the port number of the database.
+ * @param {string} options.user the user to authenticate to the database.
+ * @param {string} options.password the password of the user.
+ * @param {string} options.database the name of the database, a.k.a. the schema.
  * @see {@link https://github.com/felixge/node-mysql#connection-options} for a list of connection options to use.
  * @constructor
  */
@@ -52,7 +52,7 @@ Engine.prototype.disconnect = function () {
 /**
  * Acquires the first available client from pool.
  * @param {function} [callback] an optional callback function.
- * @return {Promise}
+ * @return {Promise} resolving to client.
  * @private
  */
 Engine.prototype._acquireClient = function (callback) {
@@ -78,10 +78,10 @@ Engine.prototype._releaseClient = function (client) {
 
 /**
  * Runs the given SQL statement.
- * @param {String} sql a parameterized SQL statement.
+ * @param {string} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
- * @param {Object} [options] optional query options.
- * @param {Boolean} [options.nestTables] set to true to handle overlapping column names.
+ * @param {object} [options] optional query options.
+ * @param {boolean} [options.nestTables] set to true to handle overlapping column names.
  * @returns {Promise}
  */
 Engine.prototype.query = function (sql, params, options) {
@@ -126,8 +126,152 @@ Engine.prototype.query = function (sql, params, options) {
 };
 
 /**
+ * Escapes the given string to use safely in a SQL query.
+ * @param {string} str
+ * @returns {string}
+ */
+Engine.prototype.escapeSQL = function (str) {
+  return '`' + str + '`';
+};
+
+/**
+ * Compiles and returns a parameterized SQL where clause, based on the given selector.
+ * @param {Array.<object>} selector
+ * @returns {object} with two properties: "sql" and "params".
+ * @private
+ */
+Engine.prototype._compileWhere = function (selector) {
+  var sql = 'WHERE ',
+    params = [];
+
+  sql += selector.map(function (obj) {
+
+    return Object.keys(obj).map(function (k) {
+      var expr = obj[k],
+        column = this.escapeSQL(k),
+        operator,
+        value;
+
+      _.forOwn(expr, function (v, o) {
+        operator = operators[o]; // convert to sql equivalent operator
+        value = v;
+        return false; // exit
+      });
+
+      if (value === null && operator === '=') return column + ' IS NULL';
+      if (value === null && operator === '!=') return column + ' IS NOT NULL';
+
+      params.push(value);
+      return column + ' ' + operator + ' ?';
+
+    }, this).join(' AND ');
+
+  }, this).join(' OR ');
+
+  return {sql: sql, params: params};
+};
+
+/**
+ * Compiles and returns a SQL order clause, based on the given order.
+ * @param {Array.<object>} order
+ * @returns {string}
+ * @private
+ */
+Engine.prototype._compileOrderBy = function (order) {
+  var sql = 'ORDER BY ';
+
+  sql += order.map(function (obj) {
+    var column, type;
+
+    _.forOwn(obj, function (v, k) {
+      column = this.escapeSQL(k);
+      type =  v.toUpperCase();
+      return false; // exit
+    }, this);
+
+    return column + ' ' + type;
+  }, this).join(', ');
+
+  return sql;
+};
+
+/**
+ * Compiles and returns a parameterized SELECT query.
+ * @param {object} options query properties.
+ * @param {string} options.table
+ * @param {(Array.<string>|null)} [options.columns]
+ * @param {(Array.<object>|null)} [options.selector]
+ * @param {(Array.<object>|null)} [options.order]
+ * @param {(number|null)} [options.limit]
+ * @param {(number|null)} [options.offset]
+ * @returns {object} with "sql" and "params" properties.
+ * @throws {Error} If options is invalid or undefined.
+ * @static
+ *
+ * @example output format:
+ * {
+ *   sql: 'SELECT name FROM table WHERE id = ?;',
+ *   params: [1],
+ * }
+ */
+Engine.prototype.select = function (options) {
+  var sql = [], params = [], clause;
+
+  // validate "options" param
+  if (!_.isPlainObject(options)) {
+    throw new Error('Invalid SELECT query options, expected plain object, received ' + typeof(options));
+  }
+
+  // init statement
+  sql.push('SELECT');
+
+  // set columns
+  if (options.columns) {
+    clause = options.columns.map(function (column) {
+      return this.escapeSQL(column);
+    }, this).join(', ');
+    sql.push(clause);
+
+  } else {
+    sql.push('*');
+  }
+
+  // set FROM clause
+  sql.push('FROM ' + this.escapeSQL(options.table));
+
+  // set WHERE clause
+  if (options.selector) {
+    clause = this.where(options.selector);
+
+    sql.push(clause.sql);
+    params.push.apply(params, clause.params);
+  }
+
+  // set ORDER BY clause
+  if (options.order) {
+    clause = this.orderBy(options.order);
+    sql.push(clause);
+  }
+
+  // set LIMIT clause
+  if (options.limit) {
+    sql.push('LIMIT ' + options.limit);
+  }
+
+  // set OFFSET clause
+  if (options.offset) {
+    sql.push('OFFSET ' + options.offset);
+  }
+
+  // finish it
+  sql = sql.join(' ') + ';';
+
+  return {sql: sql, params: params};
+};
+
+/**
  * Initiates a new transaction.
- * @returns {Promise} resolving to a Transaction instance.
+ * @returns {Promise} resolving to a new Transaction.
  */
 Engine.prototype.beginTransaction = function () {
   return new Transaction(this).begin();
@@ -135,9 +279,9 @@ Engine.prototype.beginTransaction = function () {
 
 /**
  * Retrieves meta-data from database.
- * @returns {Promise}
+ * @returns {Promise} resolving to a meta-data object.
  *
- * @example
+ * @example meta-data object
  * {
  *   table1: {
  *     columns: {
@@ -244,7 +388,7 @@ Engine.prototype.getMeta = function () {
 };
 
 /**
- * Retrieves tables from database.
+ * Retrieves table names from database.
  * @returns {Promise}
  * @private
  */
@@ -265,7 +409,7 @@ Engine.prototype._getTables = function () {
 };
 
 /**
- * Retrieves columns from database.
+ * Retrieves column properties from database.
  * @returns {Promise}
  * @private
  */
@@ -292,7 +436,7 @@ Engine.prototype._getColumns = function () {
 };
 
 /**
- * Retrieves indices from database.
+ * Retrieves index properties from database.
  * @returns {Promise}
  * @private
  */
@@ -315,7 +459,7 @@ Engine.prototype._getIndices = function () {
 };
 
 /**
- * Retrieves foreign keys from database.
+ * Retrieves foreign key properties from database.
  * @returns {Promise}
  * @private
  */

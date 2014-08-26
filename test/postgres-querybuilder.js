@@ -1,7 +1,7 @@
 require('dotenv').load(); // load environmental variables
 
 var chai = require('chai'),
-  querybuilder = require('../src/postgres-querybuilder'),
+  querybuilder = require('../src/postgres/querybuilder'),
   assert = chai.assert;
 
 describe('postgres-querybuilder', function () {
