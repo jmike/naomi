@@ -44,27 +44,53 @@ describe('MySQL Transaction', function () {
       });
     });
 
-    it('has no internal db client assigned', function () {
+    it('has null internal db client', function () {
       assert.isNull(transaction._client);
     });
 
   });
 
-  describe('@init', function () {
+  describe('@initialized', function () {
 
     before(function (done) {
       transaction.begin(done);
     });
 
-    it('resolved promise with results on #query()', function (done) {
-      transaction.query('SELECT 1;').then(function (results) {
-        assert.isArray(results);
+    it('has valid internal db client', function () {
+      assert.isNotNull(transaction._client);
+    });
+
+    it('resolves promise with results on #query()', function (done) {
+      transaction.query('INSERT INTO `employees` SET firstname = ?, lastname = ?, age = ?;', ['James', 'Bond', 38])
+      .then(function () {
+        this.query('DELETE FROM `employees` WHERE id = LAST_INSERT_ID();', done);
+      });
+    });
+
+  });
+
+  describe('@commited', function () {
+
+    before(function (done) {
+      transaction.commit(done);
+    });
+
+    it('rejects promise on #commit() with "invalid transaction state"', function (done) {
+      transaction.commit().catch(function (err) {
+        assert.match(err, /invalid transaction state/i);
         done();
       });
     });
 
-    after(function (done) {
-      transaction.commit(done);
+    it('rejects promise on #query() with "invalid transaction state"', function (done) {
+      transaction.query('SELECT 1;').catch(function (err) {
+        assert.match(err, /invalid transaction state/i);
+        done();
+      });
+    });
+
+    it('has null internal db client', function () {
+      assert.isNull(transaction._client);
     });
 
   });

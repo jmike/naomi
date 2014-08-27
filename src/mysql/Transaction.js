@@ -40,8 +40,9 @@ Transaction.prototype._query = function (sql, params, options) {
         resolve(data);
       }
     });
-
   };
+
+  return new Promise(resolver).bind(this);
 };
 
 Transaction.prototype.begin = function (callback) {
