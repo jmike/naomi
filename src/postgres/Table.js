@@ -1,7 +1,6 @@
 var Promise = require('bluebird'),
   _ = require('lodash'),
   Table = require('../Table'),
-  operators = require('./operators.json'),
   querybuilder = require('./querybuilder'),
   Transaction = require('./transaction');
 
@@ -16,9 +15,6 @@ function PostgresTable () {
 
 // PostgresTable extends Table
 PostgresTable.prototype = Object.create(Table.prototype);
-
-// overwrite operators with Postgres specific
-PostgresTable.prototype.operators = operators;
 
 PostgresTable.prototype._get = function (options) {
   var query;
