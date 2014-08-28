@@ -63,7 +63,7 @@ PostgresTable.prototype._del = function (options) {
 PostgresTable.prototype._set = function (options) {
   var self = this, resolver, query;
 
-  if (_.isArray(options.values)) {
+  if (_.isArray(options.values)) {// postgres upsert can't handle multiple records - use async logic
     return Promise.map(options.values, function (obj) {
       options.values = obj;
       return self.set(options);
