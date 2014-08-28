@@ -15,14 +15,15 @@ module.exports = {
 
   /**
    * Compiles and returns a parameterized SQL where clause, based on the given selector.
-   * @param {Array.<object>} selector
+   * @param {(object|Array.<object>)} selector
    * @returns {object} with two properties: "sql" and "params".
    * @static
    * @private
    */
   _where: function (selector) {
-    var sql = 'WHERE ',
-      params = [];
+    var sql = 'WHERE ', params = [];
+
+    if (!_.isArray(selector)) selector = [selector];
 
     sql += selector.map(function (obj) {
 

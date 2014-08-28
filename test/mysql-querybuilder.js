@@ -4,7 +4,83 @@ var chai = require('chai'),
   querybuilder = require('../src/mysql/querybuilder'),
   assert = chai.assert;
 
-describe('mysql-querybuilder', function () {
+describe('MySQL querybuilder', function () {
+
+  describe('#_where()', function () {
+
+    it('accepts object selector', function () {
+      var query = querybuilder._where({
+        id: {'=': 1}
+      });
+      assert.strictEqual(query.sql, 'WHERE `id` = ?');
+      assert.lengthOf(query.params, 1);
+      assert.strictEqual(query.params[0], 1);
+    });
+
+    it('accepts object selector with many properties', function () {
+      var query = querybuilder._where({
+        age: {'>': 30},
+        firstname: {'=': 'James'}
+      });
+      assert.strictEqual(query.sql, 'WHERE `age` > ? AND `firstname` = ?');
+      assert.lengthOf(query.params, 2);
+      assert.strictEqual(query.params[0], 30);
+      assert.strictEqual(query.params[1], 'James');
+    });
+
+    it('accepts Array selector', function () {
+      var query = querybuilder._where([
+        {
+          id: {'>': 2},
+          firstname: {'=': 'James'}
+        },
+        {
+          lastname: {'=': 'Bond'}
+        }
+      ]);
+      assert.strictEqual(query.sql, 'WHERE `id` > ? AND `firstname` = ? OR `lastname` = ?');
+      assert.lengthOf(query.params, 3);
+      assert.strictEqual(query.params[0], 2);
+      assert.strictEqual(query.params[1], 'James');
+      assert.strictEqual(query.params[2], 'Bond');
+    });
+
+    it('handles special "= null" expression', function () {
+      var query = querybuilder._where({
+        firstname: {'=': null}
+      });
+      assert.strictEqual(query.sql, 'WHERE `firstname` IS NULL');
+      assert.lengthOf(query.params, 0);
+    });
+
+    it('handles special "!= null" expression', function () {
+      var query = querybuilder._where({
+        firstname: {'!=': null}
+      });
+      assert.strictEqual(query.sql, 'WHERE `firstname` IS NOT NULL');
+      assert.lengthOf(query.params, 0);
+    });
+
+  });
+
+  describe('#_orderBy()', function () {
+
+    it('accepts object order', function () {
+      var sql = querybuilder._orderBy({
+        id: 'asc'
+      });
+      assert.strictEqual(sql, 'ORDER BY `id` ASC');
+    });
+
+    it('accepts Array order', function () {
+      var sql = querybuilder._orderBy([
+        {id: 'asc'},
+        {age: 'desc'}
+      ]);
+      assert.strictEqual(sql, 'ORDER BY `id` ASC, `age` DESC');
+    });
+
+  });
 
   describe('#select()', function () {
 
