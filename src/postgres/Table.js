@@ -92,7 +92,20 @@ PostgresTable.prototype._set = function (options) {
 };
 
 PostgresTable.prototype._setNew = function (options) {
-  return Promise.resolve(options);
+  var self = this, resolver, query;
+
+  options.table = this._table;
+  query = querybuilder.insert(options);
+
+  resolver = function (resolve, reject) {
+    self._db.query(query.sql, query.params).then(function (records) {
+      resolve(records);
+    }).catch(function (err) {
+      reject(err);
+    });
+  };
+
+  return new Promise(resolver);
 };
 
 module.exports = PostgresTable;

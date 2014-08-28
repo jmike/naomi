@@ -159,6 +159,45 @@ module.exports = _.extend(mysql_querybuilder, {
     sql = sql.join(' ') + ';';
 
     return {sql: sql, params: params};
+  },
+
+  /**
+   * Compiles and returns a parameterized INSERT statement.
+   * @param {object} options query properties.
+   * @param {string} options.table the table name to insert data.
+   * @param {(object|Array.<object>)} options.values values to insert if no record is found.
+   * @return {object} with "sql" and "params" properties.
+   * @static
+   */
+  insert: function (options) {
+    var sql = [], params = [];
+
+    if (!_.isArray(options.values)) options.values = [options.values];
+
+    sql.push('INSERT INTO ' + this.escapeSQL(options.table));
+
+    sql.push(
+      '(' + options.columns.map(function (k) {
+        return this.escapeSQL(k);
+      }, this).join(', ') + ')'
+    );
+
+    sql.push('VALUES');
+    sql.push(
+      options.values.map(function (obj) {
+        return '(' + options.columns.map(function (k) {
+          params.push(obj[k]);
+          return '?';
+        }).join(', ') + ')';
+      }).join(', ')
+    );
+
+    sql.push('RETURNING *');
+
+    // finish it
+    sql = sql.join(' ') + ';';
+
+    return {sql: sql, params: params};
   }
 
 });

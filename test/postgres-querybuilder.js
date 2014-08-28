@@ -299,12 +299,13 @@ describe('Postgres querybuilder', function () {
 
   describe('#insert()', function () {
 
-    it('returns a valid SQL with table + values specified', function () {
+    it('returns valid SQL with "table", "values", "columns" options', function () {
       var query = querybuilder.insert({
         table: 'employees',
+        columns: ['a', 'b', 'c'],
         values: {a: 1, b: 2, c: 3}
       });
-      assert.strictEqual(query.sql, 'INSERT INTO "employees" SET "a" = ?, "b" = ?, "c" = ?;');
+      assert.strictEqual(query.sql, 'INSERT INTO "employees" ("a", "b", "c") VALUES (?, ?, ?) RETURNING *;');
       assert.strictEqual(query.params[0], 1);
       assert.strictEqual(query.params[1], 2);
       assert.strictEqual(query.params[2], 3);

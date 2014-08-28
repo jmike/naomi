@@ -283,19 +283,13 @@ module.exports = {
   /**
    * Compiles and returns a parameterized INSERT statement.
    * @param {object} options query properties.
-   * @param {string} options.table the table to upsert data.
-   * @param {object} options.values values to insert if no record is found.
+   * @param {string} options.table the table name to insert data.
+   * @param {(object|Array.<object>)} options.values values to insert if no record is found.
    * @return {object} with "sql" and "params" properties.
-   * @throws {Error} If options is invalid or undefined.
    * @static
    */
   insert: function (options) {
     var sql = [], params = [], columns;
-
-    // validate "options" param
-    if (!_.isPlainObject(options)) {
-      throw new Error('Invalid INSERT query options, expected plain object, received ' + typeof(options));
-    }
 
     columns = Object.keys(options.values);
 
