@@ -1,9 +1,8 @@
 var Promise = require('bluebird'),
-  _ = require('lodash'),
   AbstractTransaction = require('../Transaction');
 
 /**
- * Constructs a new MySQL transaction.
+ * Constructs a new Postgres transaction.
  * @extends {AbstractTransaction}
  * @constructor
  */
@@ -14,32 +13,17 @@ function Transaction () {
 // Transaction extends AbstractTransaction
 Transaction.prototype = Object.create(AbstractTransaction.prototype);
 
-Transaction.prototype._query = function (sql, params, options) {
+Transaction.prototype._query = function (sql, params) {
   var self = this, resolver;
 
-  if (options.nestTables) {
-    sql = {
-      sql: sql,
-      nestTables: options.nestTables
-    };
-  }
+  sql = self._engine.prepareSQL(sql);
 
   resolver = function (resolve, reject) {
-    self._client.query(sql, params, function(err, records) {
-      var data;
-
-      if (err) return reject(err);
-
-      if (_.isArray(records)) { // SELECT statement
-        resolve(records);
-
-      } else { // DML statement
-        data = {
-          insertId: records.insertId,
-          affectedRows: records.affectedRows
-        };
-
-        resolve(data);
+    self._client.query(sql, params, function(err, result) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result.rows);
       }
     });
   };
@@ -52,7 +36,7 @@ Transaction.prototype.begin = function (callback) {
     .bind(this)
     .then(function (client) {
       this._client = client;
-      return this.query('START TRANSACTION;');
+      return this.query('BEGIN;');
     })
     .then(function () {
       return this;
