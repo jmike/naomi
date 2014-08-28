@@ -16,14 +16,15 @@ module.exports = _.extend(mysqlQueryBuilder, {
 
   /**
    * Compiles and returns a parameterized SQL where clause, based on the given selector.
-   * @param {Array.<object>} selector
+   * @param {(object|Array.<object>)} selector
    * @returns {object} with two properties: "sql" and "params".
    * @static
    * @private
    */
   _where: function (selector) {
-    var sql = 'WHERE ',
-      params = [];
+    var sql = 'WHERE ', params = [];
+
+    if (!_.isArray(selector)) selector = [selector];
 
     sql += selector.map(function (obj) {
 
@@ -55,21 +56,15 @@ module.exports = _.extend(mysqlQueryBuilder, {
   /**
    * Compiles and returns a parameterized SELECT COUNT query.
    * @param {object} options query properties.
-   * @param {string} options.table
-   * @param {(Array.<object>|null)} [options.selector]
-   * @param {(number|null)} [options.limit]
-   * @param {(number|null)} [options.offset]
+   * @param {string} options.table the name of the table to count records from.
+   * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
+   * @param {number} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
+   * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
    * @return {object} with "sql" and "params" properties.
-   * @throws {Error} If options is invalid or undefined.
    * @static
    */
   count: function (options) {
     var sql = [], params = [], clause;
-
-    // validate "options" param
-    if (!_.isPlainObject(options)) {
-      throw new Error('Invalid SELECT COUNT query options, expected plain object, received ' + typeof(options));
-    }
 
     // init statement
     sql.push('SELECT COUNT(*) AS "count"');
@@ -104,26 +99,18 @@ module.exports = _.extend(mysqlQueryBuilder, {
   /**
    * Compiles and returns a parameterized UPSERT statement.
    * @param {object} options query properties.
-   * @param {string} options.table the table to upsert data.
-   * @param {object} options.values values to insert if no record is found.
-   * @param {Array.<string>} [options.updateColumns] the record columns to update if record already exists - defaults to all columns.
-   * @param {Array.<object>} [options.updateSelector] selector to search if records exists.
+   * @param {string} options.table the table to upsert data into.
+   * @param {object} options.values the record values.
+   * @param {Array.<string>} options.columns the columns of the record(s) to insert.
+   * @param {Array.<string>} options.updateColumns the columns of the record(s) to update.
+   * @param {Array.<Array.<string>>} options.updateKeys the columns to check if record(s) already exists in table.
    * @return {object} with "sql" and "params" properties.
-   * @throws {Error} If options is invalid or undefined.
    * @static
    */
   upsert: function (options) {
-    var sql = [], params = [], columns, clause;
+    var sql = [], params = [];
 
-    // validate "options" param
-    if (!_.isPlainObject(options)) {
-      throw new Error('Invalid UPSERT query options, expected plain object, received ' + typeof(options));
-    }
-
-    columns = Object.keys(options.values);
-    options.updateColumns = options.updateColumns || columns;
-
-    // init statement
+    // init with UPDATE statement
     sql.push('WITH upsert AS (UPDATE ' + this.escapeSQL(options.table) + ' SET');
 
     // set UPDATE columns
@@ -135,13 +122,17 @@ module.exports = _.extend(mysqlQueryBuilder, {
     );
 
     // set UPDATE WHERE clause
-    if (options.updateSelector) {
-      clause = this._where(options.updateSelector);
-      sql.push(clause.sql);
-      params.push.apply(params, clause.params);
-    }
+    sql.push('WHERE');
+    sql.push(
+      options.updateKeys.map(function (keys) {
+        return keys.map(function (k) {
+          params.push(options.values[k]);
+          return this.escapeSQL(k) + ' = ?';
+        }, this).join(' AND ');
+      }, this).join(' OR ')
+    );
 
-    // SET RETURNING clause
+    // set UPDATE RETURNING clause
     sql.push('RETURNING *)');
 
     // set INSERT statement
@@ -149,21 +140,19 @@ module.exports = _.extend(mysqlQueryBuilder, {
 
     // set INSERT columns
     sql.push(
-      '(' + columns.map(function (k) {
+      '(' + options.columns.map(function (k) {
         return this.escapeSQL(k);
       }, this).join(', ') + ')'
     );
 
     // do the trick
     sql.push('SELECT');
-
     sql.push(
-      columns.map(function (k) {
+      options.columns.map(function (k) {
         params.push(options.values[k]);
         return '?';
       }).join(', ')
     );
-
     sql.push('WHERE NOT EXISTS (SELECT * FROM upsert)');
 
     // finish it

@@ -1,19 +1,19 @@
 var Promise = require('bluebird'),
-  AbstractTransaction = require('../Transaction');
+  Transaction = require('../PostgresTransaction');
 
 /**
  * Constructs a new Postgres transaction.
- * @extends {AbstractTransaction}
+ * @extends {Transaction}
  * @constructor
  */
-function Transaction () {
-  AbstractTransaction.apply(this, arguments);
+function PostgresTransaction () {
+  Transaction.apply(this, arguments);
 }
 
-// Transaction extends AbstractTransaction
-Transaction.prototype = Object.create(AbstractTransaction.prototype);
+// PostgresTransaction extends Transaction
+PostgresTransaction.prototype = Object.create(Transaction.prototype);
 
-Transaction.prototype._query = function (sql, params) {
+PostgresTransaction.prototype._query = function (sql, params) {
   var self = this, resolver;
 
   sql = self._engine.prepareSQL(sql);
@@ -31,7 +31,7 @@ Transaction.prototype._query = function (sql, params) {
   return new Promise(resolver).bind(this);
 };
 
-Transaction.prototype.begin = function (callback) {
+PostgresTransaction.prototype.begin = function (callback) {
   return this._engine.acquireClient()
     .bind(this)
     .then(function (client) {
@@ -44,7 +44,7 @@ Transaction.prototype.begin = function (callback) {
     .nodeify(callback);
 };
 
-Transaction.prototype.commit = function (callback) {
+PostgresTransaction.prototype.commit = function (callback) {
   return this.query('COMMIT;')
     .bind(this)
     .then (function () {
@@ -55,4 +55,4 @@ Transaction.prototype.commit = function (callback) {
     .nodeify(callback);
 };
 
-module.exports = Transaction;
+module.exports = PostgresTransaction;

@@ -53,12 +53,14 @@ module.exports = {
 
   /**
    * Compiles and returns a SQL order clause, based on the given order.
-   * @param {Array.<object>} order
+   * @param {(object|Array.<object>)} order
    * @returns {string}
    * @static
    */
   _orderBy: function (order) {
     var sql = 'ORDER BY ';
+
+    if (!_.isArray(order)) order = [order];
 
     sql += order.map(function (obj) {
       var column, type;
@@ -77,15 +79,14 @@ module.exports = {
 
   /**
    * Compiles and returns a parameterized SELECT query.
-   * @param {object} options query properties.
-   * @param {string} options.table
-   * @param {(Array.<string>|null)} [options.columns]
-   * @param {(Array.<object>|null)} [options.selector]
-   * @param {(Array.<object>|null)} [options.order]
-   * @param {(number|null)} [options.limit]
-   * @param {(number|null)} [options.offset]
+   * @param {object} options query options.
+   * @param {string} options.table the name of the table to select records from.
+   * @param {Array.<string>} [options.columns] the name of the columns to select.
+   * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
+   * @param {(object|Array.<object>)} [options.order] an order expression to sort records.
+   * @param {number} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
+   * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
    * @returns {object} with "sql" and "params" properties.
-   * @throws {Error} If options is invalid or undefined.
    * @static
    *
    * @example output format:
@@ -97,20 +98,16 @@ module.exports = {
   select: function (options) {
     var sql = [], params = [], clause;
 
-    // validate "options" param
-    if (!_.isPlainObject(options)) {
-      throw new Error('Invalid SELECT query options, expected plain object, received ' + typeof(options));
-    }
-
     // init statement
     sql.push('SELECT');
 
     // set columns
     if (options.columns) {
-      clause = options.columns.map(function (column) {
-        return this.escapeSQL(column);
-      }, this).join(', ');
-      sql.push(clause);
+      sql.push(
+        options.columns.map(function (column) {
+          return this.escapeSQL(column);
+        }, this).join(', ')
+      );
 
     } else {
       sql.push('*');
@@ -152,21 +149,15 @@ module.exports = {
   /**
    * Compiles and returns a parameterized SELECT COUNT query.
    * @param {object} options query properties.
-   * @param {string} options.table
-   * @param {(Array.<object>|null)} [options.selector]
-   * @param {(number|null)} [options.limit]
-   * @param {(number|null)} [options.offset]
+   * @param {string} options.table the name of the table to count records from.
+   * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
+   * @param {number} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
+   * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
    * @return {object} with "sql" and "params" properties.
-   * @throws {Error} If options is invalid or undefined.
    * @static
    */
   count: function (options) {
     var sql = [], params = [], clause;
-
-    // validate "options" param
-    if (!_.isPlainObject(options)) {
-      throw new Error('Invalid SELECT COUNT query options, expected plain object, received ' + typeof(options));
-    }
 
     // init statement
     sql.push('SELECT COUNT(*) AS `count`');
@@ -201,21 +192,15 @@ module.exports = {
   /**
    * Compiles and returns a parameterized DELETE statement.
    * @param {object} options query properties.
-   * @param {string} options.table
-   * @param {(Array.<object>|null)} [options.selector]
-   * @param {(Array.<object>|null)} [options.order]
-   * @param {(number|null)} [options.limit]
+   * @param {string} options.table the name of the table to delete records from.
+   * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
+   * @param {(object|Array.<object>)} [options.order] an order expression to sort records.
+   * @param {number} [options.limit] max number of records to delete from database - must be a positive integer, i.e. limit > 0.
    * @return {object} with "sql" and "params" properties.
-   * @throws {Error} If options is invalid or undefined.
    * @static
    */
   delete: function (options) {
     var sql = [], params = [], clause;
-
-    // validate "options" param
-    if (!_.isPlainObject(options)) {
-      throw new Error('Invalid DELETE query options, expected plain object, received ' + typeof(options));
-    }
 
     // init DELETE statement
     sql.push('DELETE');
@@ -256,16 +241,10 @@ module.exports = {
    * @param {Array.<string>} [options.updateColumns] columns to update if record already exists - defaults to all columns.
    * @param {Array.<object>} [options.updateSelector] selector to search if records exists.
    * @return {object} with "sql" and "params" properties.
-   * @throws {Error} If options is invalid or undefined.
    * @static
    */
   upsert: function (options) {
     var sql = [], params = [], columns;
-
-    // validate "options" param
-    if (!_.isPlainObject(options)) {
-      throw new Error('Invalid UPSERT query options, expected plain object, received ' + typeof(options));
-    }
 
     columns = Object.keys(options.values);
     options.updateColumns = options.updateColumns || columns;

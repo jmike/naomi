@@ -1,20 +1,20 @@
 var Promise = require('bluebird'),
   _ = require('lodash'),
-  AbstractTransaction = require('../Transaction');
+  Transaction = require('../MySQLTransaction');
 
 /**
  * Constructs a new MySQL transaction.
- * @extends {AbstractTransaction}
+ * @extends {Transaction}
  * @constructor
  */
-function Transaction () {
-  AbstractTransaction.apply(this, arguments);
+function MySQLTransaction () {
+  Transaction.apply(this, arguments);
 }
 
-// Transaction extends AbstractTransaction
-Transaction.prototype = Object.create(AbstractTransaction.prototype);
+// MySQLTransaction extends Transaction
+MySQLTransaction.prototype = Object.create(Transaction.prototype);
 
-Transaction.prototype._query = function (sql, params, options) {
+MySQLTransaction.prototype._query = function (sql, params, options) {
   var self = this, resolver;
 
   if (options.nestTables) {
@@ -47,7 +47,7 @@ Transaction.prototype._query = function (sql, params, options) {
   return new Promise(resolver).bind(this);
 };
 
-Transaction.prototype.begin = function (callback) {
+MySQLTransaction.prototype.begin = function (callback) {
   return this._engine.acquireClient()
     .bind(this)
     .then(function (client) {
@@ -60,7 +60,7 @@ Transaction.prototype.begin = function (callback) {
     .nodeify(callback);
 };
 
-Transaction.prototype.commit = function (callback) {
+MySQLTransaction.prototype.commit = function (callback) {
   return this.query('COMMIT;')
     .bind(this)
     .then (function () {
@@ -71,4 +71,4 @@ Transaction.prototype.commit = function (callback) {
     .nodeify(callback);
 };
 
-module.exports = Transaction;
+module.exports = MySQLTransaction;
