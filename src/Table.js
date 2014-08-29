@@ -2,6 +2,12 @@ var Promise = require('bluebird'),
   _ = require('lodash'),
   operators = ['=', '==', '===', '!=', '!==', '<>', '>', '>=', '<', '<=', '~'];
 
+/**
+ * Constructs a new Table refencing the designated table name in the specified Database.
+ * @param {Database} db the database that the table belongs to.
+ * @param {strinhg} table the name of the table.
+ * @constructor
+ */
 function Table (db, table) {
   this._db = db;
   this._table = table;
