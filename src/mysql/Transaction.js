@@ -1,20 +1,28 @@
 var Promise = require('bluebird'),
   _ = require('lodash'),
-  Transaction = require('../MySQLTransaction');
+  GenericTransaction = require('../Transaction');
 
 /**
  * Constructs a new MySQL transaction.
- * @extends {Transaction}
+ * @extends {GenericTransaction}
  * @constructor
  */
-function MySQLTransaction () {
-  Transaction.apply(this, arguments);
+function Transaction () {
+  GenericTransaction.apply(this, arguments);
 }
 
-// MySQLTransaction extends Transaction
-MySQLTransaction.prototype = Object.create(Transaction.prototype);
+// MySQL Transaction extends GenericTransaction
+Transaction.prototype = Object.create(GenericTransaction.prototype);
 
-MySQLTransaction.prototype._query = function (sql, params, options) {
+/**
+ * Runs the given parameterized SQL query as part of this transaction.
+ * @param {string} sql a parameterized SQL statement.
+ * @param {Array} params an array of parameter values.
+ * @param {object} options query options.
+ * @returns {Promise}
+ * @private
+ */
+Transaction.prototype._query = function (sql, params, options) {
   var self = this, resolver;
 
   if (options.nestTables) {
@@ -47,8 +55,13 @@ MySQLTransaction.prototype._query = function (sql, params, options) {
   return new Promise(resolver).bind(this);
 };
 
-MySQLTransaction.prototype.begin = function (callback) {
-  return this._engine.acquireClient()
+/**
+ * Begins this transaction.
+ * @param {function} [callback] an optional callback function.
+ * @return {Promise} resolving to this transaction instance.
+ */
+Transaction.prototype.begin = function (callback) {
+  return this.acquireClient()
     .bind(this)
     .then(function (client) {
       this._client = client;
@@ -60,15 +73,21 @@ MySQLTransaction.prototype.begin = function (callback) {
     .nodeify(callback);
 };
 
-MySQLTransaction.prototype.commit = function (callback) {
+/**
+ * Commits this transaction.
+ * Please note: transaction will become effectively useless after calling this method.
+ * @param {function} [callback] an optional callback function.
+ * @return {Promise} resolving to this transaction instance.
+ */
+Transaction.prototype.commit = function (callback) {
   return this.query('COMMIT;')
     .bind(this)
     .then (function () {
-      this._engine.releaseClient(this._client);
+      this.releaseClient(this._client);
       this._client = null;
       return this;
     })
     .nodeify(callback);
 };
 
-module.exports = MySQLTransaction;
+module.exports = Transaction;

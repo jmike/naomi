@@ -1,19 +1,27 @@
 var Promise = require('bluebird'),
-  Transaction = require('../PostgresTransaction');
+  GenericTransaction = require('../Transaction');
 
 /**
  * Constructs a new Postgres transaction.
- * @extends {Transaction}
+ * @extends {GenericTransaction}
  * @constructor
  */
-function PostgresTransaction () {
-  Transaction.apply(this, arguments);
+function Transaction () {
+  GenericTransaction.apply(this, arguments);
 }
 
-// PostgresTransaction extends Transaction
-PostgresTransaction.prototype = Object.create(Transaction.prototype);
+// Transaction extends GenericTransaction
+Transaction.prototype = Object.create(GenericTransaction.prototype);
 
-PostgresTransaction.prototype._query = function (sql, params) {
+/**
+ * Runs the given parameterized SQL query as part of this transaction.
+ * @param {string} sql a parameterized SQL statement.
+ * @param {Array} params an array of parameter values.
+ * @param {object} options query options.
+ * @returns {Promise}
+ * @private
+ */
+Transaction.prototype._query = function (sql, params) {
   var self = this, resolver;
 
   sql = self.prepareSQL(sql);
@@ -31,7 +39,12 @@ PostgresTransaction.prototype._query = function (sql, params) {
   return new Promise(resolver).bind(this);
 };
 
-PostgresTransaction.prototype.begin = function (callback) {
+/**
+ * Begins this transaction.
+ * @param {function} [callback] an optional callback function.
+ * @return {Promise} resolving to this transaction instance.
+ */
+Transaction.prototype.begin = function (callback) {
   return this.acquireClient()
     .bind(this)
     .then(function (client) {
@@ -44,7 +57,13 @@ PostgresTransaction.prototype.begin = function (callback) {
     .nodeify(callback);
 };
 
-PostgresTransaction.prototype.commit = function (callback) {
+/**
+ * Commits this transaction.
+ * Please note: transaction will become effectively useless after calling this method.
+ * @param {function} [callback] an optional callback function.
+ * @return {Promise} resolving to this transaction instance.
+ */
+Transaction.prototype.commit = function (callback) {
   return this.query('COMMIT;')
     .bind(this)
     .then (function () {
@@ -55,4 +74,4 @@ PostgresTransaction.prototype.commit = function (callback) {
     .nodeify(callback);
 };
 
-module.exports = PostgresTransaction;
+module.exports = Transaction;
