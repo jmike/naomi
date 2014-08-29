@@ -22,9 +22,11 @@ describe('naomi', function () {
     });
 
     it('throws error when type is invalid', function () {
-      assert.throws(function () {
-        naomi.create('invalid');
-      }, /invalid database type/i);
+      assert.throws(function () { naomi.create('invalid'); }, /invalid database type/i);
+      assert.throws(function () { naomi.create(123); }, /invalid database type/i);
+      assert.throws(function () { naomi.create(false); }, /invalid database type/i);
+      assert.throws(function () { naomi.create(null); }, /invalid database type/i);
+      assert.throws(function () { naomi.create({}); }, /invalid database type/i);
     });
 
   });
