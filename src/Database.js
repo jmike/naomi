@@ -45,7 +45,7 @@ function Database(props) {
 
   // load metadata from database server
   this.on('connect', function () {
-    this._getMeta()
+    this._extractMeta()
       .bind(this)
       .then(function (meta) {
         this._meta = meta;
