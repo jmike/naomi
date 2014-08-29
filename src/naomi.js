@@ -6,8 +6,8 @@ var MySQLDatabase = require('./mysql/Database'),
  * Please note: additional connection properties may apply depending on the database type.
  * @see {@link https://github.com/felixge/node-mysql#connection-options} for MySQL additional properties.
  * @see {@link https://github.com/brianc/node-postgres/wiki/Client#constructor} for Postgres additional properties.
- * @param {object} props connection properties.
- * @param {string} props.type the database type, i.e. "mysql", "postgres".
+ * @param {string} type the database type, i.e. "mysql", "postgres".
+ * @param {object} [props] connection properties.
  * @param {string} [props.host] the hostname of the database.
  * @param {(string|number)} [props.port] the port number of the database.
  * @param {string} [props.user] the user to access the database.
@@ -21,8 +21,8 @@ var MySQLDatabase = require('./mysql/Database'),
  * @throws {Error} if params are invalid of unspecified.
  * @static
  */
-exports.create = function (props) {
-  var type = props.type;
+exports.create = function (type, props) {
+  props = props || {};
 
   if (/mysql/i.test(type)) {
     return new MySQLDatabase(props);

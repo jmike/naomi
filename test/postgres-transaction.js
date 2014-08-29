@@ -6,8 +6,7 @@ var chai = require('chai'),
   assert = chai.assert,
   db, transaction;
 
-db = naomi.create({
-  type: 'postgres',
+db = naomi.create('postgres', {
   host: process.env.POSTGRES_HOST,
   port: parseInt(process.env.POSTGRES_PORT, 10),
   user: process.env.POSTGRES_USER,

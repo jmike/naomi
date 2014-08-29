@@ -9,8 +9,7 @@ var chai = require('chai'),
   db;
 
 // init database
-db = naomi.create({
-  type: 'mysql',
+db = naomi.create('mysql', {
   host: process.env.DATABASE_HOST,
   port: parseInt(process.env.DATABASE_PORT, 10),
   user: process.env.DATABASE_USER,

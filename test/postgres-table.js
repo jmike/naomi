@@ -5,8 +5,7 @@ var chai = require('chai'),
   assert = chai.assert,
   db;
 
-db = new Database({
-  type: 'postgres',
+db = new Database('postgres', {
   host: process.env.POSTGRES_HOST,
   port: parseInt(process.env.POSTGRES_PORT, 10),
   user: process.env.POSTGRES_USER,
@@ -18,7 +17,7 @@ describe('Postgres Table', function () {
 
   describe('@connected', function () {
 
-    var db = naomi.create(conn);
+    var db = naomi.create('postgres', conn);
 
     before(function (done) {
       db.once('ready', done);
@@ -137,7 +136,7 @@ describe('Postgres Table', function () {
 
     describe('#get()', function () {
 
-      var db = naomi.create(conn);
+      var db = naomi.create('postgres', conn);
 
       it('enqueues queries until db is ready', function (done) {
         var employees = db.extend('employees');
