@@ -16,7 +16,7 @@ PostgresTransaction.prototype = Object.create(Transaction.prototype);
 PostgresTransaction.prototype._query = function (sql, params) {
   var self = this, resolver;
 
-  sql = self._engine.prepareSQL(sql);
+  sql = self.prepareSQL(sql);
 
   resolver = function (resolve, reject) {
     self._client.query(sql, params, function(err, result) {
@@ -32,7 +32,7 @@ PostgresTransaction.prototype._query = function (sql, params) {
 };
 
 PostgresTransaction.prototype.begin = function (callback) {
-  return this._engine.acquireClient()
+  return this.acquireClient()
     .bind(this)
     .then(function (client) {
       this._client = client;
@@ -48,7 +48,7 @@ PostgresTransaction.prototype.commit = function (callback) {
   return this.query('COMMIT;')
     .bind(this)
     .then (function () {
-      this._engine.releaseClient(this._client);
+      this.releaseClient(this._client);
       this._client = null;
       return this;
     })

@@ -7,7 +7,7 @@ var Promise = require('bluebird'),
  * @constructor
  */
 function Transaction (db) {
-  this._engine = db._engine;
+  this._db = db;
   this._client = null;
 }
 
@@ -20,7 +20,7 @@ function Transaction (db) {
  * @private
  */
 Transaction.prototype._query = function (sql, params, options) {
-  return Promise.resolve();
+  return Promise.resolve(sql, params, options);
 };
 
 /**

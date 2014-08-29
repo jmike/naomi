@@ -1,7 +1,9 @@
 var events = require('events'),
   util = require('util'),
   _ = require('lodash'),
-  Promise = require('bluebird');
+  Promise = require('bluebird'),
+  Table = require('./Table'),
+  Transaction = require('./Transaction');
 
 /**
  * Constructs a new database of the designated properties.
@@ -56,6 +58,12 @@ function Database(props) {
 
 // Database extends EventEmitter
 util.inherits(Database, events.EventEmitter);
+
+// associate with Table class
+Database.prototype.Table = Table;
+
+// associate with Transaction class
+Database.prototype.Transaction = Transaction;
 
 /**
  * Attempts to connect to database server using the connection properties supplied at construction time.
@@ -184,20 +192,14 @@ Database.prototype.query = function (sql, params, options, callback) {
 
 /**
  * Begins a new transaction with this database.
- * @returns {Promise} resolving to a new Transaction instance.
- * @private
- */
-Database.prototype._beginTransaction = function () {
-  return Promise.resolve();
-};
-
-/**
- * Begins a new transaction with this database.
  * @param {function} [callback] a callback function.
  * @returns {Promise} resolving to a new Transaction instance.
  */
 Database.prototype.beginTransaction = function (callback) {
-  return this._beginTransaction().nodeify(callback);
+  var t = new this.Transaction(this);
+  return t.begin().then(function () {
+    return t;
+  }).nodeify(callback);
 };
 
 /**
@@ -230,16 +232,6 @@ Database.prototype.getTableMeta = function (tableName) {
 };
 
 /**
- * Create and returns a new Table of the given name.
- * @param {string} tableName the name of the table in database.
- * @returns {Table}
- * @private
- */
-Database.prototype._createTable = function (tableName) {
-  return tableName;
-};
-
-/**
  * Returns a new Table, extended with the given properties and methods.
  * Please note: this method will not create a new table on database - it will merely reference an existing one.
  * @param {string} tableName the name of the table in database.
@@ -255,7 +247,7 @@ Database.prototype.extend = function (tableName, customProperties) {
   }
 
   // create table
-  table = this._createTable(tableName);
+  table = new this.Table(this, tableName);
 
   // extend with custom properties
   if (_.isPlainObject(customProperties)) {

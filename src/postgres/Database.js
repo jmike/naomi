@@ -11,12 +11,18 @@ var pg = require('pg.js'),
  * @constructor
  */
 function Database() {
-  this._pool = null;
   GenericDatabase.apply(this, arguments);
+  this._pool = null;
 }
 
-// Database extends GenericDatabase
+// Postgres Database extends GenericDatabase
 Database.prototype = Object.create(GenericDatabase.prototype);
+
+// associate with Postgres Table class
+Database.prototype.Table = Table;
+
+// associate with Postgres Transaction class
+Database.prototype.Transaction = Transaction;
 
 /**
  * Attempts to connect to database server using the connection properties supplied at construction time.
@@ -139,18 +145,6 @@ Database.prototype._query = function (sql, params) {
   };
 
   return new Promise(resolver);
-};
-
-/**
- * Begins a new transaction with this database.
- * @returns {Promise} resolving to a new Transaction instance.
- * @private
- */
-Database.prototype._beginTransaction = function () {
-  var t = new Transaction(this);
-  return t.begin().then(function () {
-    return t;
-  });
 };
 
 /**
@@ -363,16 +357,6 @@ Database.prototype._getForeignKeys = function () {
       };
     });
   });
-};
-
-/**
- * Creates and returns a new Table of the given name.
- * @param {string} tableName the name of the table in database.
- * @returns {Table}
- * @private
- */
-Database.prototype._createTable = function (tableName) {
-  return new Table(this, tableName);
 };
 
 module.exports = Database;
