@@ -1,7 +1,10 @@
 var events = require('events'),
   util = require('util'),
   _ = require('lodash'),
-  Promise = require('bluebird');
+  Promise = require('bluebird'),
+  MySQLEngine = require('./mysql/Engine'),
+  PostgresEngine = require('./postgres/Engine'),
+  Table = require('./Table');
 
 /**
  * Constructs a new database of the designated properties.
@@ -15,27 +18,41 @@ var events = require('events'),
  * @param {string} [props.user] the user to access the database.
  * @param {string} [props.password] the password of the user.
  * @param {string} [props.database] the name of the database.
- * @param {number} [props.poolSize=10] number of unique Client objects to maintain in the pool.
- * @param {number} [props.poolIdleTimeout=30000] max milliseconds a client can go unused before it is removed from the pool and destroyed.
- * @param {number} [props.reapIntervalMillis=1000] frequency to check for idle clients within the client pool.
+ * @returns {Database}
  * @throws {Error} if params are invalid or unspecified.
- * @constructor
+ * @static
  */
 function Database(props) {
+  var engine, type;
+
   // validate "props" param
   if (!_.isPlainObject(props)) {
-    throw new Error('Invalid connection properties: expected plain object, received ' + typeof(props));
+    throw new Error('Invalid connection properties: expected plain object, received ' + props);
   }
 
-  // handle optional connection properties
-  props.poolSize = props.poolSize || 10;
-  props.poolIdleTimeout = props.poolIdleTimeout || 30000;
-  props.reapIntervalMillis = props.reapIntervalMillis || 1000;
+  // extract + validate "type" option
+  type = props.type;
 
-  // set database properties
+  if (!_.isString(type)) {
+    throw new Error('Invalid or unspecified database type');
+  }
+
+  // init database engine
+  if (/mysql/i.test(type)) {
+    engine = new MySQLEngine(props);
+  } else if (/postgres/i.test(type)) {
+    engine = new PostgresEngine(props);
+  } else {
+    throw new Error('Unknown database type: expected "mysql" or "postgres", received "' + type + '"');
+  }
+
+  // set database public properties
+  this.type = type;
   this.isConnected = false;
   this.isReady = false;
-  this.connectionProperties = props;
+
+  // set database private properties
+  this._engine = engine;
   this._meta = {};
 
   // init the EventEmitter
@@ -44,7 +61,7 @@ function Database(props) {
 
   // load metadata from database server
   this.on('connect', function () {
-    this._getMeta()
+    engine.getMeta()
       .bind(this)
       .then(function (meta) {
         this._meta = meta;
@@ -54,17 +71,8 @@ function Database(props) {
   });
 }
 
-// Database extends EventEmitter
+// Database extends the EventEmitter class
 util.inherits(Database, events.EventEmitter);
-
-/**
- * Attempts to connect to database server using the connection properties supplied at construction time.
- * @returns {Promise}
- * @private
- */
-Database.prototype._connect = function () {
-  return Promise.resolve();
-};
 
 /**
  * Attempts to connect to database server using the connection properties supplied at construction time.
@@ -77,7 +85,7 @@ Database.prototype.connect = function (callback) {
     return Promise.resolve().nodeify(callback);
   }
 
-  return this._connect()
+  return this._engine.connect()
     .bind(this)
     .then(function () {
       this.isConnected = true;
@@ -85,15 +93,6 @@ Database.prototype.connect = function (callback) {
       return;
     })
     .nodeify(callback);
-};
-
-/**
- * Gracefully closes any open connection to the database server.
- * @returns {Promise}
- * @private
- */
-Database.prototype._disconnect = function () {
-  return Promise.resolve();
 };
 
 /**
@@ -108,7 +107,7 @@ Database.prototype.disconnect = function (callback) {
     return Promise.resolve().nodeify(callback);
   }
 
-  this._disconnect()
+  this._engine.disconnect()
     .bind(this)
     .then(function () {
       this.isConnected = false;
@@ -117,18 +116,6 @@ Database.prototype.disconnect = function (callback) {
       return;
     })
     .nodeify(callback);
-};
-
-/**
- * Runs the given SQL statement to the database server.
- * @param {string} sql a parameterized SQL statement.
- * @param {Array} params an array of parameter values.
- * @param {object} options query options.
- * @returns {Promise} resolving to the query results.
- * @private
- */
-Database.prototype._query = function (sql, params, options) {
-  return Promise.resolve(sql, params, options);
 };
 
 /**
@@ -179,16 +166,126 @@ Database.prototype.query = function (sql, params, options, callback) {
   }
 
   // execute the query
-  return this._query(sql, params, options).nodeify(callback);
+  return this._engine.query(sql, params, options).nodeify(callback);
 };
 
 /**
- * Begins a new transaction with this database.
- * @returns {Promise} resolving to a new Transaction instance.
- * @private
+ * Compiles and executes a SELECT query based on the supplied properties.
+ * @param {object} props query properties.
+ * @param {string} props.table the name of the table to select records from.
+ * @param {Array.<string>} [props.columns] an array of columns to return.
+ * @param {(object|Array.<object>)} [props.selector] a selector object to match specific records.
+ * @param {(object|Array.<object>)} [props.order] an order object to sort records.
+ * @param {number} [props.limit] max number of records to return - must be a positive integer, i.e. limit > 0.
+ * @param {number} [props.offset] number of records to skip - must be a non-negative integer, i.e. offset >= 0.
+ * @param {function} [callback] an optional callback function.
+ * @returns {Promise}
  */
-Database.prototype._beginTransaction = function () {
-  return Promise.resolve();
+Database.prototype.select = function (props, callback) {
+  if (!_.isPlainObject(props)) {
+    return Promise.reject('Invalid query properties: expected plain object, received ' + typeof(props))
+      .nodeify(callback);
+  }
+
+  if (!this.isConnected) {
+    return Promise.reject('Connection is closed - did you forget to call #connect()?')
+      .nodeify(callback);
+  }
+
+  return this._engine.select(props).nodeify(callback);
+};
+
+/**
+ * Compiles and executes a SELECT COUNT query based on the supplied properties.
+ * @param {object} props query properties.
+ * @param {string} props.table the name of the table to count records from.
+ * @param {(object|Array.<object>)} [props.selector] a selector object to match specific records.
+ * @param {number} [props.limit] max number of records to return - must be a positive integer, i.e. limit > 0.
+ * @param {number} [props.offset] number of records to skip - must be a non-negative integer, i.e. offset >= 0.
+ * @param {function} [callback] an optional callback function.
+ * @returns {Promise}
+ */
+Database.prototype.count = function (props, callback) {
+  if (!_.isPlainObject(props)) {
+    return Promise.reject('Invalid query properties: expected plain object, received ' + typeof(props))
+      .nodeify(callback);
+  }
+
+  if (!this.isConnected) {
+    return Promise.reject('Connection is closed - did you forget to call #connect()?')
+      .nodeify(callback);
+  }
+
+  return this._engine.count(props).nodeify(callback);
+};
+
+/**
+ * Compiles and executes a DELETE query based on the supplied properties.
+ * @param {object} props query properties.
+ * @param {string} props.table the name of the table to delete records from.
+ * @param {(object|Array.<object>)} [props.selector] a selector object to match specific records.
+ * @param {(object|Array.<object>)} [props.order] an order object to sort records.
+ * @param {number} [props.limit] max number of records to return - must be a positive integer, i.e. limit > 0.
+ * @param {function} [callback] an optional callback function.
+ * @returns {Promise}
+ */
+Database.prototype.delete = function (props, callback) {
+  if (!_.isPlainObject(props)) {
+    return Promise.reject('Invalid query properties: expected plain object, received ' + typeof(props))
+      .nodeify(callback);
+  }
+
+  if (!this.isConnected) {
+    return Promise.reject('Connection is closed - did you forget to call #connect()?')
+      .nodeify(callback);
+  }
+
+  return this._engine.delete(props).nodeify(callback);
+};
+
+/**
+ * Compiles and executes an UPSERT, i.e. update if exists or insert, query based on the supplied properties.
+ * @param {object} props query properties.
+ * @param {string} props.table the name of the table to upsert records to.
+ * @param {object} props.values values to upsert.
+ * @param {Array.<string>} [props.updateColumns] columns to update if record already exists - defaults to all columns.
+ * @param {Array.<object>} [props.updateSelector] selector to test if records exists.
+ * @param {function} [callback] an optional callback function.
+ * @returns {Promise}
+ */
+Database.prototype.upsert = function (props, callback) {
+  if (!_.isPlainObject(props)) {
+    return Promise.reject('Invalid query properties: expected plain object, received ' + typeof(props))
+      .nodeify(callback);
+  }
+
+  if (!this.isConnected) {
+    return Promise.reject('Connection is closed - did you forget to call #connect()?')
+      .nodeify(callback);
+  }
+
+  return this._engine.upsert(props).nodeify(callback);
+};
+
+/**
+ * Compiles and executes an INSERT query based on the supplied properties.
+ * @param {object} props query properties.
+ * @param {string} props.table the name of the table to insert records to.
+ * @param {object} props.values values to insert.
+ * @param {function} [callback] an optional callback function.
+ * @returns {Promise}
+ */
+Database.prototype.insert = function (props, callback) {
+  if (!_.isPlainObject(props)) {
+    return Promise.reject('Invalid query properties: expected plain object, received ' + typeof(props))
+      .nodeify(callback);
+  }
+
+  if (!this.isConnected) {
+    return Promise.reject('Connection is closed - did you forget to call #connect()?').nodeify(callback);
+  }
+
+  return this._engine.insert(props).nodeify(callback);
 };
 
 /**
@@ -197,16 +294,7 @@ Database.prototype._beginTransaction = function () {
  * @returns {Promise} resolving to a new Transaction instance.
  */
 Database.prototype.beginTransaction = function (callback) {
-  return this._beginTransaction().nodeify(callback);
-};
-
-/**
- * Extracts and returns meta-data from database.
- * @returns {Promise} resolving to a meta-data object.
- * @private
- */
-Database.prototype._extractMeta = function () {
-  return {};
+  return this._engine.beginTransaction().nodeify(callback);
 };
 
 /**
@@ -230,16 +318,6 @@ Database.prototype.getTableMeta = function (tableName) {
 };
 
 /**
- * Create and returns a new Table of the given name.
- * @param {string} tableName the name of the table in database.
- * @returns {Table}
- * @private
- */
-Database.prototype._createTable = function (tableName) {
-  return tableName;
-};
-
-/**
  * Returns a new Table, extended with the given properties and methods.
  * Please note: this method will not create a new table on database - it will merely reference an existing one.
  * @param {string} tableName the name of the table in database.
@@ -255,7 +333,7 @@ Database.prototype.extend = function (tableName, customProperties) {
   }
 
   // create table
-  table = this._createTable(tableName);
+  table = new Table(this, tableName);
 
   // extend with custom properties
   if (_.isPlainObject(customProperties)) {

@@ -1,39 +1,36 @@
 var pg = require('pg.js'),
   createPool = require('generic-pool').Pool,
   Promise = require('bluebird'),
-  querybuilder = require('./querybuilder');
+  GenericDatabase = require('../Database'),
+  Table = require('./Table'),
+  Transaction = require('./Transaction');
 
 /**
- * Constructs a new Postgres database Engine.
- * @param {object} options connection options.
- * @param {string} options.host the hostname of the database.
- * @param {String|Number} options.port the port number of the database.
- * @param {string} options.user the user to authenticate to the database.
- * @param {string} options.password the password of the user.
- * @param {string} options.database the name of the database, a.k.a. the schema.
- * @param {number} [options.poolSize=10] number of unique Client objects to maintain in the pool.
- * @param {number} [options.poolIdleTimeout=30000] max milliseconds a client can go unused before it is removed from the pool and destroyed.
- * @param {number} [options.reapIntervalMillis=1000] frequency to check for idle clients within the client pool.
- * @see {@link https://github.com/brianc/node-postgres/wiki/Client#constructor} for a list of connection options to use.
+ * Constructs a new Postgres Database.
+ * @extends {GenericDatabase}
  * @constructor
  */
-function Engine(options) {
-  this._options = options;
+function Database() {
   this._pool = null;
+  GenericDatabase.apply(this, arguments);
 }
 
+// Database extends GenericDatabase
+Database.prototype = Object.create(GenericDatabase.prototype);
+
 /**
- * Connects to database using the connection options given at construction time.
+ * Attempts to connect to database server using the connection properties supplied at construction time.
  * @returns {Promise}
+ * @private
  */
-Engine.prototype.connect = function () {
+Database.prototype._connect = function () {
   var self = this;
 
   return Promise.try(function () {
     self._pool = createPool({
 
       create: function(callback) {
-        var client = new pg.Client(self._options);
+        var client = new pg.Client(self.connectionProperties);
 
         client.connect(function (err) {
           if (err) return callback(err);
@@ -46,9 +43,9 @@ Engine.prototype.connect = function () {
       },
 
       min: 2,
-      max: self._options.poolSize || 10,
-      idleTimeoutMillis: self._options.poolIdleTimeout || 30000,
-      reapIntervalMillis: self._options.reapIntervalMillis || 1000
+      max: self.connectionProperties.poolSize,
+      idleTimeoutMillis: self.connectionProperties.poolIdleTimeout,
+      reapIntervalMillis: self.connectionProperties.reapIntervalMillis
     });
 
     return;
@@ -56,10 +53,11 @@ Engine.prototype.connect = function () {
 };
 
 /**
- * Disconnects from database.
+ * Gracefully closes any open connection to the database server.
  * @returns {Promise}
+ * @private
  */
-Engine.prototype.disconnect = function () {
+Database.prototype._disconnect = function () {
   var self = this;
 
   return Promise.try(function () {
@@ -75,7 +73,7 @@ Engine.prototype.disconnect = function () {
  * @param {function} [callback] an optional callback function.
  * @return {Promise} resolving to client.
  */
-Engine.prototype.acquireClient = function (callback) {
+Database.prototype.acquireClient = function (callback) {
   var self = this, resolver;
 
   resolver = function (resolve, reject) {
@@ -91,9 +89,10 @@ Engine.prototype.acquireClient = function (callback) {
 /**
  * Releases the designated client to pool.
  */
-Engine.prototype.releaseClient = function (client) {
+Database.prototype.releaseClient = function (client) {
   this._pool.release(client);
 };
+
 
 /**
  * Converts "?" to "$1", "$2", etc, according to the order they appear in the given SQL statement.
@@ -101,7 +100,7 @@ Engine.prototype.releaseClient = function (client) {
  * @param {string} sql a parameterized SQL statement, using "?" to denote param.
  * @return {string}
  */
-Engine.prototype.prepareSQL = function (sql) {
+Database.prototype.prepareSQL = function (sql) {
   var re = /\?/g,
     i = 0;
 
@@ -112,13 +111,13 @@ Engine.prototype.prepareSQL = function (sql) {
 };
 
 /**
- * Runs the given SQL statement.
+ * Runs the given SQL statement to the database server.
  * @param {string} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
- * @param {object} [options] query options - currently unused.
  * @returns {Promise} resolving to the query results.
+ * @private
  */
-Engine.prototype.query = function (sql, params) {
+Database.prototype._query = function (sql, params) {
   var self = this, resolver;
 
   sql = this.prepareSQL(sql);
@@ -143,93 +142,23 @@ Engine.prototype.query = function (sql, params) {
 };
 
 /**
- * Compiles and executes a SELECT query based on the supplied options.
- * @see {@link querybuilder#select} for a list of query options to use.
- * @param {object} options query properties.
- * @returns {Promise}
+ * Begins a new transaction with this database.
+ * @returns {Promise} resolving to a new Transaction instance.
+ * @private
  */
-Engine.prototype.select = function (options) {
-  var self = this;
-
-  return Promise.try(function () {
-    var q = querybuilder.select(options);
-    return self.query(q.sql, q.params);
+Database.prototype._beginTransaction = function () {
+  var t = new Transaction(this);
+  return t.begin().then(function () {
+    return t;
   });
 };
 
 /**
- * Compiles and executes a SELECT COUNT query based on the supplied options.
- * @see {@link querybuilder#count} for a list of query options to use.
- * @param {object} options query properties.
- * @returns {Promise}
- */
-Engine.prototype.count = function (options) {
-  var self = this;
-
-  return Promise.try(function () {
-    var q = querybuilder.count(options);
-    return self.query(q.sql, q.params);
-  });
-};
-
-/**
- * Compiles and executes a DELETE query based on the supplied options.
- * @see {@link querybuilder#delete} for a list of query options to use.
- * @param {object} options query properties.
- * @returns {Promise}
- */
-Engine.prototype.delete = function (options) {
-  var self = this;
-
-  return Promise.try(function () {
-    var q = querybuilder.delete(options);
-    return self.query(q.sql, q.params);
-  });
-};
-
-/**
- * Compiles and executes an UPSERT query based on the supplied options.
- * @see {@link querybuilder#upsert} for a list of query options to use.
- * @param {object} options query properties.
- * @returns {Promise}
- */
-Engine.prototype.upsert = function (options) {
-  var self = this;
-
-  return Promise.try(function () {
-    var q = querybuilder.upsert(options);
-    return self.query(q.sql, q.params);
-  });
-};
-
-/**
- * Compiles and executes an UPSERT query based on the supplied options.
- * @see {@link querybuilder#insert} for a list of query options to use.
- * @param {object} options query properties.
- * @returns {Promise}
- */
-Engine.prototype.insert = function (options) {
-  var self = this;
-
-  return Promise.try(function () {
-    var q = querybuilder.insert(options);
-    return self.query(q.sql, q.params);
-  });
-};
-
-/**
- * Initiates a new transaction.
- * @returns {Promise} resolving to a new Transaction.
- */
-Engine.prototype.beginTransaction = function () {
-  return new Transaction(this).begin();
-};
-
-/**
- * Retrieves meta-data from database.
+ * Extracts and returns meta-data from database.
  * @returns {Promise} resolving to a meta-data object.
+ * @private
  *
- * @example meta-data object
+ * @example output
  * {
  *   table1: {
  *     columns: {
@@ -263,7 +192,7 @@ Engine.prototype.beginTransaction = function () {
  *   }
  * }
  */
-Engine.prototype.getMeta = function () {
+Database.prototype._extractMeta = function () {
   return Promise.props({
     tables: this._getTables(),
     columns: this._getColumns(),
@@ -336,13 +265,13 @@ Engine.prototype.getMeta = function () {
  * @returns {Promise}
  * @private
  */
-Engine.prototype._getTables = function () {
+Database.prototype._getTables = function () {
   var sql, params;
 
   sql = 'SELECT table_name FROM information_schema.tables ' +
     'WHERE table_type = \'BASE TABLE\' AND table_catalog = $1 ' +
     'AND table_schema NOT IN (\'pg_catalog\', \'information_schema\');';
-  params = [this._options.database];
+  params = [this.connectionProperties.database];
 
   return this.query(sql, params).then(function (records) {
     return records.map(function (record) {
@@ -356,13 +285,13 @@ Engine.prototype._getTables = function () {
  * @returns {Promise}
  * @private
  */
-Engine.prototype._getColumns = function () {
+Database.prototype._getColumns = function () {
   var sql, params;
 
   sql = 'SELECT column_name, table_name, data_type, is_nullable, column_default, collation_name, ordinal_position ' +
     'FROM information_schema.columns ' +
     'WHERE table_catalog = $1 AND table_schema NOT IN (\'pg_catalog\', \'information_schema\');';
-  params = [this._options.database];
+  params = [this.connectionProperties.database];
 
   return this.query(sql, params).then(function (records) {
     return records.map(function (record) {
@@ -385,14 +314,14 @@ Engine.prototype._getColumns = function () {
  * @returns {Promise}
  * @private
  */
-Engine.prototype._getConstraints = function () {
+Database.prototype._getConstraints = function () {
   var sql, params;
 
   sql = 'SELECT tc.constraint_name, tc.constraint_type, ccu.table_name, ccu.column_name ' +
     'FROM information_schema.table_constraints AS tc ' +
     'INNER JOIN information_schema.constraint_column_usage AS ccu ON tc.constraint_name = ccu.constraint_name ' +
     'WHERE tc.constraint_catalog = $1;';
-  params = [this._options.database];
+  params = [this.connectionProperties.database];
 
   return this.query(sql, params).then(function (records) {
     return records.map(function (record) {
@@ -411,7 +340,7 @@ Engine.prototype._getConstraints = function () {
  * @returns {Promise}
  * @private
  */
-Engine.prototype._getForeignKeys = function () {
+Database.prototype._getForeignKeys = function () {
   var sql, params;
 
   sql = 'SELECT tc.constraint_name, tc.table_name, kcu.column_name, ' +
@@ -421,7 +350,7 @@ Engine.prototype._getForeignKeys = function () {
     'INNER JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name ' +
     'INNER JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name ' +
     'WHERE tc.constraint_type = \'FOREIGN KEY\' AND tc.constraint_catalog = $1;';
-  params = [this._options.database];
+  params = [this.connectionProperties.database];
 
   return this.query(sql, params, {}).then(function (records) {
     return records.map(function (record) {
@@ -436,4 +365,14 @@ Engine.prototype._getForeignKeys = function () {
   });
 };
 
-module.exports = Engine;
+/**
+ * Creates and returns a new Table of the given name.
+ * @param {string} tableName the name of the table in database.
+ * @returns {Table}
+ * @private
+ */
+Database.prototype._createTable = function (tableName) {
+  return new Table(this, tableName);
+};
+
+module.exports = Database;

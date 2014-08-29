@@ -1,18 +1,18 @@
 require('dotenv').load(); // load environmental variables
 
 var chai = require('chai'),
-  naomi = require('../src/naomi'),
+  Database = require('../src/Database'),
   assert = chai.assert,
-  conn;
+  db;
 
-conn = {
+db = new Database({
   type: 'postgres',
   host: process.env.POSTGRES_HOST,
   port: parseInt(process.env.POSTGRES_PORT, 10),
   user: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_SCHEMA
-};
+});
 
 describe('Postgres Table', function () {
 
