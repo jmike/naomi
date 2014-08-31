@@ -72,7 +72,7 @@ describe('Postgres Table', function () {
           assert.property(records[0], 'id');
 
           return employees.count().then(function (n) {
-            assert.operator(n, '>', 1);
+            assert.operator(n, '>=', 1);
             return records;
           });
         })

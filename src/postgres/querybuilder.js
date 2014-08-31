@@ -111,17 +111,41 @@ module.exports = _.extend(mysql_querybuilder, {
     var sql = [], params = [];
 
     // init with UPDATE statement
-    sql.push('WITH upsert AS (UPDATE ' + this.escapeSQL(options.table) + ' SET');
+// WITH
+//   new_data (id, value) AS (
+//     VALUES (1, 2), (3, 4), ...
+//   ),
+//   updated AS (
+//     UPDATE table t set
+//       value = t.value + new_data.value
+//     FROM new_data
+//     WHERE t.id = new_data.id
+//     RETURNING t.*
+//   ),
+//   inserted as (
+//   INSERT INTO table (id, value)
+//   SELECT id, value
+//   FROM new_data
+//   WHERE NOT EXISTS (
+//     SELECT 1 FROM updated WHERE updated.id = new_data.id
+//   )
+//   RETURNING id, value)
+// SELECT id, value
+// FROM inserted
+// UNION ALL
+// SELECT id, value
+// FROM updated
 
-    // set UPDATE columns
-    sql.push(
+    sql.push('WITH');
+
+    // set UPDATE statement
+    sql.push('updated AS (UPDATE ' + this.escapeSQL(options.table) + ' SET');
+    sql.push( // key-value pairs
       options.updateColumns.map(function (k) {
         params.push(options.values[k]);
         return this.escapeSQL(k) + ' = ?';
       }, this).join(', ')
     );
-
-    // set UPDATE WHERE clause
     sql.push('WHERE');
     sql.push(
       options.updateKeys.map(function (keys) {
@@ -131,21 +155,15 @@ module.exports = _.extend(mysql_querybuilder, {
         }, this).join(' AND ');
       }, this).join(' OR ')
     );
-
-    // set UPDATE RETURNING clause
-    sql.push('RETURNING *)');
+    sql.push('RETURNING *),');
 
     // set INSERT statement
-    sql.push('INSERT INTO ' + this.escapeSQL(options.table));
-
-    // set INSERT columns
-    sql.push(
+    sql.push('inserted AS (INSERT INTO ' + this.escapeSQL(options.table));
+    sql.push( // columns
       '(' + options.columns.map(function (k) {
         return this.escapeSQL(k);
       }, this).join(', ') + ')'
     );
-
-    // do the trick
     sql.push('SELECT');
     sql.push(
       options.columns.map(function (k) {
@@ -153,7 +171,11 @@ module.exports = _.extend(mysql_querybuilder, {
         return '?';
       }).join(', ')
     );
-    sql.push('WHERE NOT EXISTS (SELECT * FROM upsert)');
+    sql.push('WHERE NOT EXISTS (SELECT * FROM updated)');
+    sql.push('RETURNING *)');
+
+    // set final SELECT statement
+    sql.push('SELECT * FROM inserted UNION ALL SELECT * FROM updated');
 
     // finish it
     sql = sql.join(' ') + ';';
