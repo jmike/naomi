@@ -5,6 +5,8 @@ var chai = require('chai'),
   PostgresDatabase = require('../src/postgres/Database'),
   assert = chai.assert;
 
+require('dotenv').load(); // load environmental variables
+
 describe('naomi', function () {
 
   describe('#create()', function () {
@@ -15,10 +17,28 @@ describe('naomi', function () {
       assert.instanceOf(db, MySQLDatabase);
     });
 
+    it('loads MySQL connection properties from environmental variables', function () {
+      var db = naomi.create('mysql');
+      assert.strictEqual(db.connectionProperties.host, process.env.MYSQL_HOST);
+      assert.equal(db.connectionProperties.port, process.env.MYSQL_PORT);
+      assert.strictEqual(db.connectionProperties.user, process.env.MYSQL_USER);
+      assert.strictEqual(db.connectionProperties.password, process.env.MYSQL_PASSWORD);
+      assert.strictEqual(db.connectionProperties.database, process.env.MYSQL_DATABASE);
+    });
+
     it('returns new Database when type is postgres', function () {
       var db = naomi.create('postgres');
       assert.instanceOf(db, Database);
       assert.instanceOf(db, PostgresDatabase);
+    });
+
+    it('loads Postgres connection properties from environmental variables', function () {
+      var db = naomi.create('postgres');
+      assert.strictEqual(db.connectionProperties.host, process.env.POSTGRES_HOST);
+      assert.equal(db.connectionProperties.port, process.env.POSTGRES_PORT);
+      assert.strictEqual(db.connectionProperties.user, process.env.POSTGRES_USER);
+      assert.strictEqual(db.connectionProperties.password, process.env.POSTGRES_PASSWORD);
+      assert.strictEqual(db.connectionProperties.database, process.env.POSTGRES_DATABASE);
     });
 
     it('throws error when type is invalid', function () {

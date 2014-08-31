@@ -1,5 +1,8 @@
-var MySQLDatabase = require('./mysql/Database'),
+var _ = require('lodash'),
+  MySQLDatabase = require('./mysql/Database'),
   PostgresDatabase = require('./postgres/Database');
+
+require('dotenv').load(); // load environmental variables
 
 /**
  * Creates and returns a new database of the designated type.
@@ -25,10 +28,22 @@ exports.create = function (type, props) {
   props = props || {};
 
   if (/mysql/i.test(type)) {
+    props.host = props.host || process.env.MYSQL_HOST || 'localhost';
+    props.port = props.port || parseInt(process.env.MYSQL_PORT, 10) || 3306;
+    props.user = props.user || process.env.MYSQL_USER || 'root';
+    props.password = props.password || process.env.MYSQL_PASSWORD || '';
+    props.database = props.database || process.env.MYSQL_DATABASE || null;
+
     return new MySQLDatabase(props);
   }
 
   if (/postgres/i.test(type)) {
+    props.host = props.host || process.env.POSTGRES_HOST || 'localhost';
+    props.port = props.port || parseInt(process.env.POSTGRES_PORT, 10) || 5432;
+    props.user = props.user || process.env.POSTGRES_USER || 'root';
+    props.password = props.password || process.env.POSTGRES_PASSWORD || '';
+    props.database = props.database || process.env.POSTGRES_DATABASE || null;
+
     return new PostgresDatabase(props);
   }
 
