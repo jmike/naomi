@@ -1,23 +1,14 @@
 require('dotenv').load(); // load environmental variables
 
 var chai = require('chai'),
-  Database = require('../src/Database'),
-  assert = chai.assert,
-  db;
-
-db = new Database('postgres', {
-  host: process.env.POSTGRES_HOST,
-  port: parseInt(process.env.POSTGRES_PORT, 10),
-  user: process.env.POSTGRES_USER,
-  password: process.env.POSTGRES_PASSWORD,
-  database: process.env.POSTGRES_SCHEMA
-});
+  naomi = require('../src/naomi'),
+  assert = chai.assert;
 
 describe('Postgres Table', function () {
 
-  describe('@connected', function () {
+  var db = naomi.create('postgres');
 
-    var db = naomi.create('postgres', conn);
+  describe('@connected', function () {
 
     before(function (done) {
       db.once('ready', done);
@@ -51,68 +42,61 @@ describe('Postgres Table', function () {
       //   assert.isFalse(employees.isIndexKey('invalid-column'));
       // });
 
-      it('is able to complete a CRUD [+ Count] operation', function (done) {
-        employees.set({ // insert
-          id: 2,
+      it('successfully completes a CRUD [+ Count] operation', function (done) {
+        employees.setNew({ // insert
           firstname: 'Donnie',
           lastname: 'Azoff',
           age: 36
-        }).then(function (data) {
-          // assert.isObject(data);
-          return employees.get(2); // select
-
-        }).then(function (records) {
+        })
+        .then(function (records) { // select
           assert.isArray(records);
           assert.lengthOf(records, 1);
-          return employees.countAll(); // count
+          assert.property(records[0], 'id');
 
-        }).then(function (count) {
-          assert.strictEqual(count, 2);
-          return employees.set({ // update
-            id: 2,
+          return employees.get(records[0].id);
+        })
+        .then(function (records) { // update
+          assert.isArray(records);
+          assert.lengthOf(records, 1);
+          assert.property(records[0], 'id');
+
+          return employees.set({
             firstname: 'Donnie',
             lastname: 'Azoff',
             age: 37
           });
+        })
+        .then(function (records) { // count
+          assert.isArray(records);
+          assert.lengthOf(records, 1);
+          assert.property(records[0], 'id');
 
-        }).then(function (data) {
-          // assert.isObject(data);
-          return employees.del(2); // delete
+          return employees.count().then(function (n) {
+            assert.operator(n, '>', 1);
+            return records;
+          });
+        })
+        .then(function (records) { // delete
+          assert.isArray(records);
+          assert.lengthOf(records, 1);
+          assert.property(records[0], 'id');
 
-        }).then(function (data) {
-          // assert.isObject(data);
+          return employees.del(records[0].id);
+        })
+        .then(function () {
           done();
-
-        }).catch(function (err) {
+        })
+        .catch(function (err) {
           throw err;
         });
       });
 
       describe('#get()', function () {
 
-        it('throws an error when selector contains column that does not exist', function () {
+        it('throws error when selector contains column that does not exist', function (done) {
           employees.get({foo: 'bar'}).catch(function (err) {
-            assert.strictEqual(err, 'Invalid selector: column "foo" cannot not be found in table "employees"');
-          });
-        });
-
-      });
-
-      describe('#count()', function () {
-
-        it('throws an error when selector contains column that does not exist', function () {
-          employees.count({foo: 'bar'}).catch(function (err) {
-            assert.strictEqual(err, 'Invalid selector: column "foo" cannot not be found in table "employees"');
-          });
-        });
-
-      });
-
-      describe('#del()', function () {
-
-        it('throws an error when selector contains column that does not exist', function () {
-          employees.del({foo: 'bar'}).catch(function (err) {
-            assert.strictEqual(err, 'Invalid selector: column "foo" cannot not be found in table "employees"');
+            assert.match(err, /invalid query selector/i);
+            done();
           });
         });
 
@@ -132,24 +116,24 @@ describe('Postgres Table', function () {
 
   });
 
-  describe('@deferred', function () {
+  // describe('@deferred', function () {
 
-    describe('#get()', function () {
+  //   describe('#get()', function () {
 
-      var db = naomi.create('postgres', conn);
+  //     var db = naomi.create('postgres');
 
-      it('enqueues queries until db is ready', function (done) {
-        var employees = db.extend('employees');
-        employees.get(1).then(function (records) {
-          assert.lengthOf(records, 1);
-          db.disconnect(done);
-        });
+  //     it('enqueues queries until db is ready', function (done) {
+  //       var employees = db.extend('employees');
+  //       employees.get(1).then(function (records) {
+  //         assert.lengthOf(records, 1);
+  //         db.disconnect(done);
+  //       });
 
-        db.connect();
-      });
+  //       db.connect();
+  //     });
 
-    });
+  //   });
 
-  });
+  // });
 
 });

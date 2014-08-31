@@ -8,12 +8,12 @@ var Promise = require('bluebird'),
  * @extends {GenericTable}
  * @constructor
  */
-function PostgresTable () {
+function Table () {
   GenericTable.apply(this, arguments);
 }
 
-// PostgresTable extends GenericTable
-PostgresTable.prototype = Object.create(GenericTable.prototype);
+// Table extends GenericTable
+Table.prototype = Object.create(GenericTable.prototype);
 
 /**
  * Retrieves the designated record(s) from this table.
@@ -24,7 +24,7 @@ PostgresTable.prototype = Object.create(GenericTable.prototype);
  * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
  * @returns {Promise} resolving to an Array.<object> of records.
  */
-PostgresTable.prototype._get = function (options) {
+Table.prototype._get = function (options) {
   var query;
 
   options.table = this._table;
@@ -42,7 +42,7 @@ PostgresTable.prototype._get = function (options) {
  * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
  * @returns {Promise} resolving to the count of records.
  */
-PostgresTable.prototype._count = function (options) {
+Table.prototype._count = function (options) {
   var self = this, resolver, query;
 
   options.table = this._table;
@@ -67,7 +67,7 @@ PostgresTable.prototype._count = function (options) {
  * @param {number} [options.limit] max number of records to delete from database - must be a positive integer, i.e. limit > 0.
  * @returns {Promise}
  */
-PostgresTable.prototype._del = function (options) {
+Table.prototype._del = function (options) {
   var self = this, resolver, query;
 
   options.table = this._table;
@@ -93,7 +93,7 @@ PostgresTable.prototype._del = function (options) {
  * @param {Array.<Array.<string>>} options.updateKeys the columns to check if record(s) already exists in table.
  * @returns {Promise} resolving to the updated/created records.
  */
-PostgresTable.prototype._set = function (options) {
+Table.prototype._set = function (options) {
   var self = this, resolver, query;
 
   if (_.isArray(options.values)) {// postgres upsert can't handle multiple records - use async logic
@@ -107,13 +107,12 @@ PostgresTable.prototype._set = function (options) {
   query = querybuilder.upsert(options);
 
   resolver = function (resolve, reject) {
-    var t = new Transaction(self._db);
-    t.begin().then(function () {
-      return t.query('LOCK TABLE "' + self._table + '" IN SHARE ROW EXCLUSIVE MODE;');
+    self._db.beginTransaction().then(function () {
+      return this.query('LOCK TABLE "' + self._table + '" IN SHARE ROW EXCLUSIVE MODE;');
     }).then(function () {
-      return t.query(query.sql, query.params);
+      return this.query(query.sql, query.params);
     }).then(function (records) {
-      return t.commit().then(function () {
+      return this.commit().then(function () {
         resolve(records);
       });
     }).catch(function (err) {
@@ -131,7 +130,7 @@ PostgresTable.prototype._set = function (options) {
  * @param {Array.<string>} options.columns the columns of the record(s) to insert.
  * @returns {Promise} resolving to the created records.
  */
-PostgresTable.prototype._setNew = function (options) {
+Table.prototype._setNew = function (options) {
   var self = this, resolver, query;
 
   options.table = this._table;
@@ -148,4 +147,4 @@ PostgresTable.prototype._setNew = function (options) {
   return new Promise(resolver);
 };
 
-module.exports = PostgresTable;
+module.exports = Table;

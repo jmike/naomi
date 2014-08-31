@@ -10,7 +10,7 @@ function Transaction () {
   GenericTransaction.apply(this, arguments);
 }
 
-// Transaction extends GenericTransaction
+// Postgres Transaction extends GenericTransaction
 Transaction.prototype = Object.create(GenericTransaction.prototype);
 
 /**
@@ -24,7 +24,7 @@ Transaction.prototype = Object.create(GenericTransaction.prototype);
 Transaction.prototype._query = function (sql, params) {
   var self = this, resolver;
 
-  sql = self.prepareSQL(sql);
+  sql = self._db.prepareSQL(sql);
 
   resolver = function (resolve, reject) {
     self._client.query(sql, params, function(err, result) {
@@ -45,7 +45,7 @@ Transaction.prototype._query = function (sql, params) {
  * @return {Promise} resolving to this transaction instance.
  */
 Transaction.prototype.begin = function (callback) {
-  return this.acquireClient()
+  return this._db.acquireClient()
     .bind(this)
     .then(function (client) {
       this._client = client;
@@ -67,7 +67,7 @@ Transaction.prototype.commit = function (callback) {
   return this.query('COMMIT;')
     .bind(this)
     .then (function () {
-      this.releaseClient(this._client);
+      this._db.releaseClient(this._client);
       this._client = null;
       return this;
     })
