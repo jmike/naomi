@@ -301,15 +301,15 @@ Table.prototype._get = function (options) {
 
 /**
  * Retrieves the designated record(s) from this table.
+ * @param {(boolean|number|string|Date|object|Array.<object>|null)} selector selector to match record(s) in table.
  * @param {object} [options] query options.
- * @param {(boolean|number|string|Date|object|Array.<object>)} [options.selector] a selector to match record(s) in table.
  * @param {(string|object|Array.<object|string>)} [options.order] an order expression to sort records.
  * @param {(number|string)} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
  * @param {(number|string)} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
  * @param {function} [callback] an optional callback function.
  * @returns {Promise} resolving to an Array.<object> of records.
  */
-Table.prototype.get = function (options, callback) {
+Table.prototype.get = function (selector, options, callback) {
   var self = this, resolver;
 
   // handle optional "options" param
@@ -330,7 +330,7 @@ Table.prototype.get = function (options, callback) {
     }
 
     try {
-      if (options.selector) options.selector = self._parseSelector(options.selector);
+      if (selector) options.selector = self._parseSelector(selector);
       if (options.order) options.order = self._parseOrder(options.order);
       if (options.limit) options.limit = self._parseLimit(options.limit);
       if (options.offset) options.offset = self._parseOffset(options.offset);
@@ -366,14 +366,14 @@ Table.prototype._count = function (options) {
 
 /**
  * Counts the designated record(s) in this table.
+ * @param {(boolean|number|string|Date|object|Array.<object>|null)} selector selector to match record(s) in table.
  * @param {object} [options] query options.
- * @param {(boolean|number|string|Date|object|Array.<object>)} [options.selector] a selector to match record(s) in table.
  * @param {(number|string)} [options.limit] max number of records to count from table - must be a positive integer, i.e. limit > 0.
  * @param {(number|string)} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
  * @param {function} [callback] an optional callback function.
  * @returns {Promise} resolving to the count of records.
  */
-Table.prototype.count = function (options, callback) {
+Table.prototype.count = function (selector, options, callback) {
   var self = this, resolver;
 
   // handle optional "options" param
@@ -394,7 +394,7 @@ Table.prototype.count = function (options, callback) {
     }
 
     try {
-      if (options.selector) options.selector = self._parseSelector(options.selector);
+      if (selector) options.selector = self._parseSelector(selector);
       if (options.limit) options.limit = self._parseLimit(options.limit);
       if (options.offset) options.offset = self._parseOffset(options.offset);
     } catch (err) {
@@ -429,6 +429,7 @@ Table.prototype._del = function (options) {
 
 /**
  * Deletes the designated record(s) from this table.
+ * @param {(boolean|number|string|Date|object|Array.<object>|null)} selector selector to match record(s) in table.
  * @param {object} [options] query options.
  * @param {(boolean|number|string|Date|object|Array.<object>)} [options.selector] a selector to match record(s) in database.
  * @param {(string|object|Array.<object|string>)} [options.order] an order expression to sort records.
@@ -436,7 +437,7 @@ Table.prototype._del = function (options) {
  * @param {function} [callback] an optional callback function.
  * @returns {Promise}
  */
-Table.prototype.del = function (options, callback) {
+Table.prototype.del = function (selector, options, callback) {
   var self = this, resolver;
 
   // handle optional "options" param
@@ -457,7 +458,7 @@ Table.prototype.del = function (options, callback) {
     }
 
     try {
-      if (options.selector) options.selector = self._parseSelector(options.selector);
+      if (selector) options.selector = self._parseSelector(selector);
       if (options.order) options.order = self._parseOrder(options.order);
       if (options.limit) options.limit = self._parseLimit(options.limit);
     } catch (err) {
@@ -578,7 +579,7 @@ Table.prototype._setNew = function (options) {
  * @param {function} [callback] an optional callback function.
  * @returns {Promise} resolving to the created records.
  */
-Table.prototype.set = function (attrs, callback) {
+Table.prototype.setNew = function (attrs, callback) {
   var self = this, columns, resolver;
 
   // extract columns from attrs
