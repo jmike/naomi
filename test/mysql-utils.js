@@ -1,15 +1,21 @@
 require('dotenv').load(); // load environmental variables
 
 var chai = require('chai'),
-  querybuilder = require('../src/mysql/querybuilder'),
+  where = require('../src/mysql/utils/where'),
+  orderBy = require('../src/mysql/utils/orderBy'),
+  select = require('../src/mysql/utils/select'),
+  count = require('../src/mysql/utils/count'),
+  del = require('../src/mysql/utils/delete'),
+  upsert = require('../src/mysql/utils/upsert'),
+  insert = require('../src/mysql/utils/insert'),
   assert = chai.assert;
 
-describe('MySQL querybuilder', function () {
+describe('MySQL utils', function () {
 
-  describe('#_where()', function () {
+  describe('where', function () {
 
     it('accepts object selector', function () {
-      var query = querybuilder._where({
+      var query = where({
         id: {'=': 1}
       });
       assert.strictEqual(query.sql, 'WHERE `id` = ?');
@@ -18,7 +24,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('accepts object selector with many properties', function () {
-      var query = querybuilder._where({
+      var query = where({
         age: {'>': 30},
         firstname: {'=': 'James'}
       });
@@ -29,7 +35,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('accepts Array selector', function () {
-      var query = querybuilder._where([
+      var query = where([
         {
           id: {'>': 2},
           firstname: {'=': 'James'}
@@ -46,7 +52,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('handles special "= null" expression', function () {
-      var query = querybuilder._where({
+      var query = where({
         firstname: {'=': null}
       });
       assert.strictEqual(query.sql, 'WHERE `firstname` IS NULL');
@@ -54,7 +60,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('handles special "!= null" expression', function () {
-      var query = querybuilder._where({
+      var query = where({
         firstname: {'!=': null}
       });
       assert.strictEqual(query.sql, 'WHERE `firstname` IS NOT NULL');
@@ -63,17 +69,17 @@ describe('MySQL querybuilder', function () {
 
   });
 
-  describe('#_orderBy()', function () {
+  describe('orderBy', function () {
 
     it('accepts object order', function () {
-      var sql = querybuilder._orderBy({
+      var sql = orderBy({
         id: 'asc'
       });
       assert.strictEqual(sql, 'ORDER BY `id` ASC');
     });
 
     it('accepts Array order', function () {
-      var sql = querybuilder._orderBy([
+      var sql = orderBy([
         {id: 'asc'},
         {age: 'desc'}
       ]);
@@ -82,17 +88,17 @@ describe('MySQL querybuilder', function () {
 
   });
 
-  describe('#select()', function () {
+  describe('select', function () {
 
     it('returns a valid SQL with table specified', function () {
-      var query = querybuilder.select({
+      var query = select({
         table: 'employees'
       });
       assert.strictEqual(query.sql, 'SELECT * FROM `employees`;');
     });
 
     it('returns a valid SQL with table + columns specified', function () {
-      var query = querybuilder.select({
+      var query = select({
         table: 'employees',
         columns: ['a', 'b', 'c']
       });
@@ -100,7 +106,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('returns a valid SQL with table + columns + selector specified', function () {
-      var query = querybuilder.select({
+      var query = select({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -115,7 +121,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('returns a valid SQL with table + columns + selector + order specified', function () {
-      var query = querybuilder.select({
+      var query = select({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -134,7 +140,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('returns a valid SQL with table + columns + selector + order + limit specified', function () {
-      var query = querybuilder.select({
+      var query = select({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -154,7 +160,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('returns a valid SQL with table + columns + selector + order + limit + offset specified', function () {
-      var query = querybuilder.select({
+      var query = select({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -176,17 +182,17 @@ describe('MySQL querybuilder', function () {
 
   });
 
-  describe('#count()', function () {
+  describe('count', function () {
 
     it('returns a valid SQL with table specified', function () {
-      var query = querybuilder.count({
+      var query = count({
         table: 'employees'
       });
       assert.strictEqual(query.sql, 'SELECT COUNT(*) AS `count` FROM `employees`;');
     });
 
     it('returns a valid SQL with table + columns specified', function () {
-      var query = querybuilder.count({
+      var query = count({
         table: 'employees',
         columns: ['a', 'b', 'c']
       });
@@ -194,7 +200,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('returns a valid SQL with table + columns + selector specified', function () {
-      var query = querybuilder.count({
+      var query = count({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -209,7 +215,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('returns a valid SQL with table + columns + selector + limit specified', function () {
-      var query = querybuilder.count({
+      var query = count({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -225,7 +231,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('returns a valid SQL with table + columns + selector + limit + offset specified', function () {
-      var query = querybuilder.count({
+      var query = count({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -243,17 +249,17 @@ describe('MySQL querybuilder', function () {
 
   });
 
-  describe('#delete()', function () {
+  describe('delete', function () {
 
     it('returns a valid SQL with table specified', function () {
-      var query = querybuilder.delete({
+      var query = del({
         table: 'employees'
       });
       assert.strictEqual(query.sql, 'DELETE FROM `employees`;');
     });
 
     it('returns a valid SQL with selector specified', function () {
-      var query = querybuilder.delete({
+      var query = del({
         table: 'employees',
         selector: [
           {
@@ -267,7 +273,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('returns a valid SQL with table + selector + order specified', function () {
-      var query = querybuilder.delete({
+      var query = del({
         table: 'employees',
         selector: [
           {
@@ -285,7 +291,7 @@ describe('MySQL querybuilder', function () {
     });
 
     it('returns a valid SQL with table + selector + order + limit specified', function () {
-      var query = querybuilder.delete({
+      var query = del({
         table: 'employees',
         selector: [
           {
@@ -305,10 +311,10 @@ describe('MySQL querybuilder', function () {
 
   });
 
-  describe('#upsert()', function () {
+  describe('upsert', function () {
 
     it('returns a valid SQL with table + values + updateColumns specified', function () {
-      var query = querybuilder.upsert({
+      var query = upsert({
         table: 'employees',
         values: {a: 1, b: 2, c: 3},
         updateColumns: ['b', 'c']
@@ -321,10 +327,10 @@ describe('MySQL querybuilder', function () {
 
   });
 
-  describe('#insert()', function () {
+  describe('insert', function () {
 
     it('returns a valid SQL with table + values specified', function () {
-      var query = querybuilder.insert({
+      var query = insert({
         table: 'employees',
         values: {a: 1, b: 2, c: 3}
       });

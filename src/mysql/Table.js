@@ -1,7 +1,11 @@
 var _ = require('lodash'),
   Promise = require('bluebird'),
   GenericTable = require('../Table'),
-  querybuilder = require('./querybuilder');
+  select = require('./utils/select'),
+  count = require('./utils/count'),
+  del = require('./utils/delete'),
+  upsert = require('./utils/upsert'),
+  insert = require('./utils/insert');
 
 /**
  * Constructs a new Postgres Table.
@@ -29,7 +33,7 @@ Table.prototype._get = function (options) {
 
   options.table = this._table;
   options.columns = Object.keys(this._columns);
-  query = querybuilder.select(options);
+  query = select(options);
 
   return this._db.query(query.sql, query.params);
 };
@@ -46,7 +50,7 @@ Table.prototype._count = function (options) {
   var self = this, resolver, query;
 
   options.table = this._table;
-  query = querybuilder.count(options);
+  query = count(options);
 
   resolver = function (resolve, reject) {
     self._db.query(query.sql, query.params).then(function (records) {
@@ -71,7 +75,7 @@ Table.prototype._del = function (options) {
   var self = this, resolver, query;
 
   options.table = this._table;
-  query = querybuilder.delete(options);
+  query = del(options);
 
   resolver = function (resolve, reject) {
     self._db.query(query.sql, query.params).then(function () {
