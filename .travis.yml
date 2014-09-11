@@ -11,4 +11,4 @@ before_script:
   - psql -c 'create database naomi_test;' -U postgres
   - psql -U postgres naomi_test < assets/postgres-test.sql
 env:
-  - NODE_ENV=development MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USER=root MYSQL_PASSWORD= MYSQL_SCHEMA=naomi_test POSTGRES_HOST=localhost POSTGRES_PORT=5432 POSTGRES_USER=postgres POSTGRES_PASSWORD= POSTGRES_SCHEMA=naomi_test
+  - NODE_ENV=development MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USER=root MYSQL_PASSWORD= MYSQL_DATABASE=naomi_test POSTGRES_HOST=localhost POSTGRES_PORT=5432 POSTGRES_USER=postgres POSTGRES_PASSWORD= POSTGRES_DATABASE=naomi_test
