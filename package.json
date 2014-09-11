@@ -39,7 +39,8 @@
     "query",
     "client",
     "model",
-    "mysql"
+    "mysql",
+    "postgres"
   ],
   "license": "MIT"
 }
