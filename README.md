@@ -169,7 +169,7 @@ SELECT * FROM `employees` WHERE `id` = 1;
 
 ##### Using multiple fields
 
-```
+```javascript
 employees.get({
   lastName: 'Anderson',
   age: {'>=': 30}
@@ -180,13 +180,13 @@ employees.get({
 
 This will result to the following SQL, run under the hood:
 
-```
+```sql
 SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` >= 30;
 ```
 
 ##### Using range of custom fields
 
-```
+```javascript
 employees.get([
   {
     lastName: 'Anderson',
@@ -202,28 +202,24 @@ employees.get([
 
 This will result to the following SQL, run under the hood:
 
-```
+```sql
 SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` != 30 OR `id` = 1;
 ```
 
 ##### Using custom operators
 
-```
+```javascript
 employees.get({
   lastName: 'Anderson',
   age: {'!=': null}
-}, function (err, records) {
-  if (err) {
-    return console.error(err);
-  }
-
+}).then(function (records) {
   // do something with records
-});
+});;
 ```
 
 This will result to the following SQL, run under the hood:
 
-```
+```sql
 SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` IS NOT NULL;
 ```
 
@@ -240,101 +236,79 @@ Less than or equal operator | <=
 
 Please not that {'=': null} compiles to `IS NULL` and {'=': null} compiles to 'IS NOT NULL'.
 
-##### Retrieving records with ORDER BY clause
+##### Using an ORDER BY clause
 
-```
+```javascript
 employees.get({age: {'>': 18}}, {
   order: 'lastName',
-}, function (err, records) {
-  if (err) {
-    return console.error(err);
-  }
-
+}).then(function (records) {
   // do something with records
-});
+});;
 ```
 
 This will result to the following SQL, run under the hood:
 
-```
+```sql
 SELECT * FROM `employees` WHERE `age` > 18 ORDER BY `lastName` ASC;
 ```
 
-##### Retrieving records with complex ORDER BY clause
+##### Using a complex ORDER BY clause
 
-```
+```javascript
 employees.get({age: {'>': 18}}, {
   order: ['lastName', {id: 'desc'}],
-}, function (err, records) {
-  if (err) {
-    return console.error(err);
-  }
-
+}).then(function (records) {
   // do something with records
-});
+});;
 ```
 
 This will result to the following SQL, run under the hood:
 
-```
+```sql
 SELECT * FROM `employees` WHERE `age` > 18 ORDER BY `lastName` ASC, `id` DESC;
 ```
 
-##### Retrieving records using LIMIT and OFFSET
+##### Using LIMIT and OFFSET
 
-```
+```javascript
 employees.get({age: {'>': 18}}, {
   order: 'lastName',
   limit: 10,
   offset: 20
-}, function (err, records) {
-  if (err) {
-    return console.error(err);
-  }
-
+}).then(function (records) {
   // do something with records
-});
+});;
 ```
 
 This will result to the following SQL, run under the hood:
 
-```
+```sql
 SELECT * FROM `employees` WHERE `age` > 18 ORDER BY `lastName` LIMIT 10 OFFSET 20;
 ```
 
-##### Deleting records
+#### Deleting records from table
 
-```
-employees.del(1, function (err) {
-  if (err) {
-    return console.error(err);
-  }
-
-  // employee with id #1 is deleted
-});
+```javascript
+employees.del(1);
 ```
 
 This will result to the following SQL, run under the hood:
 
-```
+```sql
 DELETE FROM `employees` WHERE id = 1;
 ```
 
-##### Counting records
+#### Counting records in table
 
-```
-employees.count(function (err, count) {
-  if (err) {
-    return console.error(err);
-  }
-
+```javascript
+employees.count().then(function (n) {
   // do something with count
 });
 ```
 
 This will result to the following SQL, run under the hood:
 
-```
+```sql
 SELECT COUNT(*) AS 'count' FROM `employees`;
 ```
 
@@ -348,7 +322,7 @@ Databases, besides data, contain a lot of metadata. Stuff like:
 
 These metadata can be extracted from the database and are sufficient for compiling basic validation rules and application structure.
 
-Still, the current breed of tools (e.g. ORMs) tend to ignore database metadata and replicate that information in the application layer. This results to:
+Still, most ORM tools tend to ignore database metadata and replicate that information in the application layer. This results to:
 
 * Unnecessary complexity;
 * Synchronization issues;
@@ -361,7 +335,7 @@ Naomi works the other way around:
 1. You first create the database using a tool of your choice, e.g. [MySQL Workbench](http://www.mysql.com/products/workbench/), [pgAdmin](http://www.pgadmin.org/) - a tool you know and love;
 2. You call a few simple methods to bring meta-information to the application.
 
-While this approach may seem intriguing to new developers, it is in fact the natural way of thinking for experienced users. Creating a database requires creativity and imagination that machines lack. Data architects create the database structure and developers write the SQL code.
+While this approach may seem intriguing to new developers, it is in fact the natural way of thinking for experienced users. Creating a database requires creativity and imagination that machines lack.
 
 Naomi takes care of SQL code by automating repetitive data queries. And if you need some custom logic you can always write it yourself.
 
