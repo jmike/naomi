@@ -20,7 +20,7 @@ describe('naomi', function () {
       assert.strictEqual(db.connectionProperties.host, process.env.MYSQL_HOST);
       assert.equal(db.connectionProperties.port, process.env.MYSQL_PORT);
       assert.strictEqual(db.connectionProperties.user, process.env.MYSQL_USER);
-      assert.strictEqual(db.connectionProperties.password, process.env.MYSQL_PASSWORD);
+      assert.strictEqual(db.connectionProperties.password, process.env.MYSQL_PASSWORD || '');
       assert.strictEqual(db.connectionProperties.database, process.env.MYSQL_DATABASE);
     });
 
@@ -35,7 +35,7 @@ describe('naomi', function () {
       assert.strictEqual(db.connectionProperties.host, process.env.POSTGRES_HOST);
       assert.equal(db.connectionProperties.port, process.env.POSTGRES_PORT);
       assert.strictEqual(db.connectionProperties.user, process.env.POSTGRES_USER);
-      assert.strictEqual(db.connectionProperties.password, process.env.POSTGRES_PASSWORD);
+      assert.strictEqual(db.connectionProperties.password, process.env.POSTGRES_PASSWORD || '');
       assert.strictEqual(db.connectionProperties.database, process.env.POSTGRES_DATABASE);
     });
 
