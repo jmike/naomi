@@ -13,6 +13,9 @@
     "trailing": true,
     "undef": true,
     "unused": true,
+    "predef": [
+      "-Promise"
+    ],
     "strict": false,
     "globals": {
       "describe": false,
