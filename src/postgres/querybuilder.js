@@ -1,8 +1,7 @@
 var _ = require('lodash'),
-  operators = require('./operators.json'),
-  mysql_querybuilder = require('../mysql/querybuilder');
+  operators = require('./operators.json');
 
-module.exports = _.create(mysql_querybuilder, {
+module.exports = _.create(require('../mysql/querybuilder'), {
 
   /**
    * Escapes the given string to use safely in a SQL query.
@@ -22,8 +21,10 @@ module.exports = _.create(mysql_querybuilder, {
    * @private
    */
   _where: function (selector) {
-    var sql = 'WHERE ', params = [];
+    var sql = 'WHERE ',
+      params = [];
 
+    // make sure selector is array
     if (!_.isArray(selector)) selector = [selector];
 
     sql += selector.map(function (obj) {
@@ -64,15 +65,13 @@ module.exports = _.create(mysql_querybuilder, {
    * @static
    */
   count: function (options) {
-    var sql = [], params = [], clause;
+    var sql = [],
+      params = [],
+      clause;
 
-    // init statement
     sql.push('SELECT COUNT(*) AS "count"');
-
-    // set FROM clause
     sql.push('FROM ' + this.escapeSQL(options.table));
 
-    // set WHERE clause
     if (options.selector) {
       clause = this._where(options.selector);
 
@@ -80,17 +79,14 @@ module.exports = _.create(mysql_querybuilder, {
       params.push.apply(params, clause.params);
     }
 
-    // set LIMIT clause
     if (options.limit) {
       sql.push('LIMIT ' + options.limit);
+
+      if (options.offset) {
+        sql.push('OFFSET ' + options.offset);
+      }
     }
 
-    // set OFFSET clause
-    if (options.offset) {
-      sql.push('OFFSET ' + options.offset);
-    }
-
-    // finish it
     sql = sql.join(' ') + ';';
 
     return {sql: sql, params: params};
@@ -101,14 +97,16 @@ module.exports = _.create(mysql_querybuilder, {
    * @param {object} options query properties.
    * @param {string} options.table the table to upsert data into.
    * @param {object} options.values the record values.
-   * @param {Array.<string>} options.columns the columns of the record(s) to insert.
-   * @param {Array.<string>} options.updateColumns the columns of the record(s) to update.
-   * @param {Array.<Array.<string>>} options.updateKeys the columns to check if record(s) already exists in table.
+   * @param {Array.<string>} options.columns the columns of the record to insert.
+   * @param {Array.<string>} options.updateColumns the columns of the record to update.
+   * @param {Array.<Array.<string>>} options.identifier
+   * @param {Array.<string>} [options.returnColumns] the columns to return after upsert.
    * @return {object} with "sql" and "params" properties.
    * @static
    */
   upsert: function (options) {
-    var sql = [], params = [];
+    var sql = '',
+      params = [];
 
     // init with UPDATE statement
 // WITH
@@ -136,49 +134,53 @@ module.exports = _.create(mysql_querybuilder, {
 // SELECT id, value
 // FROM updated
 
-    sql.push('WITH');
-
-    // set UPDATE statement
-    sql.push('updated AS (UPDATE ' + this.escapeSQL(options.table) + ' SET');
-    sql.push( // key-value pairs
-      options.updateColumns.map(function (k) {
+    sql += 'WITH ';
+    sql += 'updated AS (UPDATE ' + this.escapeSQL(options.table) + ' SET ';
+    sql += options.updateColumns.map(function (k) {
+      params.push(options.values[k]);
+      return this.escapeSQL(k) + ' = ?';
+    }, this).join(', ');
+    sql += ' WHERE ';
+    sql += options.identifier.map(function (keys) {
+      return keys.map(function (k) {
         params.push(options.values[k]);
         return this.escapeSQL(k) + ' = ?';
-      }, this).join(', ')
-    );
-    sql.push('WHERE');
-    sql.push(
-      options.updateKeys.map(function (keys) {
-        return keys.map(function (k) {
-          params.push(options.values[k]);
-          return this.escapeSQL(k) + ' = ?';
-        }, this).join(' AND ');
-      }, this).join(' OR ')
-    );
-    sql.push('RETURNING *),');
+      }, this).join(' AND ');
+    }, this).join(' OR ');
+    sql += ' RETURNING ';
 
-    // set INSERT statement
-    sql.push('inserted AS (INSERT INTO ' + this.escapeSQL(options.table));
-    sql.push( // columns
-      '(' + options.columns.map(function (k) {
+    if (options.returnColumns) {
+      sql += options.returnColumns.map(function (k) {
         return this.escapeSQL(k);
-      }, this).join(', ') + ')'
-    );
-    sql.push('SELECT');
-    sql.push(
-      options.columns.map(function (k) {
-        params.push(options.values[k]);
-        return '?';
-      }).join(', ')
-    );
-    sql.push('WHERE NOT EXISTS (SELECT * FROM updated)');
-    sql.push('RETURNING *)');
+      }, this).join(', ');
+    } else {
+      sql += '*';
+    }
 
-    // set final SELECT statement
-    sql.push('SELECT * FROM inserted UNION ALL SELECT * FROM updated');
+    sql += '), ';
 
-    // finish it
-    sql = sql.join(' ') + ';';
+    sql += 'inserted AS (INSERT INTO ' + this.escapeSQL(options.table) + ' (';
+    sql += options.columns.map(function (k) {
+      return this.escapeSQL(k);
+    }, this).join(', ');
+    sql += ') SELECT ';
+    sql += options.columns.map(function (k) {
+      params.push(options.values[k]);
+      return '?';
+    }).join(', ');
+    sql += ' WHERE NOT EXISTS (SELECT * FROM updated) RETURNING ';
+
+    if (options.returnColumns) {
+      sql += options.returnColumns.map(function (k) {
+        return this.escapeSQL(k);
+      }, this).join(', ');
+    } else {
+      sql += '*';
+    }
+
+    sql += ') ';
+
+    sql += 'SELECT * FROM inserted UNION ALL SELECT * FROM updated;';
 
     return {sql: sql, params: params};
   },
@@ -187,12 +189,15 @@ module.exports = _.create(mysql_querybuilder, {
    * Compiles and returns a parameterized INSERT statement.
    * @param {object} options query properties.
    * @param {string} options.table the table name to insert data.
+   * @param {Array.<string>} options.columns the columns of the record to insert.
    * @param {(object|Array.<object>)} options.values values to insert if no record is found.
+   * @param {Array.<string>} [options.returnColumns] the columns to return after upsert.
    * @return {object} with "sql" and "params" properties.
    * @static
    */
   insert: function (options) {
-    var sql = [], params = [];
+    var sql = [],
+      params = [];
 
     if (!_.isArray(options.values)) options.values = [options.values];
 
@@ -214,9 +219,18 @@ module.exports = _.create(mysql_querybuilder, {
       }).join(', ')
     );
 
-    sql.push('RETURNING *');
+    sql.push('RETURNING');
 
-    // finish it
+    if (options.returnColumns) {
+      sql.push(
+        options.returnColumns.map(function (k) {
+          return this.escapeSQL(k);
+        }, this).join(', ')
+      );
+    } else {
+      sql.push('*');
+    }
+
     sql = sql.join(' ') + ';';
 
     return {sql: sql, params: params};

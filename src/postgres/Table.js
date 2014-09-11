@@ -71,7 +71,7 @@ Table.prototype._del = function (options) {
   var self = this, resolver, query;
 
   options.table = this._table;
-  query = querybuilder.delete(options);
+  query = querybuilder.del(options);
 
   resolver = function (resolve, reject) {
     self._db.query(query.sql, query.params).then(function () {
@@ -85,26 +85,64 @@ Table.prototype._del = function (options) {
 };
 
 /**
- * Creates or updates (if already exists) the specified record(s) in this table.
- * @param {object} options query options.
- * @param {(object|Array.<object>)} options.values the record values.
- * @param {Array.<string>} options.columns the columns of the record(s) to insert.
- * @param {Array.<string>} options.updateColumns the columns of the record(s) to update.
- * @param {Array.<Array.<string>>} options.updateKeys the columns to check if record(s) already exists in table.
- * @returns {Promise} resolving to the updated/created records.
+ * Extract keys to identify a record in table, based on the given columns.
+ * @param {Array.<string>} columns
+ * @return {Array.<Array.<string>>} [description]
  */
-Table.prototype._set = function (options) {
-  var self = this, resolver, query;
+Table.prototype._extractIdentifier = function (columns) {
+  var updateKeys = [], arr;
 
-  if (_.isArray(options.values)) {// postgres upsert can't handle multiple records - use async logic
-    return Promise.map(options.values, function (obj) {
-      options.values = obj;
-      return self.set(options);
+  // set primary key intersection
+  arr = _.intersection(columns, this._primaryKey);
+
+  if (arr.length === this._primaryKey.length) {
+    updateKeys.push(arr);
+  }
+
+  // set unique keys intersection
+  _.forOwn(this._uniqueKeys, function (uniqueKey) {
+    arr = _.intersection(columns, uniqueKey);
+
+    if (arr.length === uniqueKey.length) {
+      updateKeys.push(arr);
+    }
+  });
+
+  return updateKeys;
+};
+
+/**
+ * Creates or updates (if already exists) the specified record(s) in this table.
+ * @param {(object|Array<object>)} attrs the attributes of the record(s) to create/update.
+ * @returns {Promise} resolving to the primary key of the created/updated record(s).
+ */
+Table.prototype._set = function (attrs) {
+  var self = this,
+    columns,
+    updateColumns,
+    identifier,
+    query,
+    resolver;
+
+  if (_.isArray(attrs)) {
+
+    return Promise.map(attrs, function (obj) {
+      return self._set(obj);
     }).all();
   }
 
-  options.table = this._table;
-  query = querybuilder.upsert(options);
+  columns = Object.keys(attrs);
+  updateColumns = _.difference(columns, this._primaryKey);
+  identifier = this._extractIdentifier(columns);
+
+  query = querybuilder.upsert({
+    table: this._table,
+    columns: columns,
+    values: attrs,
+    updateColumns: updateColumns,
+    identifier: identifier,
+    returnColumns: this._primaryKey
+  });
 
   resolver = function (resolve, reject) {
     self._db.beginTransaction().then(function () {
@@ -113,7 +151,7 @@ Table.prototype._set = function (options) {
       return this.query(query.sql, query.params);
     }).then(function (records) {
       return this.commit().then(function () {
-        resolve(records);
+        resolve(records[0]);
       });
     }).catch(function (err) {
       reject(err);
@@ -125,20 +163,22 @@ Table.prototype._set = function (options) {
 
 /**
  * Creates the specified record(s) in this table.
- * @param {object} options query options.
- * @param {(object|Array.<object>)} options.values the record values.
- * @param {Array.<string>} options.columns the columns of the record(s) to insert.
- * @returns {Promise} resolving to the created records.
+ * @param {(object|Array.<object>)} attrs the attributes of the record(s) to create.
+ * @returns {Promise} resolving to the primary key of the created record(s).
  */
-Table.prototype._setNew = function (options) {
-  var self = this, resolver, query;
+Table.prototype._add = function (attrs) {
+  var self = this, query, resolver;
 
-  options.table = this._table;
-  query = querybuilder.insert(options);
+  query = querybuilder.insert({
+    table: this._table,
+    columns: Object.keys(attrs),
+    values: attrs,
+    returnColumns: this._primaryKey
+  });
 
   resolver = function (resolve, reject) {
     self._db.query(query.sql, query.params).then(function (records) {
-      resolve(records);
+      resolve(records[0]);
     }).catch(function (err) {
       reject(err);
     });

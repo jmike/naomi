@@ -5,7 +5,7 @@ var Promise = require('bluebird'),
 /**
  * Constructs a new Table refencing the designated table name in the specified Database.
  * @param {Database} db the database that the table belongs to.
- * @param {strinhg} table the name of the table.
+ * @param {string} table the name of the table.
  * @constructor
  */
 function Table (db, table) {
@@ -142,23 +142,29 @@ Table.prototype._parseExpression = function (expr) {
 Table.prototype._parseSelector = function (selector) {
   var obj = {};
 
-  if (_.isPlainObject(selector)) { // standard selector type
+  // check if selector is object, i.e. standard format
+  if (_.isObject(selector)) {
+
     _.forOwn(selector, function (v, k) {
+
       if (!this.hasColumn(k)) {
         throw new Error('Invalid query selector: column "' + k + '" does not exist in table "' + this._table + '"');
       }
 
       if (_.isPlainObject(v)) {
-        selector[k] = this._parseExpression(v);
+        obj[k] = this._parseExpression(v);
       } else { // plain value
-        selector[k] = {'=': v};
+        obj[k] = {'=': v};
       }
+
     }, this);
 
-    return selector;
+    return obj;
   }
 
+  // check if selector is number, string, date or boolean
   if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) { // plain value selector
+
     if (this._primaryKey.length !== 1) {
       throw new Error('Invalid query selector: primary key is compound or non existent, thus plain value selectors are useless');
     }
@@ -167,10 +173,13 @@ Table.prototype._parseSelector = function (selector) {
     return obj;
   }
 
+  // check if selector is array
   if (_.isArray(selector)) {
+
     return selector.map(function (e) {
       return this._parseSelector(e);
     }, this);
+
   }
 
   throw new Error('Invalid query selector');
@@ -190,9 +199,12 @@ Table.prototype._parseSelector = function (selector) {
  */
 Table.prototype._parseOrder = function (order) {
   var re = /^(asc|desc)$/i,
+    obj = {},
     keys, k, v;
 
-  if (_.isPlainObject(order)) { // standard format
+  // check if order is object, i.e. standard format
+  if (_.isPlainObject(order)) {
+
     keys = Object.keys(order);
 
     if (keys.length !== 1) {
@@ -213,17 +225,16 @@ Table.prototype._parseOrder = function (order) {
     return order;
   }
 
+  // check if order is string
   if (_.isString(order)) {
-    k = order;
-    v = 'asc'; // set value to 'asc' by default
 
-    order = {}; // reset order
-    order[k] = v;
-
-    return this._parseOrder(order);
+    obj[order] = 'asc'; // set value to 'asc' by default
+    return this._parseOrder(obj);
   }
 
+  // check if order is array
   if (_.isArray(order)) {
+
     return order.map(function (e) {
       return this._parseOrder(e);
     }, this);
@@ -284,6 +295,37 @@ Table.prototype._parseOffset = function (offset) {
   }
 
   throw new Error('Invalid offset: expected object or string, received ' + offset);
+};
+
+/**
+ * Parses the given record attributes based on this table columns.
+ * @param {(object|Array.<object>)} attrs the record attributes.
+ * @returns {(object|Array.<object>)}
+ * @throws {Error} if attrs is unspecified or invalid
+ * @private
+ */
+Table.prototype._parseAttributes = function (attrs) {
+  // check if attrs is plain object, i.e. standard format
+  if (_.isPlainObject(attrs)) {
+
+    Object.keys(attrs).forEach(function (column) {
+      if (!this.hasColumn(column)) {
+        throw new Error('Invalid record attributes: column ' + column + ' does not exist in table ' + this._table);
+      }
+    }, this);
+
+    return attrs;
+  }
+
+  // check if attrs is array
+  if (_.isArray(attrs)) {
+
+    return attrs.map(function (obj) {
+      return this._parseAttributes(obj);
+    }, this);
+  }
+
+  throw new Error('Invalid records attributes: expected object or Array, received ' + typeof(attrs));
 };
 
 /**
@@ -481,74 +523,37 @@ Table.prototype.del = function (selector, options, callback) {
 
 /**
  * Creates or updates (if already exists) the specified record(s) in this table.
- * @param {object} options query options.
- * @param {(object|Array.<object>)} options.values the record values.
- * @param {Array.<string>} options.columns the columns of the record(s) to insert.
- * @param {Array.<string>} options.updateColumns the columns of the record(s) to update.
- * @param {Array.<Array.<string>>} options.updateKeys the columns to check if record(s) already exists in table.
- * @returns {Promise} resolving to the updated/created records.
+ * @param {(object|Array.<object>)} attrs the attributes of the record(s) to create/update.
+ * @returns {Promise} resolving to the primary key of the created/updated record(s).
  */
-Table.prototype._set = function (options) {
-  return Promise.resolve(options);
+Table.prototype._set = function (attrs) {
+  return Promise.resolve(attrs);
 };
 
 /**
  * Creates or updates (if already exists) the specified record(s) in this table.
- * @param {(object|Array<object>)} attrs the record's attributes.
+ * @param {(object|Array<object>)} attrs the attributes of the record(s) to create/update.
  * @param {function} [callback] an optional callback function.
- * @returns {Promise} resolving to the updated/created records.
+ * @returns {Promise} resolving to the primary key of the created/updated record(s).
  */
 Table.prototype.set = function (attrs, callback) {
-  var self = this, columns, resolver;
-
-  // extract columns from attrs
-  if (_.isPlainObject(attrs)) {
-    columns = Object.keys(attrs);
-  } else if (_.isArray(attrs)) {
-    columns = Object.keys(attrs[0]); // assuming all records in array have the same columns
-  } else {
-    return Promise.reject('Invalid record attributes: expected plain object or Array, received ' + typeof(attrs))
-      .nodeify(callback);
-  }
+  var self = this, resolver;
 
   resolver = function (resolve, reject) {
-    var options = {}, arr;
+    var values;
 
+    // make sure table exists in database
     if (!self._db.hasTable(self._table)) {
       return reject('Table "' + self._table + '" cannot be found in database');
     }
 
-    // make sure all columns exist in table
-    arr = _.difference(columns, Object.keys(self._columns));
-    if (arr.length !== 0) {
-      return reject('Invalid record attributes: column ' + arr[0] + ' does not exist in table ' + self._table);
+    try {
+      values = self._parseAttributes(attrs);
+    } catch (err) {
+      return reject(err);
     }
 
-    // set values
-    options.values = attrs;
-
-    // set columns to insert
-    options.columns = columns;
-
-    // set columns to update if record exists
-    options.updateColumns = _.difference(columns, self._primaryKey);
-
-    // set selector to check if record exists
-    options.updateKeys = [];
-
-    arr = _.intersection(columns, self._primaryKey);
-    if (arr.length === self._primaryKey.length) {
-      options.updateKeys.push(arr);
-    }
-
-    _.forOwn(self._uniqueKeys, function (uniqueKey) {
-      arr = _.intersection(columns, uniqueKey);
-      if (arr.length === uniqueKey.length) {
-        options.updateKeys.push(arr);
-      }
-    });
-
-    resolve(self._set(options));
+    resolve(self._set(values));
   };
 
   return new Promise(function(resolve, reject) {
@@ -564,54 +569,37 @@ Table.prototype.set = function (attrs, callback) {
 
 /**
  * Creates the specified record(s) in this table.
- * @param {object} options query options.
- * @param {(object|Array.<object>)} options.values the record values.
- * @param {Array.<string>} options.columns the columns of the record(s) to insert.
- * @returns {Promise} resolving to the created records.
+ * @param {(object|Array.<object>)} attrs the attributes of the record(s) to create.
+ * @returns {Promise} resolving to the primary key of the created record(s).
  */
-Table.prototype._setNew = function (options) {
-  return Promise.resolve(options);
+Table.prototype._add = function (attrs) {
+  return Promise.resolve(attrs);
 };
 
 /**
  * Creates the specified record(s) in this table.
- * @param {(object|Array<object>)} attrs the record's attributes.
+ * @param {(object|Array<object>)} attrs the attributes of the record(s) to create.
  * @param {function} [callback] an optional callback function.
- * @returns {Promise} resolving to the created records.
+ * @returns {Promise} resolving to the primary key of the created record(s).
  */
-Table.prototype.setNew = function (attrs, callback) {
-  var self = this, columns, resolver;
-
-  // extract columns from attrs
-  if (_.isPlainObject(attrs)) {
-    columns = Object.keys(attrs);
-  } else if (_.isArray(attrs)) {
-    columns = Object.keys(attrs[0]); // assuming all records in array have the same columns
-  } else {
-    return Promise.reject('Invalid record attributes: expected plain object or Array, received ' + typeof(attrs))
-      .nodeify(callback);
-  }
+Table.prototype.add = function (attrs, callback) {
+  var self = this, resolver;
 
   resolver = function (resolve, reject) {
-    var options = {}, arr;
+    var values;
 
+    // make sure table exists in database
     if (!self._db.hasTable(self._table)) {
       return reject('Table "' + self._table + '" cannot be found in database');
     }
 
-    // make sure all columns exist in table
-    arr = _.difference(columns, Object.keys(self._columns));
-    if (arr.length !== 0) {
-      return reject('Invalid record attributes: column ' + arr[0] + ' does not exist in table ' + self._table);
+    try {
+      values = self._parseAttributes(attrs);
+    } catch (err) {
+      return reject(err);
     }
 
-    // set values
-    options.values = attrs;
-
-    // set columns
-    options.columns = columns;
-
-    resolve(self._setNew(options));
+    resolve(self._add(values));
   };
 
   return new Promise(function(resolve, reject) {

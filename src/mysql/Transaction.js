@@ -61,7 +61,7 @@ Transaction.prototype._query = function (sql, params, options) {
  * @return {Promise} resolving to this transaction instance.
  */
 Transaction.prototype.begin = function (callback) {
-  return this.acquireClient()
+  return this._db.acquireClient()
     .bind(this)
     .then(function (client) {
       this._client = client;
@@ -83,7 +83,7 @@ Transaction.prototype.commit = function (callback) {
   return this.query('COMMIT;')
     .bind(this)
     .then (function () {
-      this.releaseClient(this._client);
+      this._db.releaseClient(this._client);
       this._client = null;
       return this;
     })

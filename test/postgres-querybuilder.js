@@ -219,29 +219,31 @@ describe('Postgres querybuilder', function () {
 
   });
 
-  describe('#delete()', function () {
+  describe('#del()', function () {
 
     it('returns a valid SQL with "table" option', function () {
-      var query = querybuilder.delete({
+      var query = querybuilder.del({
         table: 'employees'
       });
+
       assert.strictEqual(query.sql, 'DELETE FROM "employees";');
     });
 
     it('returns valid SQL with "table", "selector" options', function () {
-      var query = querybuilder.delete({
+      var query = querybuilder.del({
         table: 'employees',
         selector: {
           a: {'!=': 1},
           b: {'=': null}
         }
       });
+
       assert.strictEqual(query.sql, 'DELETE FROM "employees" WHERE "a" != ? AND "b" IS NULL;');
       assert.strictEqual(query.params[0], 1);
     });
 
     it('returns valid SQL with "table", "selector", "order" options', function () {
-      var query = querybuilder.delete({
+      var query = querybuilder.del({
         table: 'employees',
         selector: {
           a: {'!=': 1},
@@ -257,7 +259,7 @@ describe('Postgres querybuilder', function () {
     });
 
     it('returns valid SQL with "table", "selector", "order", "limit" options', function () {
-      var query = querybuilder.delete({
+      var query = querybuilder.del({
         table: 'employees',
         selector: {
           a: {'!=': 1},
@@ -277,15 +279,36 @@ describe('Postgres querybuilder', function () {
 
   describe('#upsert()', function () {
 
-    it('returns valid SQL with "table", "columns", "values", "updateColumns", "updateKeys" options', function () {
+    it('returns valid SQL with "table", "columns", "values", "updateColumns", "identifier" options', function () {
       var query = querybuilder.upsert({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         values: {a: 1, b: 2, c: 3},
         updateColumns: ['b', 'c'],
-        updateKeys: [['a'], ['b']]
+        identifier: [['a'], ['b']]
       });
-      assert.strictEqual(query.sql, 'WITH upsert AS (UPDATE "employees" SET "b" = ?, "c" = ? WHERE "a" = ? OR "b" = ? RETURNING *) INSERT INTO "employees" ("a", "b", "c") SELECT ?, ?, ? WHERE NOT EXISTS (SELECT * FROM upsert);');
+
+      assert.strictEqual(query.sql, 'WITH updated AS (UPDATE "employees" SET "b" = ?, "c" = ? WHERE "a" = ? OR "b" = ? RETURNING *), inserted AS (INSERT INTO "employees" ("a", "b", "c") SELECT ?, ?, ? WHERE NOT EXISTS (SELECT * FROM updated) RETURNING *) SELECT * FROM inserted UNION ALL SELECT * FROM updated;');
+      assert.strictEqual(query.params[0], 2);
+      assert.strictEqual(query.params[1], 3);
+      assert.strictEqual(query.params[2], 1);
+      assert.strictEqual(query.params[3], 2);
+      assert.strictEqual(query.params[4], 1);
+      assert.strictEqual(query.params[5], 2);
+      assert.strictEqual(query.params[6], 3);
+    });
+
+    it('returns valid SQL with "table", "columns", "values", "updateColumns", "identifier", "returnColumns" options', function () {
+      var query = querybuilder.upsert({
+        table: 'employees',
+        columns: ['a', 'b', 'c'],
+        values: {a: 1, b: 2, c: 3},
+        updateColumns: ['b', 'c'],
+        identifier: [['a'], ['b']],
+        returnColumns: ['d']
+      });
+
+      assert.strictEqual(query.sql, 'WITH updated AS (UPDATE "employees" SET "b" = ?, "c" = ? WHERE "a" = ? OR "b" = ? RETURNING "d"), inserted AS (INSERT INTO "employees" ("a", "b", "c") SELECT ?, ?, ? WHERE NOT EXISTS (SELECT * FROM updated) RETURNING "d") SELECT * FROM inserted UNION ALL SELECT * FROM updated;');
       assert.strictEqual(query.params[0], 2);
       assert.strictEqual(query.params[1], 3);
       assert.strictEqual(query.params[2], 1);
@@ -306,6 +329,19 @@ describe('Postgres querybuilder', function () {
         values: {a: 1, b: 2, c: 3}
       });
       assert.strictEqual(query.sql, 'INSERT INTO "employees" ("a", "b", "c") VALUES (?, ?, ?) RETURNING *;');
+      assert.strictEqual(query.params[0], 1);
+      assert.strictEqual(query.params[1], 2);
+      assert.strictEqual(query.params[2], 3);
+    });
+
+    it('returns valid SQL with "table", "values", "columns", "returnColumns" options', function () {
+      var query = querybuilder.insert({
+        table: 'employees',
+        columns: ['a', 'b', 'c'],
+        values: {a: 1, b: 2, c: 3},
+        returnColumns: ['d', 'e']
+      });
+      assert.strictEqual(query.sql, 'INSERT INTO "employees" ("a", "b", "c") VALUES (?, ?, ?) RETURNING "d", "e";');
       assert.strictEqual(query.params[0], 1);
       assert.strictEqual(query.params[1], 2);
       assert.strictEqual(query.params[2], 3);

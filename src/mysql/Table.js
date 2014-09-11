@@ -1,11 +1,7 @@
 var _ = require('lodash'),
   Promise = require('bluebird'),
   GenericTable = require('../Table'),
-  select = require('./utils/select'),
-  count = require('./utils/count'),
-  del = require('./utils/delete'),
-  upsert = require('./utils/upsert'),
-  insert = require('./utils/insert');
+  querybuilder = require('./querybuilder');
 
 /**
  * Constructs a new Postgres Table.
@@ -33,7 +29,7 @@ Table.prototype._get = function (options) {
 
   options.table = this._table;
   options.columns = Object.keys(this._columns);
-  query = select(options);
+  query = querybuilder.select(options);
 
   return this._db.query(query.sql, query.params);
 };
@@ -47,20 +43,14 @@ Table.prototype._get = function (options) {
  * @returns {Promise} resolving to the count of records.
  */
 Table.prototype._count = function (options) {
-  var self = this, resolver, query;
+  var query;
 
   options.table = this._table;
-  query = count(options);
+  query = querybuilder.count(options);
 
-  resolver = function (resolve, reject) {
-    self._db.query(query.sql, query.params).then(function (records) {
-      resolve(records[0].count | 0);
-    }).catch(function (err) {
-      reject(err);
-    });
-  };
-
-  return new Promise(resolver);
+  return this._db.query(query.sql, query.params).then(function (records) {
+    return records[0].count || 0;
+  });
 };
 
 /**
@@ -72,44 +62,117 @@ Table.prototype._count = function (options) {
  * @returns {Promise}
  */
 Table.prototype._del = function (options) {
-  var self = this, resolver, query;
+  var query;
 
   options.table = this._table;
-  query = del(options);
+  query = querybuilder.del(options);
 
-  resolver = function (resolve, reject) {
-    self._db.query(query.sql, query.params).then(function () {
-      resolve();
-    }).catch(function (err) {
-      reject(err);
-    });
-  };
-
-  return new Promise(resolver);
+  return this._db.query(query.sql, query.params).then(function () {
+    return; // void
+  });
 };
 
 /**
  * Creates or updates (if already exists) the specified record(s) in this table.
- * @param {object} options query options.
- * @param {(object|Array.<object>)} options.values the record values.
- * @param {Array.<string>} options.columns the columns of the record(s) to insert.
- * @param {Array.<string>} options.updateColumns the columns of the record(s) to update.
- * @param {Array.<Array.<string>>} options.updateKeys the columns to check if record(s) already exists in table.
- * @returns {Promise} resolving to the updated/created records.
+ * @param {(object|Array.<object>)} attrs the attributes of the record(s) to create/update.
+ * @returns {Promise} resolving to the primary key of the created/updated record(s).
  */
-Table.prototype._set = function (options) {
-  return Promise.resolve(options);
+Table.prototype._set = function (attrs) {
+  var self = this,
+    columns,
+    updateColumns,
+    query;
+
+  // check if attrs is array
+  if (_.isArray(attrs)) {
+
+    return Promise.map(attrs, function (obj) {
+      return self._set(obj);
+    }).all();
+  }
+
+  columns = Object.keys(attrs);
+  updateColumns = _.difference(columns, this._primaryKey);
+
+  query = querybuilder.upsert({
+    table: this._table,
+    columns: columns,
+    values: attrs,
+    updateColumns: updateColumns
+  });
+
+  return this._db.query(query.sql, query.params).then(function (result) {
+    var obj = {};
+
+    // check if primary key is simple + autoinc
+    if (self._primaryKey.length === 1 && self._columns[self._primaryKey[0]].isAutoInc) {
+
+      // check if record was inserted
+      if (result.insertId) {
+        obj[self._primaryKey[0]] = result.insertId;
+        return obj;
+      }
+
+      // check if primary key is explicitely defined
+      // if (_.has(options.attrs, self._primaryKey[0])) {
+        return _.pick(attrs, self._primaryKey);
+      // }
+
+      // retrieve primary key from database
+      // query = querybuilder.select({
+      //   table: self._table,
+      //   self._columns: self._primaryKey,
+      //   selector: self._uniqueKeys.map(function (arr) {
+
+      //   });
+      //   limit: 1
+      // });
+      // return self._db.query(query.sql, query.params).then(function (records) {
+      //   return records[0];
+      // });
+    }
+
+    return _.pick(attrs, self._primaryKey);
+  });
 };
 
 /**
  * Creates the specified record(s) in this table.
- * @param {object} options query options.
- * @param {(object|Array.<object>)} options.values the record values.
- * @param {Array.<string>} options.columns the columns of the record(s) to insert.
- * @returns {Promise} resolving to the created records.
+ * @param {(object|Array.<object>)} attrs the attributes of the record(s) to create.
+ * @returns {Promise} resolving to the primary key of the created record(s).
  */
-Table.prototype._setNew = function (options) {
-  return Promise.resolve(options);
+Table.prototype._add = function (attrs) {
+  var self = this,
+    columns,
+    query;
+
+  // check if attrs is array
+  if (_.isArray(attrs)) {
+
+    return Promise.map(attrs, function (obj) {
+      return self._add(obj);
+    }).all();
+  }
+
+  columns = Object.keys(attrs);
+
+  query = querybuilder.insert({
+    table: this._table,
+    columns: columns,
+    values: attrs
+  });
+
+  return this._db.query(query.sql, query.params).then(function (result) {
+    var obj = {};
+
+    // check if primary key is simple + autoinc
+    if (self._primaryKey.length === 1 && self._columns[self._primaryKey[0]].isAutoInc) {
+      obj[self._primaryKey[0]] = result.insertId;
+      return obj;
+    }
+
+    return _.pick(attrs, self._primaryKey);
+  });
 };
 
 module.exports = Table;

@@ -191,13 +191,17 @@ Database.prototype._extractMeta = function () {
     });
 
     // set columns in table(s)
-    result.columns.forEach(function (column) {
-      var table = meta[column.table];
+    result.columns.forEach(function (e) {
+      var table = meta[e.table];
 
-      table.columns[column.name] = {
-        type: column.type,
-        position: column.position,
-        isNullable: column.isNullable
+      table.columns[e.name] = {
+        type: e.type,
+        position: e.position,
+        isNullable: e.isNullable,
+        isAutoInc: e.isAutoInc,
+        default: e.default,
+        collation: e.collation,
+        comment: e.comment
       };
     });
 
@@ -270,7 +274,7 @@ Database.prototype._getTables = function () {
  * @private
  */
 Database.prototype._getColumns = function () {
-  var sql, params;
+  var re = /auto_increment/i, sql, params;
 
   sql = 'SELECT * FROM information_schema.COLUMNS WHERE table_schema = ?;';
   params = [this.connectionProperties.database];
@@ -282,6 +286,7 @@ Database.prototype._getColumns = function () {
         table: record.TABLE_NAME,
         type: record.DATA_TYPE,
         isNullable: record.IS_NULLABLE === 'YES',
+        isAutoInc: re.test(record.EXTRA),
         default: record.COLUMN_DEFAULT,
         collation: record.COLLATION_NAME,
         comment: record.COLUMN_COMMENT === '' ? null : record.COLUMN_COMMENT,

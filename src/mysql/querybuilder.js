@@ -157,7 +157,6 @@ module.exports = {
       clause;
 
     sql.push('SELECT COUNT(*) AS `count`');
-
     sql.push('FROM ' + this.escapeSQL(options.table));
 
     if (options.selector) {
@@ -223,29 +222,28 @@ module.exports = {
    * Compiles and returns a parameterized UPSERT statement.
    * @param {object} options query properties.
    * @param {string} options.table
+   * @param {Array.<string>} options.columns column names to insert.
    * @param {object} options.values values to upsert.
    * @param {Array.<string>} [options.updateColumns] columns to update if record already exists - defaults to all columns.
-   * @param {Array.<object>} [options.updateSelector] selector to search if records exists.
    * @return {object} with "sql" and "params" properties.
    * @static
    */
   upsert: function (options) {
     var sql = [],
-      params = [],
-      columns;
+      params = [];
 
-    columns = Object.keys(options.values);
-    options.updateColumns = options.updateColumns || columns;
+    // handle option updateColumns param
+    options.updateColumns = options.updateColumns || options.columns;
 
     sql.push('INSERT INTO ' + this.escapeSQL(options.table));
 
-    sql.push('(' + columns.map(function (column) {
+    sql.push('(' + options.columns.map(function (column) {
       return this.escapeSQL(column);
     }, this).join(', ') + ')');
 
     sql.push('VALUES');
 
-    sql.push('(' + columns.map(function (k) {
+    sql.push('(' + options.columns.map(function (k) {
       params.push(options.values[k]);
       return '?';
     }).join(', ') + ')');
@@ -266,20 +264,18 @@ module.exports = {
    * Compiles and returns a parameterized INSERT statement.
    * @param {object} options query properties.
    * @param {string} options.table the table name to insert data.
-   * @param {(object|Array.<object>)} options.values values to insert if no record is found.
+   * @param {Array.<string>} options.columns column names to insert.
+   * @param {(object|Array.<object>)} options.values values to insert.
    * @return {object} with "sql" and "params" properties.
    * @static
    */
   insert: function (options) {
-    var sql = [], params = [], columns;
-
-    columns = Object.keys(options.values);
+    var sql = [], params = [];
 
     sql.push('INSERT INTO ' + this.escapeSQL(options.table));
-
     sql.push('SET');
 
-    sql.push(columns.map(function (k) {
+    sql.push(options.columns.map(function (k) {
       params.push(options.values[k]);
       return this.escapeSQL(k) + ' = ?';
     }, this).join(', '));

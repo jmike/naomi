@@ -43,45 +43,57 @@ describe('Postgres Table', function () {
       // });
 
       it('successfully completes a CRUD [+ Count] operation', function (done) {
-        employees.setNew({ // insert
+        employees.add({
           firstname: 'Donnie',
           lastname: 'Azoff',
           age: 36
         })
-        .then(function (records) { // select
-          assert.isArray(records);
-          assert.lengthOf(records, 1);
-          assert.property(records[0], 'id');
+        .then(function (key) {
+          assert.isObject(key);
+          assert.isNumber(key.id);
 
-          return employees.get(records[0].id);
+          return key;
         })
-        .then(function (records) { // update
-          assert.isArray(records);
-          assert.lengthOf(records, 1);
-          assert.property(records[0], 'id');
+        .then(function (key) { // select
+          return employees.get(key).then(function (records) {
+            assert.isArray(records);
+            assert.lengthOf(records, 1);
+            assert.strictEqual(records[0].id, key.id);
 
+            return key;
+          });
+        })
+        .then(function (key) { // update (using primary key)
           return employees.set({
+            id: key.id,
             firstname: 'Donnie',
             lastname: 'Azoff',
             age: 37
+          }).then(function (k) {
+            assert.deepEqual(k, key);
+
+            return k;
           });
         })
-        .then(function (records) { // count
-          assert.isArray(records);
-          assert.lengthOf(records, 1);
-          assert.property(records[0], 'id');
+        .then(function (key) { // update (using unique key)
+          return employees.set({
+            firstname: 'Donnie',
+            lastname: 'Azoff',
+            age: 38
+          }).then(function (k) {
+            assert.deepEqual(k, key);
 
+            return k;
+          });
+        })
+        .then(function (key) { // count
           return employees.count().then(function (n) {
             assert.operator(n, '>=', 1);
-            return records;
+            return key;
           });
         })
-        .then(function (records) { // delete
-          assert.isArray(records);
-          assert.lengthOf(records, 1);
-          assert.property(records[0], 'id');
-
-          return employees.del(records[0].id);
+        .then(function (k) {
+          return employees.del(k);
         })
         .then(function () {
           done();

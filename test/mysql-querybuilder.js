@@ -332,6 +332,7 @@ describe('MySQL querybuilder', function () {
     it('returns a valid SQL with table + values + updateColumns specified', function () {
       var query = querybuilder.upsert({
         table: 'employees',
+        columns: ['a', 'b', 'c'],
         values: {a: 1, b: 2, c: 3},
         updateColumns: ['b', 'c']
       });
@@ -346,9 +347,10 @@ describe('MySQL querybuilder', function () {
 
   describe('#insert()', function () {
 
-    it('returns a valid SQL with table + values specified', function () {
+    it('returns a valid SQL with table + columns + values specified', function () {
       var query = querybuilder.insert({
         table: 'employees',
+        columns: ['a', 'b', 'c'],
         values: {a: 1, b: 2, c: 3}
       });
 
