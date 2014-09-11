@@ -1,33 +1,29 @@
 require('dotenv').load(); // load environmental variables
 
 var chai = require('chai'),
-  where = require('../src/mysql/utils/where'),
-  orderBy = require('../src/mysql/utils/orderBy'),
-  select = require('../src/mysql/utils/select'),
-  count = require('../src/mysql/utils/count'),
-  del = require('../src/mysql/utils/delete'),
-  upsert = require('../src/mysql/utils/upsert'),
-  insert = require('../src/mysql/utils/insert'),
+  querybuilder = require('../src/mysql/querybuilder'),
   assert = chai.assert;
 
-describe('MySQL utils', function () {
+describe('MySQL querybuilder', function () {
 
-  describe('where', function () {
+  describe('#_where()', function () {
 
     it('accepts object selector', function () {
-      var query = where({
+      var query = querybuilder._where({
         id: {'=': 1}
       });
+
       assert.strictEqual(query.sql, 'WHERE `id` = ?');
       assert.lengthOf(query.params, 1);
       assert.strictEqual(query.params[0], 1);
     });
 
     it('accepts object selector with many properties', function () {
-      var query = where({
+      var query = querybuilder._where({
         age: {'>': 30},
         firstname: {'=': 'James'}
       });
+
       assert.strictEqual(query.sql, 'WHERE `age` > ? AND `firstname` = ?');
       assert.lengthOf(query.params, 2);
       assert.strictEqual(query.params[0], 30);
@@ -35,7 +31,7 @@ describe('MySQL utils', function () {
     });
 
     it('accepts Array selector', function () {
-      var query = where([
+      var query = querybuilder._where([
         {
           id: {'>': 2},
           firstname: {'=': 'James'}
@@ -44,6 +40,7 @@ describe('MySQL utils', function () {
           lastname: {'=': 'Bond'}
         }
       ]);
+
       assert.strictEqual(query.sql, 'WHERE `id` > ? AND `firstname` = ? OR `lastname` = ?');
       assert.lengthOf(query.params, 3);
       assert.strictEqual(query.params[0], 2);
@@ -52,61 +49,67 @@ describe('MySQL utils', function () {
     });
 
     it('handles special "= null" expression', function () {
-      var query = where({
+      var query = querybuilder._where({
         firstname: {'=': null}
       });
+
       assert.strictEqual(query.sql, 'WHERE `firstname` IS NULL');
       assert.lengthOf(query.params, 0);
     });
 
     it('handles special "!= null" expression', function () {
-      var query = where({
+      var query = querybuilder._where({
         firstname: {'!=': null}
       });
+
       assert.strictEqual(query.sql, 'WHERE `firstname` IS NOT NULL');
       assert.lengthOf(query.params, 0);
     });
 
   });
 
-  describe('orderBy', function () {
+  describe('#_orderBy()', function () {
 
     it('accepts object order', function () {
-      var sql = orderBy({
+      var sql = querybuilder._orderBy({
         id: 'asc'
       });
+
       assert.strictEqual(sql, 'ORDER BY `id` ASC');
     });
 
     it('accepts Array order', function () {
-      var sql = orderBy([
+      var sql = querybuilder._orderBy([
         {id: 'asc'},
         {age: 'desc'}
       ]);
+
       assert.strictEqual(sql, 'ORDER BY `id` ASC, `age` DESC');
     });
 
   });
 
-  describe('select', function () {
+  describe('#select()', function () {
 
     it('returns a valid SQL with table specified', function () {
-      var query = select({
+      var query = querybuilder.select({
         table: 'employees'
       });
+
       assert.strictEqual(query.sql, 'SELECT * FROM `employees`;');
     });
 
     it('returns a valid SQL with table + columns specified', function () {
-      var query = select({
+      var query = querybuilder.select({
         table: 'employees',
         columns: ['a', 'b', 'c']
       });
+
       assert.strictEqual(query.sql, 'SELECT `a`, `b`, `c` FROM `employees`;');
     });
 
     it('returns a valid SQL with table + columns + selector specified', function () {
-      var query = select({
+      var query = querybuilder.select({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -116,12 +119,13 @@ describe('MySQL utils', function () {
           }
         ]
       });
+
       assert.strictEqual(query.sql, 'SELECT `a`, `b`, `c` FROM `employees` WHERE `a` != ? AND `b` IS NULL;');
       assert.strictEqual(query.params[0], 1);
     });
 
     it('returns a valid SQL with table + columns + selector + order specified', function () {
-      var query = select({
+      var query = querybuilder.select({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -135,12 +139,13 @@ describe('MySQL utils', function () {
           {c: 'desc'}
         ]
       });
+
       assert.strictEqual(query.sql, 'SELECT `a`, `b`, `c` FROM `employees` WHERE `a` != ? AND `b` IS NULL ORDER BY `a` ASC, `c` DESC;');
       assert.strictEqual(query.params[0], 1);
     });
 
     it('returns a valid SQL with table + columns + selector + order + limit specified', function () {
-      var query = select({
+      var query = querybuilder.select({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -155,12 +160,13 @@ describe('MySQL utils', function () {
         ],
         limit: 10
       });
+
       assert.strictEqual(query.sql, 'SELECT `a`, `b`, `c` FROM `employees` WHERE `a` != ? AND `b` IS NULL ORDER BY `a` ASC, `c` DESC LIMIT 10;');
       assert.strictEqual(query.params[0], 1);
     });
 
     it('returns a valid SQL with table + columns + selector + order + limit + offset specified', function () {
-      var query = select({
+      var query = querybuilder.select({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -176,31 +182,34 @@ describe('MySQL utils', function () {
         limit: 10,
         offset: 2
       });
+
       assert.strictEqual(query.sql, 'SELECT `a`, `b`, `c` FROM `employees` WHERE `a` != ? AND `b` IS NULL ORDER BY `a` ASC, `c` DESC LIMIT 10 OFFSET 2;');
       assert.strictEqual(query.params[0], 1);
     });
 
   });
 
-  describe('count', function () {
+  describe('#count()', function () {
 
     it('returns a valid SQL with table specified', function () {
-      var query = count({
+      var query = querybuilder.count({
         table: 'employees'
       });
+
       assert.strictEqual(query.sql, 'SELECT COUNT(*) AS `count` FROM `employees`;');
     });
 
     it('returns a valid SQL with table + columns specified', function () {
-      var query = count({
+      var query = querybuilder.count({
         table: 'employees',
         columns: ['a', 'b', 'c']
       });
+
       assert.strictEqual(query.sql, 'SELECT COUNT(*) AS `count` FROM `employees`;');
     });
 
     it('returns a valid SQL with table + columns + selector specified', function () {
-      var query = count({
+      var query = querybuilder.count({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -210,12 +219,13 @@ describe('MySQL utils', function () {
           }
         ]
       });
+
       assert.strictEqual(query.sql, 'SELECT COUNT(*) AS `count` FROM `employees` WHERE `a` != ? AND `b` IS NULL;');
       assert.strictEqual(query.params[0], 1);
     });
 
     it('returns a valid SQL with table + columns + selector + limit specified', function () {
-      var query = count({
+      var query = querybuilder.count({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -226,12 +236,13 @@ describe('MySQL utils', function () {
         ],
         limit: 10
       });
+
       assert.strictEqual(query.sql, 'SELECT COUNT(*) AS `count` FROM `employees` WHERE `a` != ? AND `b` IS NULL LIMIT 10;');
       assert.strictEqual(query.params[0], 1);
     });
 
     it('returns a valid SQL with table + columns + selector + limit + offset specified', function () {
-      var query = count({
+      var query = querybuilder.count({
         table: 'employees',
         columns: ['a', 'b', 'c'],
         selector: [
@@ -243,23 +254,25 @@ describe('MySQL utils', function () {
         limit: 10,
         offset: 2
       });
+
       assert.strictEqual(query.sql, 'SELECT COUNT(*) AS `count` FROM `employees` WHERE `a` != ? AND `b` IS NULL LIMIT 10 OFFSET 2;');
       assert.strictEqual(query.params[0], 1);
     });
 
   });
 
-  describe('delete', function () {
+  describe('#delete()', function () {
 
     it('returns a valid SQL with table specified', function () {
-      var query = del({
+      var query = querybuilder.del({
         table: 'employees'
       });
+
       assert.strictEqual(query.sql, 'DELETE FROM `employees`;');
     });
 
     it('returns a valid SQL with selector specified', function () {
-      var query = del({
+      var query = querybuilder.del({
         table: 'employees',
         selector: [
           {
@@ -268,12 +281,13 @@ describe('MySQL utils', function () {
           }
         ]
       });
+
       assert.strictEqual(query.sql, 'DELETE FROM `employees` WHERE `a` != ? AND `b` IS NULL;');
       assert.strictEqual(query.params[0], 1);
     });
 
     it('returns a valid SQL with table + selector + order specified', function () {
-      var query = del({
+      var query = querybuilder.del({
         table: 'employees',
         selector: [
           {
@@ -286,12 +300,13 @@ describe('MySQL utils', function () {
           {c: 'desc'}
         ]
       });
+
       assert.strictEqual(query.sql, 'DELETE FROM `employees` WHERE `a` != ? AND `b` IS NULL ORDER BY `a` ASC, `c` DESC;');
       assert.strictEqual(query.params[0], 1);
     });
 
     it('returns a valid SQL with table + selector + order + limit specified', function () {
-      var query = del({
+      var query = querybuilder.del({
         table: 'employees',
         selector: [
           {
@@ -305,20 +320,22 @@ describe('MySQL utils', function () {
         ],
         limit: 10
       });
+
       assert.strictEqual(query.sql, 'DELETE FROM `employees` WHERE `a` != ? AND `b` IS NULL ORDER BY `a` ASC, `c` DESC LIMIT 10;');
       assert.strictEqual(query.params[0], 1);
     });
 
   });
 
-  describe('upsert', function () {
+  describe('#upsert()', function () {
 
     it('returns a valid SQL with table + values + updateColumns specified', function () {
-      var query = upsert({
+      var query = querybuilder.upsert({
         table: 'employees',
         values: {a: 1, b: 2, c: 3},
         updateColumns: ['b', 'c']
       });
+
       assert.strictEqual(query.sql, 'INSERT INTO `employees` (`a`, `b`, `c`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `b` = VALUES(`b`), `c` = VALUES(`c`);');
       assert.strictEqual(query.params[0], 1);
       assert.strictEqual(query.params[1], 2);
@@ -327,13 +344,14 @@ describe('MySQL utils', function () {
 
   });
 
-  describe('insert', function () {
+  describe('#insert()', function () {
 
     it('returns a valid SQL with table + values specified', function () {
-      var query = insert({
+      var query = querybuilder.insert({
         table: 'employees',
         values: {a: 1, b: 2, c: 3}
       });
+
       assert.strictEqual(query.sql, 'INSERT INTO `employees` SET `a` = ?, `b` = ?, `c` = ?;');
       assert.strictEqual(query.params[0], 1);
       assert.strictEqual(query.params[1], 2);
