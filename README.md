@@ -108,7 +108,7 @@ The above will result to the following SQL statement, run under the hood:
 INSERT INTO `employees` SET `firstName` = 'Thomas', `lastName` = 'Anderson', `age` = 30;
 ```
 
-#### Creating / Updating (if already exists) records to table
+#### Creating / Updating records in table
 
 ```javascript
 employees.set({
@@ -128,53 +128,52 @@ The above will result to the following SQL statement, run under the hood:
 INSERT INTO `employees` SET `firstName` = 'Thomas', `lastName` = 'Anderson', `age` = 32 ON DUPLICATE KEY UPDATE `firstName` = VALUES(`firstName`), `lastName` = VALUES(`lastName`), `age` = VALUES(`age`);
 ```
 
-##### Retrieving records by ID
+If you want to force updating a record, you can explicitly specify a primary key or unique index.
 
+```javascript
+employees.set({
+  id: 1,
+  firstName: 'Thomas',
+  lastName: 'Anderson',
+  age: 32
+});
 ```
-employees.get(1, function (err, records) {
-  if (err) {
-    return console.error(err);
-  }
 
+#### Retrieving records from table
+
+```javascript
+employees.get({age: 30}).then(function (records) {
   // do something with records
 });
 ```
 
 This will result to the following SQL, run under the hood:
 
-```
-SELECT * FROM `employees` WHERE `id` = 1;
-```
-
-##### Retrieving records by custom field
-
-```
-employees.get({age: 30}, function (err, records) {
-  if (err) {
-    return console.error(err);
-  }
-
-  // do something with records
-});
-```
-
-This will result to the following SQL, run under the hood:
-
-```
+```sql
 SELECT * FROM `employees` WHERE `age` = 30;
 ```
 
-##### Retrieving records by multiple custom fields
+In case of simple primary keys (i.e. primary keys composed by a single column) you can also do:
+
+```javascript
+employees.get(1).then(function (records) {
+  // do something with records
+});
+```
+
+This will result to the following SQL, run under the hood:
+
+```sql
+SELECT * FROM `employees` WHERE `id` = 1;
+```
+
+##### Using multiple fields
 
 ```
 employees.get({
   lastName: 'Anderson',
   age: {'>=': 30}
-}, function (err, records) {
-  if (err) {
-    return console.error(error);
-  }
-
+}).then(function (records) {
   // do something with records
 });
 ```
@@ -185,7 +184,7 @@ This will result to the following SQL, run under the hood:
 SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` >= 30;
 ```
 
-##### Retrieving records by range of custom fields
+##### Using range of custom fields
 
 ```
 employees.get([
@@ -196,13 +195,9 @@ employees.get([
   {
     id: 1
   }
-], function (err, records) {
-  if (err) {
-    return console.error(err);
-  }
-
+]).then(function (records) {
   // do something with records
-});
+});;
 ```
 
 This will result to the following SQL, run under the hood:
@@ -211,7 +206,7 @@ This will result to the following SQL, run under the hood:
 SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` != 30 OR `id` = 1;
 ```
 
-##### Retrieving records using custom operators
+##### Using custom operators
 
 ```
 employees.get({
@@ -232,7 +227,7 @@ This will result to the following SQL, run under the hood:
 SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` IS NOT NULL;
 ```
 
-The following operators are allowed:
+The following operators are accepted:
 
 Name | Operator
 :--- | :---:
@@ -243,7 +238,7 @@ Greater than or equal operator | >=
 Less than operator | <
 Less than or equal operator | <=
 
-Please not that {'=': null} compiles to 'IS NULL' and {'=': null} compiles to 'IS NOT NULL'.
+Please not that {'=': null} compiles to `IS NULL` and {'=': null} compiles to 'IS NOT NULL'.
 
 ##### Retrieving records with ORDER BY clause
 
