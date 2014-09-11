@@ -1,7 +1,7 @@
 {
   "name": "naomi",
   "version": "0.7.0",
-  "description": "The model (as in MVC) library for relational databases, e.g. MySQL, Postgres.",
+  "description": "Simple, productive, relational db client for MySQL and Postgres.",
   "repository": {
     "type": "git",
     "url": "git://github.com/jmike/naomi.git"

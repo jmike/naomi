@@ -1,6 +1,6 @@
 # Naomi
 
-A simple, unopinionated, relational db client that manages repetitive CRUD tasks, while providing an easy interface for custom queries.
+A simple relational db client for Node.js that takes care of the repetitive CRUD tasks, while providing an easy interface for custom queries.
 
 [![Build Status](https://travis-ci.org/jmike/naomi.png?branch=master)](https://travis-ci.org/jmike/naomi) [![Dependency Status](https://gemnasium.com/jmike/naomi.png)](https://gemnasium.com/jmike/naomi)
 
@@ -10,81 +10,123 @@ A simple, unopinionated, relational db client that manages repetitive CRUD tasks
 $ npm install naomi
 ```
 
-## Quick start
+#### Requirements
 
-### How to create a database?
+* MySQL 5.5+
+* PostgreSQL 9.1+
+* Node.js 0.8+
 
-Use `#create()` with the following parameters:
+## How to use
 
-1. Database type, i.e. MYSQL (POSTGRES is on the way);
-2. Connection properties.
+#### Creating a database
 
-```
+Use naomi#create() to construct a new [Database](https://github.com/jmike/naomi/wiki/Database).
+
+```javascript
 var naomi = require('naomi'),
   db;
 
-db = naomi.create('MYSQL', {
+db = naomi.create('mysql', {
   host: 'host',
   port: 3306,
   user: 'user',
   password: 'password',
-  database: 'naomi_test',
+  database: 'schema',
 });
 ```
 
-### How to create a collection?
+```javascript
+var naomi = require('naomi'),
+  db;
 
-After creating a database, you can call `#extend()` with the name of an existing table.
-
+db = naomi.create('postgres', {
+  host: 'host',
+  port: 5432,
+  user: 'user',
+  password: 'password',
+  database: 'database',
+});
 ```
+
+#### Running custom queries
+
+```javascript
+var sql = 'SELECT `firstname`, `lastname` FROM `employees` WHERE `id` = ?;',
+  params = [1];
+
+db.query(sql, params).then(function (records) {
+
+  if (records.length === 0) {
+    console.warn('Not found');
+  } else {
+    console.log(records[0]);
+  }
+
+}).catch(function (err) {
+  console.error(err);
+});
+```
+
+#### Mapping a table
+
+After creating a database, you may call #extend() with the name of an existing table.
+
+```javascript
 var employees = db.extend('employees');
 ```
 
-##### Using custom properties
+#### Mapping a table + custom properties
 
-Call `#extend()` with the following parameters:
-
-1. Table name;
-2. Custom properties and methods.
-
-```
+```javascript
 var employees = db.extend('employees', {
 
   getDistinctNames: function (age, callback) {
-    var sql = 'SELECT DISTINCT firstName FROM employees';
-    db.query(sql, callback);
+    var sql = 'SELECT DISTINCT "firstName" FROM "employees" LIMIT 100;';
+    return db.query(sql, callback);
   }
 
 });
 ```
 
-### How to use a collection?
+#### Creating records in table
 
-Collections provide handy methods to manage repetitive CRUD tasks + count records.
-
-##### Creating/updating records
-
-```
-employees.set({
+```javascript
+employees.add({
   firstName: 'Thomas',
   lastName: 'Anderson',
   age: 30
-}, function (err) {
-  if (err) {
-    return console.error(err);
-  }
-
-  // Thomas Anderson is created in db
+}).then(function (keys) {
+  console.log('Employee created with id ' + keys.id);
+}).catch(function (err) {
+  console.error(err);
 });
 ```
 
-The above will result to the following SQL, run under the hood:
+The above will result to the following SQL statement, run under the hood:
 
 ```
-INSERT INTO `employees` SET `firstName` = 'Thomas', `lastName` = 'Anderson', `age` = 30 ON DUPLICATE KEY UPDATE `firstName` = VALUES(`firstName`), `lastName` = VALUES(`lastName`), `age` = VALUES(`age`);
+INSERT INTO `employees` SET `firstName` = 'Thomas', `lastName` = 'Anderson', `age` = 30;
 ```
 
-If you need to update a record, you should explicitly specify an ID or a unique index.
+#### Creating / Updating (if already exists) records to table
+
+```javascript
+employees.set({
+  firstName: 'Thomas',
+  lastName: 'Anderson',
+  age: 32
+}).then(function (keys) {
+  console.log('Employee set with id ' + keys.id);
+}).catch(function (err) {
+  console.error(err);
+});
+```
+
+The above will result to the following SQL statement, run under the hood:
+
+```sql
+INSERT INTO `employees` SET `firstName` = 'Thomas', `lastName` = 'Anderson', `age` = 32 ON DUPLICATE KEY UPDATE `firstName` = VALUES(`firstName`), `lastName` = VALUES(`lastName`), `age` = VALUES(`age`);
+```
 
 ##### Retrieving records by ID
 
@@ -322,7 +364,7 @@ Still, the current breed of tools (e.g. ORMs) tend to ignore database metadata a
 Naomi works the other way around:
 
 1. You first create the database using a tool of your choice, e.g. [MySQL Workbench](http://www.mysql.com/products/workbench/), [pgAdmin](http://www.pgadmin.org/) - a tool you know and love;
-2. You call a few simple methods to bring meta-information to the application. 
+2. You call a few simple methods to bring meta-information to the application.
 
 While this approach may seem intriguing to new developers, it is in fact the natural way of thinking for experienced users. Creating a database requires creativity and imagination that machines lack. Data architects create the database structure and developers write the SQL code.
 
