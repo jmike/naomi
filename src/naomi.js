@@ -1,5 +1,4 @@
-var _ = require('lodash'),
-  MySQLDatabase = require('./mysql/Database'),
+var MySQLDatabase = require('./mysql/Database'),
   PostgresDatabase = require('./postgres/Database');
 
 require('dotenv').load(); // load environmental variables
