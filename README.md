@@ -4,6 +4,17 @@ A simple relational db client for Node.js that takes care of the repetitive CRUD
 
 [![Build Status](https://travis-ci.org/jmike/naomi.png?branch=master)](https://travis-ci.org/jmike/naomi) [![Dependency Status](https://gemnasium.com/jmike/naomi.png)](https://gemnasium.com/jmike/naomi)
 
+#### Features
+
+* Written entirely in javascript
+* Distributed under the MIT license, so you can use it in commercial and open-source projects
+* Supports MySQL and PostgreSQL databases
+* Supports transactions and custom queries
+* Exposes both promises and callback interfaces, using the excellent [Bluebird](https://github.com/petkaantonov/bluebird) library
+* Makes extensive use of unit-tests
+* Is battle tested under heavy load in production environments
+* Is different: uses existing database metadata, instead of redefining the db structure in the application layer.
+
 ## Installation
 
 ```
@@ -335,7 +346,7 @@ Naomi works the other way around:
 1. You first create the database using a tool of your choice, e.g. [MySQL Workbench](http://www.mysql.com/products/workbench/), [pgAdmin](http://www.pgadmin.org/) - a tool you know and love;
 2. You call a few simple methods to bring meta-information to the application.
 
-While this approach may seem intriguing to new developers, it is in fact the natural way of thinking for experienced users. Creating a database requires creativity and imagination that machines lack.
+While this approach may seem intriguing to new developers, it is in fact the natural way of thinking for experienced engineers. Creating a database requires creativity and imagination that machines lack.
 
 Naomi takes care of SQL code by automating repetitive data queries. And if you need some custom logic you can always write it yourself.
 
