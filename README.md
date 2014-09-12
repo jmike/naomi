@@ -6,14 +6,14 @@ A simple relational db client for Node.js that takes care of the repetitive CRUD
 
 #### Features
 
-* Written entirely in javascript
+* Written entirely in javascript (does not require compiling)
 * Distributed under the MIT license, so you can use it in commercial and open-source projects
 * Supports MySQL and PostgreSQL databases
 * Supports transactions and custom queries
 * Exposes both promises and callback interfaces, using the excellent [Bluebird](https://github.com/petkaantonov/bluebird) library
 * Makes extensive use of unit-tests
 * Is battle tested under heavy load in production environments
-* Is different: uses existing database metadata, instead of redefining the db structure in the application layer.
+* Is different: uses existing database metadata, instead of redefining the db structure in the application layer
 
 ## Installation
 
