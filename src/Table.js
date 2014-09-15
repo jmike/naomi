@@ -306,7 +306,7 @@ Table.prototype._parseOffset = function (offset) {
  */
 Table.prototype._parseAttributes = function (attrs) {
   // check if attrs is plain object, i.e. standard format
-  if (_.isPlainObject(attrs)) {
+  if (_.isObject(attrs)) {
 
     Object.keys(attrs).forEach(function (column) {
       if (!this.hasColumn(column)) {
@@ -325,7 +325,7 @@ Table.prototype._parseAttributes = function (attrs) {
     }, this);
   }
 
-  throw new Error('Invalid records attributes: expected object or Array, received ' + typeof(attrs));
+  throw new Error('Invalid record attributes: expected object or Array, received ' + typeof(attrs));
 };
 
 /**
