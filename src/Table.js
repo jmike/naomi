@@ -473,7 +473,6 @@ Table.prototype._del = function (options) {
  * Deletes the designated record(s) from this table.
  * @param {(boolean|number|string|Date|object|Array.<object>|null)} selector selector to match record(s) in table.
  * @param {object} [options] query options.
- * @param {(boolean|number|string|Date|object|Array.<object>)} [options.selector] a selector to match record(s) in database.
  * @param {(string|object|Array.<object|string>)} [options.order] an order expression to sort records.
  * @param {(number|string)} [options.limit] max number of records to return from database - must be a positive integer, i.e. limit > 0.
  * @param {function} [callback] an optional callback function.
