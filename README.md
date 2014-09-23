@@ -6,14 +6,14 @@ A simple relational db client for Node.js that takes care of the repetitive CRUD
 
 #### Features
 
-* Written entirely in javascript (does not require compiling)
-* Distributed under the MIT license, so you can use it in commercial and open-source projects
-* Supports MySQL and PostgreSQL databases
-* Supports transactions and custom queries
-* Exposes both promises and callback interfaces, using the excellent [Bluebird](https://github.com/petkaantonov/bluebird) library
-* Makes extensive use of unit-tests
-* Is battle tested under heavy load in production environments
-* Is different: uses existing database metadata, instead of redefining the db structure in the application layer
+* Supports MySQL and PostgreSQL databases.
+* Written entirely in javascript, i.e. does not require compiling.
+* Distributed under the MIT license, i.e. you can use it both in commercial and open-source projects.
+* Supports transactions and custom queries.
+* Exposes promises and callback interfaces.
+* Makes extensive use of unit-tests.
+* Is battle tested under heavy load in production environments.
+* Is different, i.e. uses existing database metadata instead of redefining the db structure in the application layer.
 
 ## Installation
 
@@ -23,15 +23,14 @@ $ npm install naomi
 
 #### Requirements
 
-* MySQL 5.5+
-* PostgreSQL 9.1+
+* MySQL 5.5+ || PostgreSQL 9.1+
 * Node.js 0.8+
 
 ## How to use
 
 #### Creating a database
 
-Use naomi#create() to construct a new [Database](https://github.com/jmike/naomi/wiki/Database).
+Use [naomi#create()](https://github.com/jmike/naomi/wiki/naomi#create) to construct a new [Database](https://github.com/jmike/naomi/wiki/Database).
 
 ```javascript
 var naomi = require('naomi'),
@@ -43,19 +42,6 @@ db = naomi.create('mysql', {
   user: 'user',
   password: 'password',
   database: 'schema',
-});
-```
-
-```javascript
-var naomi = require('naomi'),
-  db;
-
-db = naomi.create('postgres', {
-  host: 'host',
-  port: 5432,
-  user: 'user',
-  password: 'password',
-  database: 'database',
 });
 ```
 
@@ -78,15 +64,15 @@ db.query(sql, params).then(function (records) {
 });
 ```
 
-#### Mapping a table
+#### Referencing a table
 
-After creating a database, you may call #extend() with the name of an existing table.
+Call [Database#extend()](https://github.com/jmike/naomi/wiki/Database#extend) with the name of an existing table.
 
 ```javascript
 var employees = db.extend('employees');
 ```
 
-#### Mapping a table + custom properties
+#### Referencing a table with custom properties
 
 ```javascript
 var employees = db.extend('employees', {
@@ -106,11 +92,13 @@ employees.add({
   firstName: 'Thomas',
   lastName: 'Anderson',
   age: 30
-}).then(function (keys) {
-  console.log('Employee created with id ' + keys.id);
-}).catch(function (err) {
-  console.error(err);
-});
+})
+  .then(function (pk) {
+    console.log('Employee created with id ' + pk.id);
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
 ```
 
 The above will result to the following SQL statement, run under the hood:
@@ -126,11 +114,13 @@ employees.set({
   firstName: 'Thomas',
   lastName: 'Anderson',
   age: 32
-}).then(function (keys) {
-  console.log('Employee set with id ' + keys.id);
-}).catch(function (err) {
-  console.error(err);
-});
+})
+  .then(function (pk) {
+    console.log('Employee set with id ' + pk.id);
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
 ```
 
 The above will result to the following SQL statement, run under the hood:
@@ -139,7 +129,7 @@ The above will result to the following SQL statement, run under the hood:
 INSERT INTO `employees` SET `firstName` = 'Thomas', `lastName` = 'Anderson', `age` = 32 ON DUPLICATE KEY UPDATE `firstName` = VALUES(`firstName`), `lastName` = VALUES(`lastName`), `age` = VALUES(`age`);
 ```
 
-If you want to force updating a record, you can explicitly specify a primary key or unique index.
+You may enforce updating a record by explicitly specifying a primary key or unique index.
 
 ```javascript
 employees.set({
@@ -153,9 +143,13 @@ employees.set({
 #### Retrieving records from table
 
 ```javascript
-employees.get({age: 30}).then(function (records) {
-  // do something with records
-});
+employees.get({age: 30})
+  .then(function (records) {
+    // do something with records
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
 ```
 
 This will result to the following SQL, run under the hood:
@@ -164,12 +158,16 @@ This will result to the following SQL, run under the hood:
 SELECT * FROM `employees` WHERE `age` = 30;
 ```
 
-In case of simple primary keys (i.e. primary keys composed by a single column) you can also do:
+In case of tables with simple primary keys, i.e. primary keys composed by a single column, you may also do:
 
 ```javascript
-employees.get(1).then(function (records) {
-  // do something with records
-});
+employees.get(1)
+  .then(function (records) {
+    // do something with records
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
 ```
 
 This will result to the following SQL, run under the hood:
@@ -178,15 +176,19 @@ This will result to the following SQL, run under the hood:
 SELECT * FROM `employees` WHERE `id` = 1;
 ```
 
-##### Using multiple fields
+##### Retrieving records with multiple fields
 
 ```javascript
 employees.get({
   lastName: 'Anderson',
   age: {'>=': 30}
-}).then(function (records) {
-  // do something with records
-});
+})
+  .then(function (records) {
+    // do something with records
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
 ```
 
 This will result to the following SQL, run under the hood:
@@ -195,7 +197,7 @@ This will result to the following SQL, run under the hood:
 SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` >= 30;
 ```
 
-##### Using range of custom fields
+##### Retrieving records with range of custom fields
 
 ```javascript
 employees.get([
@@ -206,9 +208,10 @@ employees.get([
   {
     id: 1
   }
-]).then(function (records) {
-  // do something with records
-});;
+])
+  .then(function (records) {
+    // do something with records
+  });
 ```
 
 This will result to the following SQL, run under the hood:
@@ -223,9 +226,10 @@ SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` != 30 OR `id` 
 employees.get({
   lastName: 'Anderson',
   age: {'!=': null}
-}).then(function (records) {
-  // do something with records
-});;
+})
+  .then(function (records) {
+    // do something with records
+  });
 ```
 
 This will result to the following SQL, run under the hood:
@@ -252,9 +256,10 @@ Please not that {'=': null} compiles to `IS NULL` and {'=': null} compiles to 'I
 ```javascript
 employees.get({age: {'>': 18}}, {
   order: 'lastName',
-}).then(function (records) {
-  // do something with records
-});;
+})
+  .then(function (records) {
+    // do something with records
+  });
 ```
 
 This will result to the following SQL, run under the hood:
@@ -268,9 +273,10 @@ SELECT * FROM `employees` WHERE `age` > 18 ORDER BY `lastName` ASC;
 ```javascript
 employees.get({age: {'>': 18}}, {
   order: ['lastName', {id: 'desc'}],
-}).then(function (records) {
-  // do something with records
-});;
+})
+  .then(function (records) {
+    // do something with records
+  });
 ```
 
 This will result to the following SQL, run under the hood:
@@ -286,9 +292,10 @@ employees.get({age: {'>': 18}}, {
   order: 'lastName',
   limit: 10,
   offset: 20
-}).then(function (records) {
-  // do something with records
-});;
+})
+  .then(function (records) {
+    // do something with records
+  });
 ```
 
 This will result to the following SQL, run under the hood:
@@ -300,7 +307,10 @@ SELECT * FROM `employees` WHERE `age` > 18 ORDER BY `lastName` LIMIT 10 OFFSET 2
 #### Deleting records from table
 
 ```javascript
-employees.del(1);
+employees.del(1)
+  .then(function () {
+    // record has been deleted
+  });
 ```
 
 This will result to the following SQL, run under the hood:
@@ -312,9 +322,10 @@ DELETE FROM `employees` WHERE id = 1;
 #### Counting records in table
 
 ```javascript
-employees.count().then(function (n) {
-  // do something with count
-});
+employees.count()
+  .then(function (n) {
+    // do something with count
+  });
 ```
 
 This will result to the following SQL, run under the hood:
@@ -325,15 +336,16 @@ SELECT COUNT(*) AS 'count' FROM `employees`;
 
 ## Philosophy
 
-Databases, besides data, contain a lot of metadata. Stuff like:
+Databases, besides data, contain metadata - stuff like:
 
 * Column names + datatypes;
-* Indices, e.g. primary keys, unique keys;
+* Indices (primary keys, unique keys, etc);
+* Constraints;
 * Relations.
 
-These metadata can be extracted from the database and are sufficient for compiling basic validation rules and application structure.
+These metadata can be extracted from the database and are sufficient for generating basic validation rules and application structure.
 
-Still, most ORM tools tend to ignore database metadata and replicate that information in the application layer. This results to:
+Yet most ORM tools tend to ignore database metadata and replicate that information in the application layer. This results to:
 
 * Unnecessary complexity;
 * Synchronization issues;
