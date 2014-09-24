@@ -547,7 +547,13 @@ Table.prototype.set = function (attrs, callback) {
     }
 
     try {
-      values = self._parseAttributes(attrs);
+      if (_.isArray(attrs)) {
+        values = attrs.map(function (e) {
+          return self._parseAttributes(e);
+        });
+      } else {
+        values = self._parseAttributes(attrs);
+      }
     } catch (err) {
       return reject(err);
     }

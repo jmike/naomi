@@ -22,7 +22,7 @@ Table.prototype = Object.create(GenericTable.prototype);
  * @param {(object|Array.<object>)} [options.order] an order expression to sort records.
  * @param {number} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
  * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
- * @returns {Promise} resolving to an Array.<object> of records.
+ * @returns {promise} resolving to an Array.<object> of records.
  */
 Table.prototype._get = function (options) {
   var query;
@@ -40,7 +40,7 @@ Table.prototype._get = function (options) {
  * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
  * @param {number} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
  * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
- * @returns {Promise} resolving to the count of records.
+ * @returns {promise} resolving to the count of records.
  */
 Table.prototype._count = function (options) {
   var query;
@@ -59,7 +59,7 @@ Table.prototype._count = function (options) {
  * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
  * @param {(object|Array.<object>)} [options.order] an order expression to sort records.
  * @param {number} [options.limit] max number of records to delete from database - must be a positive integer, i.e. limit > 0.
- * @returns {Promise}
+ * @returns {promise}
  */
 Table.prototype._del = function (options) {
   var query;
@@ -75,7 +75,7 @@ Table.prototype._del = function (options) {
 /**
  * Creates or updates (if already exists) the specified record(s) in this table.
  * @param {(object|Array.<object>)} attrs the attributes of the record(s) to create/update.
- * @returns {Promise} resolving to the primary key of the created/updated record(s).
+ * @returns {promise} resolving to the primary key of the created/updated record(s).
  */
 Table.prototype._set = function (attrs) {
   var self = this,
@@ -85,10 +85,11 @@ Table.prototype._set = function (attrs) {
 
   // check if attrs is array
   if (_.isArray(attrs)) {
-
-    return Promise.map(attrs, function (obj) {
-      return self._set(obj);
-    }).all();
+    return Promise.all(
+      attrs.map(function (e) {
+        return self._set(e);
+      })
+    );
   }
 
   columns = Object.keys(attrs);
@@ -139,7 +140,7 @@ Table.prototype._set = function (attrs) {
 /**
  * Creates the specified record(s) in this table.
  * @param {(object|Array.<object>)} attrs the attributes of the record(s) to create.
- * @returns {Promise} resolving to the primary key of the created record(s).
+ * @returns {promise} resolving to the primary key of the created record(s).
  */
 Table.prototype._add = function (attrs) {
   var self = this,
