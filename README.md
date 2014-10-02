@@ -300,6 +300,14 @@ Naomi takes care of SQL code by automating repetitive data queries. And if you n
 
 Author: [Dimitrios C. Michalakos](https://github.com/jmike)
 
+## Acknowledgements
+
+This project would not be without the extraordinary work of:
+
+* Felix Geisendörfer (https://github.com/felixge/node-mysql)
+* Brian C (https://github.com/brianc/node-postgres)
+* Petka Antonov (https://github.com/petkaantonov/bluebird)
+
 ## License
 
 MIT
