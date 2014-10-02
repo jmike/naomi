@@ -281,9 +281,9 @@ Databases, besides data, contain metadata - stuff like:
 
 These metadata can be extracted from the database and are sufficient for generating basic validation rules and application structure. Yet most ORM tools tend to ignore database metadata and replicate that information in the application layer. This results to:
 
-* *Unnecessary complexity*, i.e. you trade SQL with an ORM-specific API that is equally complex;
-* *Synchronization issues*, i.e. sky falls on your head when you change the db schema;
-* *Reduced expressiveness*, i.e. no ORM can fully implement the expressiveness of SQL.
+* **Unnecessary complexity**, i.e. you trade SQL with an ORM-specific API that is equally complex;
+* **Synchronization issues**, i.e. sky falls on your head when you change the db schema;
+* **Reduced expressiveness**, i.e. no ORM can fully implement the expressiveness of SQL.
 
 ##### How is Naomi different?
 
