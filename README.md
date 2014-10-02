@@ -1,18 +1,18 @@
 # Naomi
 
-A simple relational db client for Node.js that takes care of the repetitive CRUD tasks, while providing an easy interface for custom queries.
+A simple ORM for Node.js that takes care of the repetitive CRUD tasks, while providing a handy interface for custom queries.
 
 [![Build Status](https://travis-ci.org/jmike/naomi.png?branch=master)](https://travis-ci.org/jmike/naomi) [![Dependency Status](https://gemnasium.com/jmike/naomi.png)](https://gemnasium.com/jmike/naomi)
 
 #### Features
 
-* Supports MySQL and PostgreSQL databases.
-* Written entirely in javascript, i.e. does not require compiling.
-* Distributed under the MIT license, i.e. you can use it both in commercial and open-source projects.
-* Supports transactions and custom queries.
-* Exposes promises and callback interfaces.
-* Makes extensive use of unit-tests.
-* Is battle tested under heavy load in production environments.
+* Supports MySQL and PostgreSQL databases;
+* Written entirely in javascript, i.e. does not require compilation;
+* Distributed under the MIT license, i.e. you can use it both in commercial and open-source projects;
+* Supports transactions and custom queries;
+* Exposes promise and callback interfaces;
+* Makes extensive use of unit-tests;
+* Is battle-tested under heavy load in production environments;
 * Is different, i.e. uses existing database metadata instead of redefining the db structure in the application layer.
 
 ## Installation
@@ -23,14 +23,16 @@ $ npm install naomi
 
 #### Requirements
 
-* MySQL 5.5+ || PostgreSQL 9.1+
+* MySQL 5.5+ or PostgreSQL 9.1+
 * Node.js 0.8+
 
-## How to use
+## Quick start
 
-#### Creating a database
+#### Connect to database
 
-Use [naomi#create()](https://github.com/jmike/naomi/wiki/naomi#create) to construct a new [Database](https://github.com/jmike/naomi/wiki/Database).
+Use [naomi#create()](https://github.com/jmike/naomi/wiki/naomi#create) to construct a new [Database](https://github.com/jmike/naomi/wiki/Database) instance. For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+
+MySQL example:
 
 ```javascript
 var naomi = require('naomi'),
@@ -45,34 +47,86 @@ db = naomi.create('mysql', {
 });
 ```
 
-#### Running custom queries
+Postgres example:
+
+```javascript
+var naomi = require('naomi'),
+  db;
+
+db = naomi.create('postgres', {
+  host: 'host',
+  port: 5432,
+  user: 'user',
+  password: 'password',
+  database: 'database',
+});
+```
+
+#### Run custom queries
+
+Use [Database#query()](https://github.com/jmike/naomi/wiki/Database#query) to run a _parameterised_ SQL query. For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+
+MySQL example:
 
 ```javascript
 var sql = 'SELECT `firstname`, `lastname` FROM `employees` WHERE `id` = ?;',
   params = [1];
 
-db.query(sql, params).then(function (records) {
-
-  if (records.length === 0) {
-    console.warn('Not found');
-  } else {
-    console.log(records[0]);
-  }
-
-}).catch(function (err) {
-  console.error(err);
-});
+db.query(sql, params)
+  .then(function (records) {
+    if (records.length === 0) {
+      console.warn('Not found');
+    } else {
+      console.log(records[0]);
+    }
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
 ```
 
-#### Referencing a table
+Postgres example:
 
-Call [Database#extend()](https://github.com/jmike/naomi/wiki/Database#extend) with the name of an existing table.
+```javascript
+var sql = 'SELECT "firstname", "lastname" FROM "employees" WHERE "id" = ?;',
+  params = [1];
+
+db.query(sql, params)
+  .then(function (records) {
+    if (records.length === 0) {
+      console.warn('Not found');
+    } else {
+      console.log(records[0]);
+    }
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
+#### Map table to object
+
+You wouldn't normally use an ORM to run custom queries. Naomi provides the [Table](https://github.com/jmike/naomi/wiki/Table) class to map tables to objects and run repretitive CRUD tasks.
+
+Use [Database#extend()](https://github.com/jmike/naomi/wiki/Database#extend) to create a new Table instance.
 
 ```javascript
 var employees = db.extend('employees');
 ```
 
-#### Referencing a table with custom properties
+The Table class exposes the following methods:
+
+1. Table#add() - create records in table;
+2. Table#set() - create or update records in table;
+3. Table#get() - read records from table;
+4. Table#del() - delete records in table;
+5. Table#count() - count records in table;
+
+#### Map table with custom properties
+
+In case a Table's methods are not enough, you can write your own custom methods.
+
+Postgres example:
 
 ```javascript
 var employees = db.extend('employees', {
@@ -85,7 +139,7 @@ var employees = db.extend('employees', {
 });
 ```
 
-#### Creating records in table
+#### Create records in table
 
 ```javascript
 employees.add({
@@ -107,7 +161,9 @@ The above will result to the following SQL statement, run under the hood:
 INSERT INTO `employees` SET `firstName` = 'Thomas', `lastName` = 'Anderson', `age` = 30;
 ```
 
-#### Creating / Updating records in table
+For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+
+#### Create / Update records in table
 
 ```javascript
 employees.set({
@@ -140,7 +196,9 @@ employees.set({
 });
 ```
 
-#### Retrieving records from table
+For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+
+#### Retrieve records from table
 
 ```javascript
 employees.get({age: 30})
@@ -176,135 +234,9 @@ This will result to the following SQL, run under the hood:
 SELECT * FROM `employees` WHERE `id` = 1;
 ```
 
-##### Retrieving records with multiple fields
+Table#get() can get fairly complicated, e.g. using complex selectors, order, limit, offset, etc. For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
 
-```javascript
-employees.get({
-  lastName: 'Anderson',
-  age: {'>=': 30}
-})
-  .then(function (records) {
-    // do something with records
-  })
-  .catch(function (err) {
-    console.error(err);
-  });
-```
-
-This will result to the following SQL, run under the hood:
-
-```sql
-SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` >= 30;
-```
-
-##### Retrieving records with range of custom fields
-
-```javascript
-employees.get([
-  {
-    lastName: 'Anderson',
-    age: {'!=': 30}
-  },
-  {
-    id: 1
-  }
-])
-  .then(function (records) {
-    // do something with records
-  });
-```
-
-This will result to the following SQL, run under the hood:
-
-```sql
-SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` != 30 OR `id` = 1;
-```
-
-##### Using custom operators
-
-```javascript
-employees.get({
-  lastName: 'Anderson',
-  age: {'!=': null}
-})
-  .then(function (records) {
-    // do something with records
-  });
-```
-
-This will result to the following SQL, run under the hood:
-
-```sql
-SELECT * FROM `employees` WHERE `lastName` = 'Anderson' AND `age` IS NOT NULL;
-```
-
-The following operators are accepted:
-
-Name | Operator
-:--- | :---:
-Equal operator | =
-Not equal operator | !=
-Greater than operator | >
-Greater than or equal operator | >=
-Less than operator | <
-Less than or equal operator | <=
-
-Please not that {'=': null} compiles to `IS NULL` and {'=': null} compiles to 'IS NOT NULL'.
-
-##### Using an ORDER BY clause
-
-```javascript
-employees.get({age: {'>': 18}}, {
-  order: 'lastName',
-})
-  .then(function (records) {
-    // do something with records
-  });
-```
-
-This will result to the following SQL, run under the hood:
-
-```sql
-SELECT * FROM `employees` WHERE `age` > 18 ORDER BY `lastName` ASC;
-```
-
-##### Using a complex ORDER BY clause
-
-```javascript
-employees.get({age: {'>': 18}}, {
-  order: ['lastName', {id: 'desc'}],
-})
-  .then(function (records) {
-    // do something with records
-  });
-```
-
-This will result to the following SQL, run under the hood:
-
-```sql
-SELECT * FROM `employees` WHERE `age` > 18 ORDER BY `lastName` ASC, `id` DESC;
-```
-
-##### Using LIMIT and OFFSET
-
-```javascript
-employees.get({age: {'>': 18}}, {
-  order: 'lastName',
-  limit: 10,
-  offset: 20
-})
-  .then(function (records) {
-    // do something with records
-  });
-```
-
-This will result to the following SQL, run under the hood:
-
-```sql
-SELECT * FROM `employees` WHERE `age` > 18 ORDER BY `lastName` LIMIT 10 OFFSET 20;
-```
-
-#### Deleting records from table
+#### Delete records from table
 
 ```javascript
 employees.del(1)
@@ -319,7 +251,9 @@ This will result to the following SQL, run under the hood:
 DELETE FROM `employees` WHERE id = 1;
 ```
 
-#### Counting records in table
+For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+
+#### Count records in table
 
 ```javascript
 employees.count()
@@ -334,6 +268,8 @@ This will result to the following SQL, run under the hood:
 SELECT COUNT(*) AS 'count' FROM `employees`;
 ```
 
+For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+
 ## Philosophy
 
 Databases, besides data, contain metadata - stuff like:
@@ -343,20 +279,18 @@ Databases, besides data, contain metadata - stuff like:
 * Constraints;
 * Relations.
 
-These metadata can be extracted from the database and are sufficient for generating basic validation rules and application structure.
+These metadata can be extracted from the database and are sufficient for generating basic validation rules and application structure. Yet most ORM tools tend to ignore database metadata and replicate that information in the application layer. This results to:
 
-Yet most ORM tools tend to ignore database metadata and replicate that information in the application layer. This results to:
-
-* Unnecessary complexity;
-* Synchronization issues;
-* Reduced expressiveness.
+* Unnecessary complexity, i.e. you trade SQL with an ORM-specific API that is equally complex;
+* Synchronization issues, i.e. sky falls on your head when you change the db schema;
+* Reduced expressiveness, i.e. no ORM can fully implement the expressiveness of SQL.
 
 ##### How is Naomi different?
 
 Naomi works the other way around:
 
-1. You first create the database using a tool of your choice, e.g. [MySQL Workbench](http://www.mysql.com/products/workbench/), [pgAdmin](http://www.pgadmin.org/) - a tool you know and love;
-2. You call a few simple methods to bring meta-information to the application.
+1. You first create the database using a tool of your choice, e.g. [MySQL Workbench](http://www.mysql.com/products/workbench/), [pgAdmin](http://www.pgadmin.org/) - a tool you already know;
+2. You call a few simple methods to extract meta-information to the application layer.
 
 While this approach may seem intriguing to new developers, it is in fact the natural way of thinking for experienced engineers. Creating a database requires creativity and imagination that machines lack.
 
