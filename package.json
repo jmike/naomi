@@ -1,6 +1,6 @@
 {
   "name": "naomi",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "description": "Simple, productive, relational db client for MySQL and Postgres.",
   "repository": {
     "type": "git",
