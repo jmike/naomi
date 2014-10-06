@@ -152,6 +152,8 @@ Database.prototype.query = function (sql, params, options, callback) {
     return Promise.reject('Invalid SQL statement: expected string, received ' + typeof(sql)).nodeify(callback);
   }
 
+  // console.log(sql);
+
   // handle optional "params" param
   if (!_.isArray(params)) {
 

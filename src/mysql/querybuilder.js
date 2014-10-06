@@ -248,12 +248,13 @@ module.exports = {
       return '?';
     }).join(', ') + ')');
 
-    sql.push('ON DUPLICATE KEY UPDATE');
-
-    sql.push(options.updateColumns.map(function (column) {
-      column = this.escapeSQL(column);
-      return column + ' = VALUES(' + column + ')';
-    }, this).join(', '));
+    if (options.updateColumns.length !== 0) {
+      sql.push('ON DUPLICATE KEY UPDATE');
+      sql.push(options.updateColumns.map(function (column) {
+        column = this.escapeSQL(column);
+        return column + ' = VALUES(' + column + ')';
+      }, this).join(', '));
+    }
 
     sql = sql.join(' ') + ';';
 
