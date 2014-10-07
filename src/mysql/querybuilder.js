@@ -235,7 +235,13 @@ module.exports = {
     // handle option updateColumns param
     options.updateColumns = options.updateColumns || options.columns;
 
-    sql.push('INSERT INTO ' + this.escapeSQL(options.table));
+    sql.push('INSERT');
+
+    if (options.updateColumns.length === 0) {
+      sql.push('IGNORE');
+    }
+
+    sql.push('INTO ' + this.escapeSQL(options.table));
 
     sql.push('(' + options.columns.map(function (column) {
       return this.escapeSQL(column);
