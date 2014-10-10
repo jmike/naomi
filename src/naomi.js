@@ -37,11 +37,11 @@ exports.create = function (type, props) {
 
   if (/postgres/i.test(type)) {
     return new PostgresDatabase({
-      host: props.host || process.env.MYSQL_HOST || 'localhost',
-      port: props.port || parseInt(process.env.MYSQL_PORT, 10) || 5432,
-      user: props.user || process.env.MYSQL_USER || 'root',
-      password: props.password || process.env.MYSQL_PASSWORD || '',
-      database: props.database || process.env.MYSQL_DATABASE || null,
+      host: props.host || process.env.POSTGRES_HOST || 'localhost',
+      port: props.port || parseInt(process.env.POSTGRES_PORT, 10) || 5432,
+      user: props.user || process.env.POSTGRES_USER || 'root',
+      password: props.password || process.env.POSTGRES_PASSWORD || '',
+      database: props.database || process.env.POSTGRES_DATABASE || null,
       connectionLimit: props.connectionLimit || props.poolSize || 10, // connectionLimit used to be poolSize
       poolIdleTimeout: 30000,
       reapIntervalMillis: 1000
