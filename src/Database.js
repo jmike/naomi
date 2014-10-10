@@ -28,11 +28,6 @@ function Database(props) {
     throw new Error('Invalid connection properties: expected plain object, received ' + typeof(props));
   }
 
-  // handle optional connection properties
-  props.poolSize = props.poolSize || 10;
-  props.poolIdleTimeout = props.poolIdleTimeout || 30000;
-  props.reapIntervalMillis = props.reapIntervalMillis || 1000;
-
   // set database properties
   this.isConnected = false;
   this.isReady = false;

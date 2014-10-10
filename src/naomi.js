@@ -15,9 +15,7 @@ require('dotenv').load(); // load environmental variables
  * @param {string} [props.user] the user to access the database.
  * @param {string} [props.password] the password of the user.
  * @param {string} [props.database] the name of the database.
- * @param {number} [props.poolSize=10] number of unique Client objects to maintain in the pool.
- * @param {number} [props.poolIdleTimeout=30000] max milliseconds a client can go unused before it is removed from the pool and destroyed.
- * @param {number} [props.reapIntervalMillis=1000] frequency to check for idle clients within the client pool.
+ * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
  * @throws {Error} if params are invalid or unspecified.
  * @returns {Database}
  * @throws {Error} if params are invalid of unspecified.
@@ -27,23 +25,27 @@ exports.create = function (type, props) {
   props = props || {};
 
   if (/mysql/i.test(type)) {
-    props.host = props.host || process.env.MYSQL_HOST || 'localhost';
-    props.port = props.port || parseInt(process.env.MYSQL_PORT, 10) || 3306;
-    props.user = props.user || process.env.MYSQL_USER || 'root';
-    props.password = props.password || process.env.MYSQL_PASSWORD || '';
-    props.database = props.database || process.env.MYSQL_DATABASE || null;
-
-    return new MySQLDatabase(props);
+    return new MySQLDatabase({
+      host: props.host || process.env.MYSQL_HOST || 'localhost',
+      port: props.port || parseInt(process.env.MYSQL_PORT, 10) || 3306,
+      user: props.user || process.env.MYSQL_USER || 'root',
+      password: props.password || process.env.MYSQL_PASSWORD || '',
+      database: props.database || process.env.MYSQL_DATABASE || null,
+      connectionLimit: props.connectionLimit || props.poolSize || 10 // connectionLimit used to be poolSize
+    });
   }
 
   if (/postgres/i.test(type)) {
-    props.host = props.host || process.env.POSTGRES_HOST || 'localhost';
-    props.port = props.port || parseInt(process.env.POSTGRES_PORT, 10) || 5432;
-    props.user = props.user || process.env.POSTGRES_USER || 'root';
-    props.password = props.password || process.env.POSTGRES_PASSWORD || '';
-    props.database = props.database || process.env.POSTGRES_DATABASE || null;
-
-    return new PostgresDatabase(props);
+    return new PostgresDatabase({
+      host: props.host || process.env.MYSQL_HOST || 'localhost',
+      port: props.port || parseInt(process.env.MYSQL_PORT, 10) || 5432,
+      user: props.user || process.env.MYSQL_USER || 'root',
+      password: props.password || process.env.MYSQL_PASSWORD || '',
+      database: props.database || process.env.MYSQL_DATABASE || null,
+      connectionLimit: props.connectionLimit || props.poolSize || 10, // connectionLimit used to be poolSize
+      poolIdleTimeout: 30000,
+      reapIntervalMillis: 1000
+    });
   }
 
   throw new Error('Invalid database type: expected "mysql" or "postgres", received "' + type + '"');
