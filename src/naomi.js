@@ -1,7 +1,8 @@
-var MySQLDatabase = require('./mysql/Database'),
-  PostgresDatabase = require('./postgres/Database');
-
 require('dotenv').load(); // load environmental variables
+
+var _ = require('lodash'),
+  MySQLDatabase = require('./mysql/Database'),
+  PostgresDatabase = require('./postgres/Database');
 
 /**
  * Creates and returns a new database of the designated type.
@@ -25,28 +26,28 @@ exports.create = function (type, props) {
   props = props || {};
 
   if (/mysql/i.test(type)) {
-    return new MySQLDatabase({
-      host: props.host || process.env.MYSQL_HOST || 'localhost',
-      port: props.port || parseInt(process.env.MYSQL_PORT, 10) || 3306,
-      user: props.user || process.env.MYSQL_USER || 'root',
-      password: props.password || process.env.MYSQL_PASSWORD || '',
-      database: props.database || process.env.MYSQL_DATABASE || null,
-      connectionLimit: props.connectionLimit || props.poolSize || 10 // connectionLimit used to be poolSize
-    });
+    return new MySQLDatabase(_.defaults(props, {
+      host: process.env.MYSQL_HOST || 'localhost',
+      port: parseInt(process.env.MYSQL_PORT, 10) || 3306,
+      user: process.env.MYSQL_USER || 'root',
+      password: process.env.MYSQL_PASSWORD || '',
+      database: process.env.MYSQL_DATABASE || null,
+      connectionLimit: props.poolSize || 10 // connectionLimit used to be poolSize
+    }));
   }
 
   if (/postgres/i.test(type)) {
-    return new PostgresDatabase({
-      host: props.host || process.env.POSTGRES_HOST || 'localhost',
-      port: props.port || parseInt(process.env.POSTGRES_PORT, 10) || 5432,
-      user: props.user || process.env.POSTGRES_USER || 'root',
-      password: props.password || process.env.POSTGRES_PASSWORD || '',
-      database: props.database || process.env.POSTGRES_DATABASE || null,
-      connectionLimit: props.connectionLimit || props.poolSize || 10, // connectionLimit used to be poolSize
+    return new PostgresDatabase(_.defaults(props, {
+      host: process.env.POSTGRES_HOST || 'localhost',
+      port: parseInt(process.env.POSTGRES_PORT, 10) || 5432,
+      user: process.env.POSTGRES_USER || 'root',
+      password: process.env.POSTGRES_PASSWORD || '',
+      database: process.env.POSTGRES_DATABASE || null,
+      connectionLimit: props.poolSize || 10, // connectionLimit used to be poolSize
       poolIdleTimeout: 30000,
       reapIntervalMillis: 1000
-    });
+    }));
   }
 
-  throw new Error('Invalid database type: expected "mysql" or "postgres", received "' + type + '"');
+  throw new Error('Invalid database type; expected "mysql" or "postgres", received "' + type + '"');
 };

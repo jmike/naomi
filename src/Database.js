@@ -16,9 +16,7 @@ var events = require('events'),
  * @param {string} props.user the user to access the database.
  * @param {string} props.password the password of the user.
  * @param {string} props.database the name of the database.
- * @param {number} props.poolSize=10 number of unique Client objects to maintain in the pool.
- * @param {number} props.poolIdleTimeout=30000 max milliseconds a client can go unused before it is removed from the pool and destroyed.
- * @param {number} props.reapIntervalMillis=1000 frequency to check for idle clients within the client pool.
+ * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
  * @throws {Error} if params are invalid or unspecified.
  * @constructor
  */
