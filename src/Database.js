@@ -21,9 +21,19 @@ var events = require('events'),
  * @constructor
  */
 function Database(props) {
-  // validate "props" param
-  if (!_.isPlainObject(props)) {
-    throw new Error('Invalid connection properties: expected plain object, received ' + typeof(props));
+  // make sure connection properties are valid
+  if (!_.isObject(props)) {
+    throw new Error(
+      'Invalid connection properties; ' +
+      'expected plain object, received ' + typeof(props)
+    );
+  }
+
+  if (!_.isString(props.database)) {
+    throw new Error(
+      'Invalid database name; ' +
+      'expected string, received ' + typeof(props.database)
+    );
   }
 
   // set database properties

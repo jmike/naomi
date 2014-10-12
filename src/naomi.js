@@ -31,7 +31,7 @@ exports.create = function (type, props) {
       port: parseInt(process.env.MYSQL_PORT, 10) || 3306,
       user: process.env.MYSQL_USER || 'root',
       password: process.env.MYSQL_PASSWORD || '',
-      database: process.env.MYSQL_DATABASE || null,
+      database: process.env.MYSQL_DATABASE,
       connectionLimit: props.poolSize || 10 // connectionLimit used to be poolSize
     }));
   }
@@ -42,12 +42,15 @@ exports.create = function (type, props) {
       port: parseInt(process.env.POSTGRES_PORT, 10) || 5432,
       user: process.env.POSTGRES_USER || 'root',
       password: process.env.POSTGRES_PASSWORD || '',
-      database: process.env.POSTGRES_DATABASE || null,
+      database: process.env.POSTGRES_DATABASE,
       connectionLimit: props.poolSize || 10, // connectionLimit used to be poolSize
       poolIdleTimeout: 30000,
       reapIntervalMillis: 1000
     }));
   }
 
-  throw new Error('Invalid database type; expected "mysql" or "postgres", received "' + type + '"');
+  throw new Error(
+    'Invalid database type; ' +
+    'expected "mysql" or "postgres", received ' + type
+  );
 };
