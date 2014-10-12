@@ -15,12 +15,12 @@
     "npm": "1.4.x"
   },
   "dependencies": {
-    "mysql": "~2.5.1",
-    "dotenv": "~0.4.0",
-    "lodash": "~2.4.1",
-    "generic-pool": "~2.1.1",
     "bluebird": "~2.3.2",
-    "pg.js": "~3.4.4"
+    "dotenv": "~0.4.0",
+    "generic-pool": "~2.1.1",
+    "lodash": "~2.4.1",
+    "mysql": "~2.5.1",
+    "pg.js": "^3.5.0"
   },
   "devDependencies": {
     "mocha": "~1.21.4",
