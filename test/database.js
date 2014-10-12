@@ -3,7 +3,7 @@ require('dotenv').load(); // load environmental variables
 var chai = require('chai'),
   Database = require('../src/Database'),
   assert = chai.assert,
-  db = new Database({});
+  db = new Database({database: 'something'});
 
 describe('Database', function () {
 
