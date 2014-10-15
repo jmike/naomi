@@ -118,7 +118,7 @@ Database.prototype.disconnect = function (callback) {
     return Promise.resolve().nodeify(callback);
   }
 
-  this._disconnect()
+  return this._disconnect()
     .bind(this)
     .then(function () {
       this.isConnected = false;
