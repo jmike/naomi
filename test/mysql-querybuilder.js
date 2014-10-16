@@ -360,6 +360,22 @@ describe('MySQL querybuilder', function () {
       assert.strictEqual(query.params[2], 3);
     });
 
+    it('accepts array of values specified', function () {
+      var query = querybuilder.insert({
+        table: 'employees',
+        columns: ['a', 'b', 'c'],
+        values: [{a: 1, b: 2, c: 3}, {a: 4, b: 5, c: 6, d: 'invalid'}]
+      });
+
+      assert.strictEqual(query.sql, 'INSERT INTO `employees` (`a`, `b`, `c`) VALUES (?, ?, ?), (?, ?, ?);');
+      assert.strictEqual(query.params[0], 1);
+      assert.strictEqual(query.params[1], 2);
+      assert.strictEqual(query.params[2], 3);
+      assert.strictEqual(query.params[3], 4);
+      assert.strictEqual(query.params[4], 5);
+      assert.strictEqual(query.params[5], 6);
+    });
+
   });
 
 });

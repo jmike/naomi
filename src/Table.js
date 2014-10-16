@@ -112,6 +112,20 @@ Table.prototype.isIndexKey = function () {
 };
 
 /**
+ * Indicates whether the specified column is automatically incremented.
+ * This method will always return false until database is ready.
+ * @param {string} columnName the name of the column.
+ * @returns {boolean}
+ * @example
+ *
+ * table.isAutoInc('id');
+ */
+Table.prototype.isAutoInc = function (columnName) {
+  var column = this._columns[columnName];
+  return column && column.isAutoInc;
+};
+
+/**
  * Parses the given expression, as part of a selector, and returns an object to use in a SQL expression.
  * @param {object} expr an object with a single property, where key represents the operator.
  * @returns {object}
@@ -139,16 +153,26 @@ Table.prototype._parseExpression = function (expr) {
  * @throws {Error} if selector is unspecified or invalid.
  * @private
  */
-Table.prototype._parseSelector = function (selector) {
+Table.prototype._parseSelector = function (selector, level) {
   var obj = {};
 
-  // check if selector is object, i.e. standard format
+  level = level || 0;
+
+  // check if selector is array
+  if (level === 0 && _.isArray(selector)) {
+    return selector.map(function (e) {
+      return this._parseSelector(e, 1);
+    }, this);
+  }
+
+  // check if selector is object
   if (_.isObject(selector)) {
-
     _.forOwn(selector, function (v, k) {
-
       if (!this.hasColumn(k)) {
-        throw new Error('Invalid query selector: column "' + k + '" does not exist in table "' + this._table + '"');
+        throw new Error(
+          'Invalid query selector; ' +
+          'column ' + k + ' does not exist in table ' + this._table
+        );
       }
 
       if (_.isPlainObject(v)) {
@@ -164,22 +188,15 @@ Table.prototype._parseSelector = function (selector) {
 
   // check if selector is number, string, date or boolean
   if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) { // plain value selector
-
     if (this._primaryKey.length !== 1) {
-      throw new Error('Invalid query selector: primary key is compound or non existent, thus plain value selectors are useless');
+      throw new Error(
+        'Invalid query selector; ' +
+        'primary key is compound or non existent, thus plain value selectors are useless'
+      );
     }
 
     obj[this._primaryKey[0]] = {'=': selector};
     return obj;
-  }
-
-  // check if selector is array
-  if (_.isArray(selector)) {
-
-    return selector.map(function (e) {
-      return this._parseSelector(e);
-    }, this);
-
   }
 
   throw new Error('Invalid query selector');
@@ -304,28 +321,35 @@ Table.prototype._parseOffset = function (offset) {
  * @throws {Error} if attrs is unspecified or invalid
  * @private
  */
-Table.prototype._parseAttributes = function (attrs) {
-  // check if attrs is plain object, i.e. standard format
-  if (_.isObject(attrs)) {
+Table.prototype._parseAttributes = function (attrs, level) {
+  level = level || 0;
 
+  // attrs is plain object
+  if (_.isPlainObject(attrs)) {
     Object.keys(attrs).forEach(function (column) {
       if (!this.hasColumn(column)) {
-        throw new Error('Invalid record attributes: column ' + column + ' does not exist in table ' + this._table);
+        throw new Error(
+          'Invalid record attributes; ' +
+          'column ' + column + ' does not exist in table ' + this._table
+        );
       }
     }, this);
 
     return attrs;
   }
 
-  // check if attrs is array
-  if (_.isArray(attrs)) {
-
+  // attrs is array
+  if (level === 0 && _.isArray(attrs)) {
     return attrs.map(function (obj) {
-      return this._parseAttributes(obj);
+      return this._parseAttributes(obj, 1);
     }, this);
   }
 
-  throw new Error('Invalid record attributes: expected object or Array, received ' + typeof(attrs));
+  // default
+  throw new Error(
+    'Invalid record attributes; ' +
+    'expected object or Array, received ' + typeof(attrs)
+  );
 };
 
 /**
@@ -595,7 +619,7 @@ Table.prototype.add = function (attrs, callback) {
 
     // make sure table exists in database
     if (!self._db.hasTable(self._table)) {
-      return reject('Table "' + self._table + '" cannot be found in database');
+      return reject(new Error('Table "' + self._table + '" cannot be found in database'));
     }
 
     try {

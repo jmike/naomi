@@ -79,22 +79,15 @@ Table.prototype._del = function (options) {
  */
 Table.prototype._set = function (attrs) {
   var self = this,
-    columns,
-    updateColumns,
-    query;
+    columns, updateColumns, query;
 
-  // check if attrs is array
-  if (_.isArray(attrs)) {
-    return Promise.all(
-      attrs.map(function (e) {
-        return self._set(e);
-      })
-    );
-  }
+  // extract columns from attrs
+  columns = _.isArray(attrs) ? Object.keys(attrs[0]) : Object.keys(attrs);
 
-  columns = Object.keys(attrs);
+  // calculate updateColumns
   updateColumns = _.difference(columns, this._primaryKey);
 
+  // compile upsert query
   query = querybuilder.upsert({
     table: this._table,
     columns: columns,
@@ -102,39 +95,29 @@ Table.prototype._set = function (attrs) {
     updateColumns: updateColumns
   });
 
-  return this._db.query(query.sql, query.params).then(function (result) {
-    var obj = {};
+  // run query
+  return this._db.query(query.sql, query.params)
+    .then(function (result) {
+      var primaryKey, isSimpleAutoInc, insertedRows, funct;
 
-    // check if primary key is simple + autoinc
-    if (self._primaryKey.length === 1 && self._columns[self._primaryKey[0]].isAutoInc) {
+      primaryKey = self._primaryKey; // note: primaryKey is array
+      isSimpleAutoInc = primaryKey.length === 1 && self.isAutoInc(primaryKey[0]);
+      insertedRows = 0;
 
-      // check if record was inserted
-      if (result.insertId) {
-        obj[self._primaryKey[0]] = result.insertId;
-        return obj;
-      }
+      funct = function (obj) {
+        var hasPrimaryKey = primaryKey.every(function (k) {
+          return obj.hasOwnProperty(k);
+        });
 
-      // check if primary key is explicitely defined
-      // if (_.has(options.attrs, self._primaryKey[0])) {
-        return _.pick(attrs, self._primaryKey);
-      // }
+        if (hasPrimaryKey) return _.pick(obj, primaryKey);
+        if (isSimpleAutoInc) return _.zipObject(primaryKey, [result.insertId + insertedRows++]);
 
-      // retrieve primary key from database
-      // query = querybuilder.select({
-      //   table: self._table,
-      //   self._columns: self._primaryKey,
-      //   selector: self._uniqueKeys.map(function (arr) {
+        return {}; // TODO: query db for identifiers
+      };
 
-      //   });
-      //   limit: 1
-      // });
-      // return self._db.query(query.sql, query.params).then(function (records) {
-      //   return records[0];
-      // });
-    }
-
-    return _.pick(attrs, self._primaryKey);
-  });
+      if (_.isArray(attrs)) return attrs.map(funct);
+      return funct(attrs);
+    });
 };
 
 /**
@@ -144,36 +127,34 @@ Table.prototype._set = function (attrs) {
  */
 Table.prototype._add = function (attrs) {
   var self = this,
-    columns,
-    query;
+    columns, query;
 
-  // check if attrs is array
-  if (_.isArray(attrs)) {
+  // extract columns from attrs
+  columns = _.isArray(attrs) ? Object.keys(attrs[0]) : Object.keys(attrs);
 
-    return Promise.map(attrs, function (obj) {
-      return self._add(obj);
-    }).all();
-  }
-
-  columns = Object.keys(attrs);
-
+  // compile query
   query = querybuilder.insert({
     table: this._table,
     columns: columns,
     values: attrs
   });
 
-  return this._db.query(query.sql, query.params).then(function (result) {
-    var obj = {};
+  // run query
+  return this._db.query(query.sql, query.params)
+    .then(function (result) {
+      var primaryKey, isSimpleAutoInc, funct;
 
-    // check if primary key is simple + autoinc
-    if (self._primaryKey.length === 1 && self._columns[self._primaryKey[0]].isAutoInc) {
-      obj[self._primaryKey[0]] = result.insertId;
-      return obj;
-    }
+      primaryKey = self._primaryKey; // note: primaryKey is array
+      isSimpleAutoInc = primaryKey.length === 1 && self.isAutoInc(primaryKey[0]);
 
-    return _.pick(attrs, self._primaryKey);
-  });
+      funct = function (obj, i) {
+        if (isSimpleAutoInc) return _.zipObject(primaryKey, [result.insertId + i]);
+        return _.pick(obj, primaryKey);
+      };
+
+      if (_.isArray(attrs)) return attrs.map(funct);
+      return funct(attrs, 0);
+    });
 };
 
 module.exports = Table;
