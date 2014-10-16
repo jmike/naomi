@@ -1,0 +1,13 @@
+INSERT
+
+{{#unless updateColumns}}
+  IGNORE
+{{/unless}}
+
+INTO {{escape table}} ({{columns}})
+
+VALUES {{values}}
+
+{{#if updateColumns}}
+  ON DUPLICATE KEY UPDATE {{updateColumns}}
+{{/if}}
