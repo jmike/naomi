@@ -1,6 +1,6 @@
 INSERT
 
-{{#unless updateColumns}}
+{{#unless duplicateKeyAssignments}}
   IGNORE
 {{/unless}}
 
@@ -8,6 +8,6 @@ INTO {{escape table}} ({{columns}})
 
 VALUES {{values}}
 
-{{#if updateColumns}}
-  ON DUPLICATE KEY UPDATE {{updateColumns}}
+{{#if duplicateKeyAssignments}}
+  ON DUPLICATE KEY UPDATE {{duplicateKeyAssignments}}
 {{/if}}

@@ -6,32 +6,32 @@ var chai = require('chai'),
 
 describe('MySQL querybuilder', function () {
 
-  describe('#_where()', function () {
+  describe('#where()', function () {
 
     it('accepts object selector', function () {
-      var query = querybuilder._where({
+      var query = querybuilder.where({
         id: {'=': 1}
       });
 
-      assert.strictEqual(query.sql, 'WHERE `id` = ?');
+      assert.strictEqual(query.sql, '`id` = ?');
       assert.lengthOf(query.params, 1);
       assert.strictEqual(query.params[0], 1);
     });
 
     it('accepts object selector with many properties', function () {
-      var query = querybuilder._where({
+      var query = querybuilder.where({
         age: {'>': 30},
         firstname: {'=': 'James'}
       });
 
-      assert.strictEqual(query.sql, 'WHERE `age` > ? AND `firstname` = ?');
+      assert.strictEqual(query.sql, '`age` > ? AND `firstname` = ?');
       assert.lengthOf(query.params, 2);
       assert.strictEqual(query.params[0], 30);
       assert.strictEqual(query.params[1], 'James');
     });
 
     it('accepts Array selector', function () {
-      var query = querybuilder._where([
+      var query = querybuilder.where([
         {
           id: {'>': 2},
           firstname: {'=': 'James'}
@@ -41,7 +41,7 @@ describe('MySQL querybuilder', function () {
         }
       ]);
 
-      assert.strictEqual(query.sql, 'WHERE `id` > ? AND `firstname` = ? OR `lastname` = ?');
+      assert.strictEqual(query.sql, '`id` > ? AND `firstname` = ? OR `lastname` = ?');
       assert.lengthOf(query.params, 3);
       assert.strictEqual(query.params[0], 2);
       assert.strictEqual(query.params[1], 'James');
@@ -49,42 +49,42 @@ describe('MySQL querybuilder', function () {
     });
 
     it('handles special "= null" expression', function () {
-      var query = querybuilder._where({
+      var query = querybuilder.where({
         firstname: {'=': null}
       });
 
-      assert.strictEqual(query.sql, 'WHERE `firstname` IS NULL');
+      assert.strictEqual(query.sql, '`firstname` IS NULL');
       assert.lengthOf(query.params, 0);
     });
 
     it('handles special "!= null" expression', function () {
-      var query = querybuilder._where({
+      var query = querybuilder.where({
         firstname: {'!=': null}
       });
 
-      assert.strictEqual(query.sql, 'WHERE `firstname` IS NOT NULL');
+      assert.strictEqual(query.sql, '`firstname` IS NOT NULL');
       assert.lengthOf(query.params, 0);
     });
 
   });
 
-  describe('#_orderBy()', function () {
+  describe('#orderBy()', function () {
 
     it('accepts object order', function () {
-      var sql = querybuilder._orderBy({
+      var sql = querybuilder.orderBy({
         id: 'asc'
       });
 
-      assert.strictEqual(sql, 'ORDER BY `id` ASC');
+      assert.strictEqual(sql, '`id` ASC');
     });
 
     it('accepts Array order', function () {
-      var sql = querybuilder._orderBy([
+      var sql = querybuilder.orderBy([
         {id: 'asc'},
         {age: 'desc'}
       ]);
 
-      assert.strictEqual(sql, 'ORDER BY `id` ASC, `age` DESC');
+      assert.strictEqual(sql, '`id` ASC, `age` DESC');
     });
 
   });
@@ -354,7 +354,7 @@ describe('MySQL querybuilder', function () {
         values: {a: 1, b: 2, c: 3}
       });
 
-      assert.strictEqual(query.sql, 'INSERT INTO `employees` SET `a` = ?, `b` = ?, `c` = ?;');
+      assert.strictEqual(query.sql, 'INSERT INTO `employees` (`a`, `b`, `c`) VALUES (?, ?, ?);');
       assert.strictEqual(query.params[0], 1);
       assert.strictEqual(query.params[1], 2);
       assert.strictEqual(query.params[2], 3);

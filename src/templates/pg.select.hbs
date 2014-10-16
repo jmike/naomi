@@ -1,0 +1,24 @@
+SELECT
+
+{{#if columns}}
+  {{columns}}
+{{else}}
+  *
+{{/if}}
+
+FROM {{escape table}}
+
+{{#if where}}
+  WHERE {{where}}
+{{/if}}
+
+{{#if orderBy}}
+  ORDER BY {{orderBy}}
+{{/if}}
+
+{{#if limit}}
+  LIMIT {{limit}}
+  {{#if offset}}
+    OFFSET {{offset}}
+  {{/if}}
+{{/if}}

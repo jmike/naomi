@@ -17,13 +17,13 @@ function escapeSQL(identifier) {
 }
 
 /**
- * Compiles and returns a column SQL expression based on the supplied column array.
+ * Compiles and returns a column SQL expression to use in a SELECT query, based on the supplied column array.
  * @param {Array<string>} columns an array of column names.
  * @return {string}
  * @private
  * @static
  */
-function compileColumns(columns) {
+function compileSelectColumns(columns) {
   if (_.isArray(columns)) {
     return columns.map(function (column) {
       return escapeSQL(column);
@@ -38,9 +38,8 @@ function compileColumns(columns) {
  * @param {(object|Array.<object>)} selector
  * @returns {object} with two properties: "sql" and "params".
  * @static
- * @private
  */
-function compileWhere(selector) {
+function compileWhereClause(selector) {
   var params = [], sql;
 
   // make sure selector is array
@@ -73,16 +72,13 @@ function compileWhere(selector) {
   return {sql: sql, params: params};
 }
 
-exports.compileWhere = compileWhere;
-
 /**
  * Compiles and returns a SQL order clause based on the given order.
  * @param {(object|Array.<object>)} order
  * @returns {string}
  * @static
- * @private
  */
-function compileOrderBy(order) {
+function compileOrderByClause(order) {
   // make sure order is array
   if (!_.isArray(order)) order = [order];
 
@@ -100,17 +96,15 @@ function compileOrderBy(order) {
   }).join(', ');
 }
 
-exports.compileOrderBy = compileOrderBy;
-
 /**
- * Compiles and returns a parameterized value SQL expression based on the given keys and tuples.
+ * Compiles and returns a parameterized value SQL expression to use in an INSERT query, based on the given keys and tuples.
  * @param {Array.<string>} keys the array of keys.
  * @param {(object|Array.<object>)} tuples values mapped with keys.
  * @returns {object} with two properties: "sql" and "params".
  * @static
  * @private
  */
-function compileValues(keys, tuples) {
+function compileInsertValues(keys, tuples) {
   var params = [], sql;
 
   // make sure tuples is array
@@ -135,7 +129,7 @@ function compileValues(keys, tuples) {
  * @static
  * @private
  */
-function compileUpdateColumns(columns) {
+function compileDuplicateKeyAssignments(columns) {
   return columns.map(function (column) {
     column = escapeSQL(column);
     return column + ' = VALUES(' + column + ')';
@@ -188,15 +182,15 @@ upsertTemplate = compileTemplate('upsert');
  *   params: [1],
  * }
  */
-function select(options) {
+function compileSelectQuery(options) {
   var sql, params, where, orderBy;
 
-  where = options.selector && compileWhere(options.selector);
-  orderBy = options.order && compileOrderBy(options.order);
+  where = options.selector && compileWhereClause(options.selector);
+  orderBy = options.order && compileOrderByClause(options.order);
   params = where && where.params || [];
 
   sql = selectTemplate({
-    columns: compileColumns(options.columns),
+    columns: compileSelectColumns(options.columns),
     table: options.table,
     where: where && where.sql,
     orderBy: orderBy,
@@ -206,8 +200,6 @@ function select(options) {
 
   return {sql: sql, params: params};
 }
-
-exports.select = select;
 
 /**
  * Compiles and returns a parameterized SELECT COUNT query.
@@ -219,11 +211,11 @@ exports.select = select;
  * @return {object} with "sql" and "params" properties.
  * @static
  */
-function count(options) {
+function compileCountQuery(options) {
   var sql, params, where, orderBy;
 
-  where = options.selector && compileWhere(options.selector);
-  orderBy = options.order && compileOrderBy(options.order);
+  where = options.selector && compileWhereClause(options.selector);
+  orderBy = options.order && compileOrderByClause(options.order);
   params = where && where.params || [];
 
   sql = countTemplate({
@@ -237,8 +229,6 @@ function count(options) {
   return {sql: sql, params: params};
 }
 
-exports.count = count;
-
 /**
  * Compiles and returns a parameterized DELETE statement.
  * @param {object} options query properties.
@@ -249,11 +239,11 @@ exports.count = count;
  * @return {object} with "sql" and "params" properties.
  * @static
  */
-function del(options) {
+function compileDeleteQuery(options) {
   var sql, params, where, orderBy;
 
-  where = options.selector && compileWhere(options.selector);
-  orderBy = options.order && compileOrderBy(options.order);
+  where = options.selector && compileWhereClause(options.selector);
+  orderBy = options.order && compileOrderByClause(options.order);
   params = where && where.params || [];
 
   sql = deleteTemplate({
@@ -266,8 +256,6 @@ function del(options) {
   return {sql: sql, params: params};
 }
 
-exports.del = del;
-
 /**
  * Compiles and returns a parameterized UPSERT statement.
  * @param {object} options query properties.
@@ -278,26 +266,25 @@ exports.del = del;
  * @return {object} with "sql" and "params" properties.
  * @static
  */
-function upsert(options) {
+function compileUpsertQuery(options) {
   var sql, params, values;
 
   // handle optional updateColumns param
   options.updateColumns = options.updateColumns || options.columns;
 
-  values = compileValues(options.columns, options.values);
+  values = compileInsertValues(options.columns, options.values);
   params = values.params;
 
   sql = upsertTemplate({
     table: options.table,
-    columns: compileColumns(options.columns),
+    columns: compileSelectColumns(options.columns),
     values: values.sql,
-    updateColumns: options.updateColumns.length > 0 && compileUpdateColumns(options.updateColumns)
+    duplicateKeyAssignments: options.updateColumns.length > 0 &&
+      compileDuplicateKeyAssignments(options.updateColumns)
   }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
 
   return {sql: sql, params: params};
 }
-
-exports.upsert = upsert;
 
 /**
  * Compiles and returns a parameterized INSERT statement.
@@ -308,19 +295,25 @@ exports.upsert = upsert;
  * @return {object} with "sql" and "params" properties.
  * @static
  */
-function insert(options) {
+function compileInsertQuery(options) {
   var sql, params, values;
 
-  values = compileValues(options.columns, options.values);
+  values = compileInsertValues(options.columns, options.values);
   params = values.params;
 
   sql = insertTemplate({
     table: options.table,
-    columns: compileColumns(options.columns),
+    columns: compileSelectColumns(options.columns),
     values: values.sql
   }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
 
   return {sql: sql, params: params};
 }
 
-exports.insert = insert;
+exports.select = compileSelectQuery;
+exports.insert = compileInsertQuery;
+exports.upsert = compileUpsertQuery;
+exports.del = compileDeleteQuery;
+exports.count = compileCountQuery;
+exports.where = compileWhereClause;
+exports.orderBy = compileOrderByClause;
