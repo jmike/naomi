@@ -87,6 +87,7 @@ Database.prototype.releaseClient = function (client) {
  * @param {Array} params an array of parameter values.
  * @param {object} options query options.
  * @param {boolean} [options.nestTables] set to true to handle overlapping column names.
+ * @param {boolean} [options.timeout] inactivity timeout in millis.
  * @returns {Promise} resolving to the query results.
  * @private
  */
@@ -99,12 +100,7 @@ Database.prototype._query = function (sql, params, options) {
     self.acquireClient(function (err, client) {
       if (err) return reject(err);
 
-      if (options.nestTables) {
-        sql = {
-          sql: sql,
-          nestTables: options.nestTables
-        };
-      }
+      sql = _.assign({sql: sql}, options);
 
       client.query(sql, params, function(err, records) {
         var data;
