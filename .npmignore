@@ -1,4 +1,7 @@
-.git*
 .travis.yml
+.env
+.jshintrc
+.gitignore
+assets/
 test/
 docs/
