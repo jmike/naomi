@@ -2,6 +2,7 @@
 .env
 .jshintrc
 .gitignore
+.idea
 assets/
 test/
 docs/
