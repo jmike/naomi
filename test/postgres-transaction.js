@@ -11,7 +11,7 @@ db = naomi.create('postgres', {
   port: parseInt(process.env.POSTGRES_PORT, 10),
   user: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
-  database: process.env.POSTGRES_SCHEMA
+  database: process.env.POSTGRES_DATABASE
 });
 
 describe('Postgres Transaction', function () {

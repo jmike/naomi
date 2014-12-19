@@ -3,7 +3,13 @@ require('dotenv').load(); // load environmental variables
 var chai = require('chai'),
   naomi = require('../src/naomi'),
   assert = chai.assert,
-  db = naomi.create('mysql');
+  db = naomi.create('mysql', {
+    host: process.env.MYSQL_HOST,
+    port: parseInt(process.env.MYSQL_PORT, 10),
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE
+  });
 
 describe('MySQL Database', function () {
 

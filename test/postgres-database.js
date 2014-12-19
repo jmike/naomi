@@ -3,7 +3,13 @@ require('dotenv').load(); // load environmental variables
 var chai = require('chai'),
   naomi = require('../src/naomi'),
   assert = chai.assert,
-  db = naomi.create('postgres');
+  db = naomi.create('postgres', {
+    host: process.env.POSTGRES_HOST,
+    port: parseInt(process.env.POSTGRES_PORT, 10),
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DATABASE
+  });
 
 describe('Postgres Database', function () {
 

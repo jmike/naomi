@@ -1,19 +1,19 @@
-var events = require('events'),
-  util = require('util'),
-  _ = require('lodash'),
-  Promise = require('bluebird'),
-  Table = require('./Table'),
-  Transaction = require('./Transaction');
+var events = require('events');
+var util = require('util');
+var _ = require('lodash');
+var Promise = require('bluebird');
+var Table = require('./Table');
+var Transaction = require('./Transaction');
 
 /**
  * Constructs a new database of the designated properties.
- * Please note: additional connection properties may apply depending on the database type.
- * @see {@link https://github.com/felixge/node-mysql#connection-options} for MySQL additional properties.
- * @see {@link https://github.com/brianc/node-postgres/wiki/Client#constructor} for Postgres additional properties.
+ * Please note: connection properties may vary depending on the database type.
+ * @see {@link https://github.com/felixge/node-mysql#connection-options} for MySQL connection properties.
+ * @see {@link https://github.com/brianc/node-postgres/wiki/Client#constructor} for Postgres connection properties.
  * @param {object} props connection properties.
- * @param {string} props.host the hostname of the database.
- * @param {(string|number)} props.port the port number of the database.
- * @param {string} props.user the user to access the database.
+ * @param {string} [props.host=localhost] the hostname of the database.
+ * @param {(string|number)} [props.port] the port number of the database.
+ * @param {string} [props.user=root] the user to access the database.
  * @param {string} props.password the password of the user.
  * @param {string} props.database the name of the database.
  * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
@@ -21,6 +21,7 @@ var events = require('events'),
  * @constructor
  */
 function Database(props) {
+  console.log(0, props)
   // make sure connection properties are valid
   if (!_.isObject(props)) {
     throw new Error(
@@ -201,6 +202,7 @@ Database.prototype.query = function (sql, params, options, callback) {
  */
 Database.prototype.beginTransaction = function (callback) {
   var t = new this.Transaction(this);
+
   return t.begin().then(function () {
     return t;
   }).nodeify(callback);

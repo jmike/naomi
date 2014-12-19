@@ -1,12 +1,20 @@
 require('dotenv').load(); // load environmental variables
 
-var _ = require('lodash'),
-  MySQLDatabase = require('./mysql/Database'),
-  PostgresDatabase = require('./postgres/Database');
+var Joi = require('joi');
+var _ = require('lodash');
+var MySQLDatabase = require('./mysql/Database');
+var PostgresDatabase = require('./postgres/Database');
+
+var typeSchema = Joi.string()
+  .strict()
+  .required()
+  .label('database type')
+  .valid(['mysql', 'postgres'])
+  .insensitive();
 
 /**
- * Creates and returns a new database of the designated type.
- * Please note: additional connection properties may apply depending on the database type.
+ * Creates and returns a new Database instance of the designated type.
+ * Please note: connection properties may vary depending on the database type.
  * @see {@link https://github.com/felixge/node-mysql#connection-options} for MySQL additional properties.
  * @see {@link https://github.com/brianc/node-postgres/wiki/Client#constructor} for Postgres additional properties.
  * @param {string} type the database type, i.e. "mysql", "postgres".
@@ -19,38 +27,36 @@ var _ = require('lodash'),
  * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
  * @throws {Error} if params are invalid or unspecified.
  * @returns {Database}
- * @throws {Error} if params are invalid of unspecified.
  * @static
  */
 exports.create = function (type, props) {
+  var validationResult;
+
+  // validate db type
+  validationResult = Joi.validate(type, typeSchema);
+
+  if (validationResult.error) throw validationResult.error;
+  type = validationResult.value;
+
+  // handle optional connection properties
   props = props || {};
 
-  if (/mysql/i.test(type)) {
+  // contruct and return db
+  if (type === 'mysql') {
     return new MySQLDatabase(_.defaults(props, {
-      host: process.env.MYSQL_HOST || 'localhost',
-      port: parseInt(process.env.MYSQL_PORT, 10) || 3306,
-      user: process.env.MYSQL_USER || 'root',
-      password: process.env.MYSQL_PASSWORD || '',
-      database: process.env.MYSQL_DATABASE,
-      connectionLimit: props.poolSize || 10 // connectionLimit used to be poolSize
+      host: process.env.MYSQL_HOST,
+      port: parseInt(process.env.MYSQL_PORT, 10),
+      user: process.env.MYSQL_USER,
+      password: process.env.MYSQL_PASSWORD,
+      database: process.env.MYSQL_DATABASE
     }));
   }
 
-  if (/postgres/i.test(type)) {
-    return new PostgresDatabase(_.defaults(props, {
-      host: process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(process.env.POSTGRES_PORT, 10) || 5432,
-      user: process.env.POSTGRES_USER || 'root',
-      password: process.env.POSTGRES_PASSWORD || '',
-      database: process.env.POSTGRES_DATABASE,
-      connectionLimit: props.poolSize || 10, // connectionLimit used to be poolSize
-      poolIdleTimeout: 30000,
-      reapIntervalMillis: 1000
-    }));
-  }
-
-  throw new Error(
-    'Invalid database type; ' +
-    'expected "mysql" or "postgres", received ' + type
-  );
+  return new PostgresDatabase(_.defaults(props, {
+    host: process.env.POSTGRES_HOST,
+    port: parseInt(process.env.POSTGRES_PORT, 10),
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DATABASE
+  }));
 };

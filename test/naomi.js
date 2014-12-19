@@ -40,11 +40,11 @@ describe('naomi', function () {
     });
 
     it('throws error when type is invalid', function () {
-      assert.throws(function () { naomi.create('invalid'); }, /invalid database type/i);
-      assert.throws(function () { naomi.create(123); }, /invalid database type/i);
-      assert.throws(function () { naomi.create(false); }, /invalid database type/i);
-      assert.throws(function () { naomi.create(null); }, /invalid database type/i);
-      assert.throws(function () { naomi.create({}); }, /invalid database type/i);
+      assert.throws(function () { naomi.create('invalid'); }, /database type must be one of mysql, postgres/i);
+      assert.throws(function () { naomi.create(123); }, /database type must be a string/i);
+      assert.throws(function () { naomi.create(false); }, /database type must be a string/i);
+      assert.throws(function () { naomi.create(null); }, /database type must be a string/i);
+      assert.throws(function () { naomi.create({}); }, /database type must be a string/i);
     });
 
   });

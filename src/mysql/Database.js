@@ -1,21 +1,49 @@
-var  mysql = require('mysql'),
-  _ = require('lodash'),
-  Promise = require('bluebird'),
-  GenericDatabase = require('../Database'),
-  Table = require('./Table'),
-  Transaction = require('./Transaction');
+var  mysql = require('mysql');
+var _ = require('lodash');
+var Joi = require('joi');
+var Promise = require('bluebird');
+var GenericDatabase = require('../Database');
+var Table = require('./Table');
+var Transaction = require('./Transaction');
+
+var propsSchema = Joi.object()
+  .label('connection properties')
+  .keys({
+    host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
+    port: Joi.number().label('port').min(0).max(65536).optional().default(3306),
+    user: Joi.string().label('user').strict().optional().default('root'),
+    password: Joi.string().label('password').strict().required().allow(''),
+    database: Joi.string().label('database name').strict().required(),
+    connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
+  });
 
 /**
- * Constructs a new MySQL Database.
- * @extends {GenericDatabase}
+ * Constructs a new MySQL Database of the designated properties.
+ * @param {object} props connection properties.
+ * @param {string} [props.host=localhost] the hostname of the database.
+ * @param {number} [props.port=3306] the port number of the database.
+ * @param {string} [props.user=root] the user to access the database.
+ * @param {string} props.password the password of the user.
+ * @param {string} props.database the name of the database.
+ * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
+ * @throws {Error} if params are invalid or unspecified.
  * @constructor
  */
-function Database() {
-  GenericDatabase.apply(this, arguments);
+function Database(props) {
+  var validationResult;
+
+  // validate connection properties
+  console.log(props);
+  validationResult = Joi.validate(props, propsSchema);
+
+  if (validationResult.error) throw validationResult.error;
+  props = validationResult.value;
+
+  GenericDatabase.call(this, props);
   this._pool = null;
 }
 
-// MySQL Database extends GenericDatabase
+// @extends GenericDatabase
 Database.prototype = Object.create(GenericDatabase.prototype);
 
 // associate with MySQL Table class
@@ -30,10 +58,10 @@ Database.prototype.Transaction = Transaction;
  * @private
  */
 Database.prototype._connect = function () {
-  var self = this;
+  var _this = this;
 
   return Promise.try(function () {
-    self._pool = mysql.createPool(self.connectionProperties);
+    _this._pool = mysql.createPool(_this.connectionProperties);
     return;
   });
 };
@@ -44,10 +72,11 @@ Database.prototype._connect = function () {
  * @private
  */
 Database.prototype._disconnect = function () {
-  var self = this, resolver;
+  var _this = this;
+  var resolver;
 
   resolver = function (resolve, reject) {
-    self._pool.end(function (err) {
+    _this._pool.end(function (err) {
       if (err) return reject(err);
       resolve();
     });
@@ -58,14 +87,15 @@ Database.prototype._disconnect = function () {
 
 /**
  * Acquires the first available client from pool.
- * @param {function} [callback] an optional callback function.
+ * @param {function} [callback] an optional callback function with (err, client) arguments.
  * @return {Promise} resolving to client.
  */
 Database.prototype.acquireClient = function (callback) {
-  var self = this, resolver;
+  var _this = this;
+  var resolver;
 
   resolver = function (resolve, reject) {
-    self._pool.getConnection(function (err, client) {
+    _this._pool.getConnection(function (err, client) {
       if (err) return reject(err);
       resolve(client);
     });
@@ -76,6 +106,7 @@ Database.prototype.acquireClient = function (callback) {
 
 /**
  * Releases the designated client to pool.
+ * @param {Client} client
  */
 Database.prototype.releaseClient = function (client) {
   client.release();
@@ -92,12 +123,13 @@ Database.prototype.releaseClient = function (client) {
  * @private
  */
 Database.prototype._query = function (sql, params, options) {
-  var self = this, resolver;
+  var _this = this;
+  var resolver;
 
   options = options || {};
 
   resolver = function (resolve, reject) {
-    self.acquireClient(function (err, client) {
+    _this.acquireClient(function (err, client) {
       if (err) return reject(err);
 
       sql = _.assign({sql: sql}, options);
@@ -105,7 +137,7 @@ Database.prototype._query = function (sql, params, options) {
       client.query(sql, params, function(err, records) {
         var data;
 
-        self.releaseClient(client);
+        _this.releaseClient(client);
 
         if (err) return reject(err);
 
@@ -249,8 +281,9 @@ Database.prototype._extractMeta = function () {
  * @private
  */
 Database.prototype._getTables = function () {
-  var schema = this.connectionProperties.database,
-    sql, params;
+  var schema = this.connectionProperties.database;
+  var sql;
+  var params;
 
   sql = 'SHOW FULL TABLES FROM ??;';
   params = [schema];
@@ -270,7 +303,9 @@ Database.prototype._getTables = function () {
  * @private
  */
 Database.prototype._getColumns = function () {
-  var re = /auto_increment/i, sql, params;
+  var re = /auto_increment/i;
+  var sql;
+  var params;
 
   sql = 'SELECT * FROM information_schema.COLUMNS WHERE table_schema = ?;';
   params = [this.connectionProperties.database];
@@ -298,7 +333,8 @@ Database.prototype._getColumns = function () {
  * @private
  */
 Database.prototype._getIndices = function () {
-  var sql, params;
+  var sql;
+  var params;
 
   sql = 'SELECT * FROM information_schema.STATISTICS WHERE table_schema = ?;';
   params = [this.connectionProperties.database];
@@ -321,8 +357,9 @@ Database.prototype._getIndices = function () {
  * @private
  */
 Database.prototype._getForeignKeys = function () {
-  var schema = this.connectionProperties.database,
-    sql, params;
+  var schema = this.connectionProperties.database;
+  var sql;
+  var params;
 
   sql = 'SELECT * FROM information_schema.KEY_COLUMN_USAGE ' +
     'WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ?;';

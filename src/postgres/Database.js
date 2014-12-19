@@ -1,21 +1,50 @@
-var pg = require('pg.js'),
-  createPool = require('generic-pool').Pool,
-  Promise = require('bluebird'),
-  GenericDatabase = require('../Database'),
-  Table = require('./Table'),
-  Transaction = require('./Transaction');
+var pg = require('pg.js');
+var createPool = require('generic-pool').Pool;
+var Promise = require('bluebird');
+var Joi = require('joi');
+var GenericDatabase = require('../Database');
+var Table = require('./Table');
+var Transaction = require('./Transaction');
+
+var propsSchema = Joi.object()
+  .label('connection properties')
+  .keys({
+    host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
+    port: Joi.number().label('port').min(0).max(65536).optional().default(5432),
+    user: Joi.string().label('user').strict().optional().default('root'),
+    password: Joi.string().label('password').strict().required().allow(''),
+    database: Joi.string().label('database name').strict().required(),
+    connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
+    poolIdleTimeout: Joi.number().min(1000).strict().optional().default(30000),
+    reapIntervalMillis: Joi.number().min(1000).strict().optional().default(1000)
+  });
 
 /**
  * Constructs a new Postgres Database.
+ * @param {object} props connection properties.
+ * @param {string} [props.host=localhost] the hostname of the database.
+ * @param {(string|number)} [props.port] the port number of the database.
+ * @param {string} [props.user=root] the user to access the database.
+ * @param {string} props.password the password of the user.
+ * @param {string} props.database the name of the database.
+ * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
  * @extends {GenericDatabase}
  * @constructor
  */
-function Database() {
-  GenericDatabase.apply(this, arguments);
+function Database(props) {
+  var validationResult;
+
+  // validate connection properties
+  validationResult = Joi.validate(props, propsSchema);
+
+  if (validationResult.error) throw validationResult.error;
+  props = validationResult.value;
+
+  GenericDatabase.call(this, props);
   this._pool = null;
 }
 
-// Postgres Database extends GenericDatabase
+// @extends GenericDatabase
 Database.prototype = Object.create(GenericDatabase.prototype);
 
 // associate with Postgres Table class
@@ -30,13 +59,13 @@ Database.prototype.Transaction = Transaction;
  * @private
  */
 Database.prototype._connect = function () {
-  var self = this;
+  var _this = this;
 
   return Promise.try(function () {
-    self._pool = createPool({
+    _this._pool = createPool({
 
       create: function(callback) {
-        var client = new pg.Client(self.connectionProperties);
+        var client = new pg.Client(_this.connectionProperties);
 
         client.connect(function (err) {
           if (err) return callback(err);
@@ -49,9 +78,9 @@ Database.prototype._connect = function () {
       },
 
       min: 2,
-      max: self.connectionProperties.poolSize,
-      idleTimeoutMillis: self.connectionProperties.poolIdleTimeout,
-      reapIntervalMillis: self.connectionProperties.reapIntervalMillis
+      max: _this.connectionProperties.poolSize,
+      idleTimeoutMillis: _this.connectionProperties.poolIdleTimeout,
+      reapIntervalMillis: _this.connectionProperties.reapIntervalMillis
     });
 
     return;
@@ -64,11 +93,11 @@ Database.prototype._connect = function () {
  * @private
  */
 Database.prototype._disconnect = function () {
-  var self = this;
+  var _this = this;
 
   return Promise.try(function () {
-    self._pool.drain(function () {
-      self._pool.destroyAllNow();
+    _this._pool.drain(function () {
+      _this._pool.destroyAllNow();
     });
     return;
   });
@@ -80,10 +109,11 @@ Database.prototype._disconnect = function () {
  * @return {Promise} resolving to client.
  */
 Database.prototype.acquireClient = function (callback) {
-  var self = this, resolver;
+  var _this = this;
+  var resolver;
 
   resolver = function (resolve, reject) {
-    self._pool.acquire(function(err, client) {
+    _this._pool.acquire(function(err, client) {
       if (err) return reject(err);
       resolve(client);
     });
@@ -107,8 +137,8 @@ Database.prototype.releaseClient = function (client) {
  * @return {string}
  */
 Database.prototype.prepareSQL = function (sql) {
-  var re = /\?/g,
-    i = 0;
+  var re = /\?/g;
+  var i = 0;
 
   return sql.replace(re, function () {
     i++;
@@ -124,16 +154,17 @@ Database.prototype.prepareSQL = function (sql) {
  * @private
  */
 Database.prototype._query = function (sql, params) {
-  var self = this, resolver;
+  var _this = this;
+  var resolver;
 
   sql = this.prepareSQL(sql);
 
   resolver = function (resolve, reject) {
-    self.acquireClient(function(err, client) {
+    _this.acquireClient(function(err, client) {
       if (err) return reject(err);
 
       client.query(sql, params, function(err, result) {
-        self.releaseClient(client);
+        _this.releaseClient(client);
 
         if (err) {
           reject(err);
@@ -260,7 +291,8 @@ Database.prototype._extractMeta = function () {
  * @private
  */
 Database.prototype._getTables = function () {
-  var sql, params;
+  var sql;
+  var params;
 
   sql = 'SELECT table_name FROM information_schema.tables ' +
     'WHERE table_type = \'BASE TABLE\' AND table_catalog = $1 ' +
@@ -280,7 +312,8 @@ Database.prototype._getTables = function () {
  * @private
  */
 Database.prototype._getColumns = function () {
-  var sql, params;
+  var sql;
+  var params;
 
   sql = 'SELECT column_name, table_name, data_type, is_nullable, column_default, collation_name, ordinal_position ' +
     'FROM information_schema.columns ' +
@@ -309,7 +342,8 @@ Database.prototype._getColumns = function () {
  * @private
  */
 Database.prototype._getConstraints = function () {
-  var sql, params;
+  var sql;
+  var params;
 
   sql = 'SELECT tc.constraint_name, tc.constraint_type, ccu.table_name, ccu.column_name ' +
     'FROM information_schema.table_constraints AS tc ' +
@@ -335,7 +369,8 @@ Database.prototype._getConstraints = function () {
  * @private
  */
 Database.prototype._getForeignKeys = function () {
-  var sql, params;
+  var sql;
+  var params;
 
   sql = 'SELECT tc.constraint_name, tc.table_name, kcu.column_name, ' +
     'ccu.table_name AS referenced_table_name, ' +
