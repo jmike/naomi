@@ -15,16 +15,8 @@ var typeSchema = Joi.string()
 /**
  * Creates and returns a new Database instance of the designated type.
  * Please note: connection properties may vary depending on the database type.
- * @see {@link https://github.com/felixge/node-mysql#connection-options} for MySQL additional properties.
- * @see {@link https://github.com/brianc/node-postgres/wiki/Client#constructor} for Postgres additional properties.
  * @param {string} type the database type, i.e. "mysql", "postgres".
  * @param {object} [props] connection properties.
- * @param {string} [props.host] the hostname of the database.
- * @param {(string|number)} [props.port] the port number of the database.
- * @param {string} [props.user] the user to access the database.
- * @param {string} [props.password] the password of the user.
- * @param {string} [props.database] the name of the database.
- * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
  * @throws {Error} if params are invalid or unspecified.
  * @returns {Database}
  * @static
