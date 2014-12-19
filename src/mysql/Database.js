@@ -12,7 +12,7 @@ var propsSchema = Joi.object()
     host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
     port: Joi.number().label('port').min(0).max(65536).optional().default(3306),
     user: Joi.string().label('user').strict().optional().default('root'),
-    password: Joi.string().label('password').strict().optional().default(''),
+    password: Joi.string().label('password').strict().optional().default('').allow(''),
     database: Joi.string().label('database name').strict().required(),
     connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
   });
