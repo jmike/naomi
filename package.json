@@ -20,7 +20,7 @@
     "generic-pool": "~2.1.1",
     "handlebars": "^2.0.0",
     "lodash": "~2.4.1",
-    "mysql": "^2.5.2",
+    "mysql": "^2.5.4",
     "pg.js": "^4.1.1"
   },
   "devDependencies": {
