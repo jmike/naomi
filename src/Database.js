@@ -21,7 +21,6 @@ var Transaction = require('./Transaction');
  * @constructor
  */
 function Database(props) {
-  console.log(0, props)
   // make sure connection properties are valid
   if (!_.isObject(props)) {
     throw new Error(
