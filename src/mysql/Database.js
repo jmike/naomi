@@ -1,4 +1,5 @@
-var  mysql = require('mysql');
+var util = require('util');
+var mysql = require('mysql');
 var _ = require('lodash');
 var Joi = require('joi');
 var Promise = require('bluebird');
@@ -33,7 +34,6 @@ function Database(props) {
   var validationResult;
 
   // validate connection properties
-  console.log(props);
   validationResult = Joi.validate(props, propsSchema);
 
   if (validationResult.error) throw validationResult.error;
@@ -44,7 +44,7 @@ function Database(props) {
 }
 
 // @extends GenericDatabase
-Database.prototype = Object.create(GenericDatabase.prototype);
+util.inherits(Database, GenericDatabase);
 
 // associate with MySQL Table class
 Database.prototype.Table = Table;
@@ -54,16 +54,21 @@ Database.prototype.Transaction = Transaction;
 
 /**
  * Attempts to connect to database server using the connection properties supplied at construction time.
+ * @param {function} [callback] an optional callback function with (err) arguments.
  * @returns {Promise}
- * @private
+ * @emits Database#connect
  */
-Database.prototype._connect = function () {
+Database.prototype.connect = function (callback) {
   var _this = this;
+
+  if (this.isConnected) Promise.resolve().nodeify(callback); // already connected
 
   return Promise.try(function () {
     _this._pool = mysql.createPool(_this.connectionProperties);
-    return;
-  });
+  })
+    .then(function () {
+      return GenericDatabase.prototype.connect.call(_this, callback);
+    });
 };
 
 /**

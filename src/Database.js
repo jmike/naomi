@@ -21,25 +21,9 @@ var Transaction = require('./Transaction');
  * @constructor
  */
 function Database(props) {
-  // make sure connection properties are valid
-  if (!_.isObject(props)) {
-    throw new Error(
-      'Invalid connection properties; ' +
-      'expected plain object, received ' + typeof(props)
-    );
-  }
-
-  if (!_.isString(props.database)) {
-    throw new Error(
-      'Invalid database name; ' +
-      'expected string, received ' + typeof(props.database)
-    );
-  }
-
-  // set database properties
+  this.connectionProperties = props;
   this.isConnected = false;
   this.isReady = false;
-  this.connectionProperties = props;
   this._meta = {};
 
   // init the EventEmitter
@@ -58,7 +42,7 @@ function Database(props) {
   });
 }
 
-// Database extends EventEmitter
+// @extends EventEmitter
 util.inherits(Database, events.EventEmitter);
 
 // associate with Table class
@@ -69,32 +53,21 @@ Database.prototype.Transaction = Transaction;
 
 /**
  * Attempts to connect to database server using the connection properties supplied at construction time.
- * @returns {Promise}
- * @private
- */
-Database.prototype._connect = function () {
-  return Promise.resolve();
-};
-
-/**
- * Attempts to connect to database server using the connection properties supplied at construction time.
- * @param {function} [callback] an optional callback function, i.e. function (err) {}.
+ * @param {function} [callback] an optional callback function with (err) arguments.
  * @returns {Promise}
  * @emits Database#connect
  */
 Database.prototype.connect = function (callback) {
-  if (this.isConnected) { // already connected
-    return Promise.resolve().nodeify(callback);
-  }
+  var _this = this;
+  var resolver;
 
-  return this._connect()
-    .bind(this)
-    .then(function () {
-      this.isConnected = true;
-      this.emit('connect');
-      return;
-    })
-    .nodeify(callback);
+  resolver = function (resolve) {
+    _this.isConnected = true;
+    _this.emit('connect');
+    resolve();
+  };
+
+  return new Promise(resolver).nodeify(callback);
 };
 
 /**

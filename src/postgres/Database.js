@@ -1,3 +1,4 @@
+var util = require('util');
 var pg = require('pg.js');
 var createPool = require('generic-pool').Pool;
 var Promise = require('bluebird');
@@ -45,7 +46,7 @@ function Database(props) {
 }
 
 // @extends GenericDatabase
-Database.prototype = Object.create(GenericDatabase.prototype);
+util.inherits(Database, GenericDatabase);
 
 // associate with Postgres Table class
 Database.prototype.Table = Table;
@@ -55,15 +56,17 @@ Database.prototype.Transaction = Transaction;
 
 /**
  * Attempts to connect to database server using the connection properties supplied at construction time.
+ * @param {function} [callback] an optional callback function with (err) arguments.
  * @returns {Promise}
- * @private
+ * @emits Database#connect
  */
-Database.prototype._connect = function () {
+Database.prototype.connect = function (callback) {
   var _this = this;
+
+  if (this.isConnected) Promise.resolve().nodeify(callback); // already connected
 
   return Promise.try(function () {
     _this._pool = createPool({
-
       create: function(callback) {
         var client = new pg.Client(_this.connectionProperties);
 
@@ -72,19 +75,18 @@ Database.prototype._connect = function () {
           callback(null, client);
         });
       },
-
       destroy: function(client) {
         client.end();
       },
-
-      min: 2,
+      min: 1,
       max: _this.connectionProperties.poolSize,
       idleTimeoutMillis: _this.connectionProperties.poolIdleTimeout,
       reapIntervalMillis: _this.connectionProperties.reapIntervalMillis
     });
-
-    return;
-  });
+  })
+    .then(function () {
+      return GenericDatabase.prototype.connect.call(_this, callback);
+    });
 };
 
 /**
