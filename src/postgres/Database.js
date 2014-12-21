@@ -91,18 +91,24 @@ Database.prototype.connect = function (callback) {
 
 /**
  * Gracefully closes any open connection to the database server.
+ * Please note: this instance will become practically useless after calling this method.
+ * @param {function} [callback] an optional callback function with (err) arguments.
  * @returns {Promise}
- * @private
+ * @emits Database#disconnect
  */
-Database.prototype._disconnect = function () {
+Database.prototype._disconnect = function (callback) {
   var _this = this;
+
+  if (!this.isConnected) return Promise.resolve().nodeify(callback); // already disconnected
 
   return Promise.try(function () {
     _this._pool.drain(function () {
       _this._pool.destroyAllNow();
     });
-    return;
-  });
+  })
+    .then(function () {
+      return GenericDatabase.prototype.disconnect.call(_this, callback);
+    });
 };
 
 /**
