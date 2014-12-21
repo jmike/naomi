@@ -96,7 +96,7 @@ Database.prototype.connect = function (callback) {
  * @returns {Promise}
  * @emits Database#disconnect
  */
-Database.prototype._disconnect = function (callback) {
+Database.prototype.disconnect = function (callback) {
   var _this = this;
 
   if (!this.isConnected) return Promise.resolve().nodeify(callback); // already disconnected
