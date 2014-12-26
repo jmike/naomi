@@ -7,25 +7,44 @@ var GenericDatabase = require('../Database');
 var Table = require('./Table');
 var Transaction = require('./Transaction');
 
-var propsSchema = Joi.object()
-  .label('connection properties')
-  .keys({
-    host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
-    port: Joi.number().label('port').min(0).max(65536).optional().default(3306),
-    user: Joi.string().label('user').strict().optional().default('root'),
-    password: Joi.string().label('password').strict().optional().default('').allow(''),
-    database: Joi.string().label('database name').strict().required(),
-    connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
-  });
+var schema = {
+  props: Joi.object()
+    .label('connection properties')
+    .keys({
+      host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
+      port: Joi.number().label('port').min(0).max(65536).optional().default(3306),
+      user: Joi.string().label('user').strict().optional().default('root'),
+      password: Joi.string().label('password').strict().optional().default('').allow(''),
+      database: Joi.string().label('database name').strict().required(),
+      connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
+    }),
+
+  sql: Joi.string()
+    .label('SQL statement')
+    .strict()
+    .required(),
+
+  queryParams: Joi.array()
+    .label('query parameters')
+    .optional(),
+
+  queryOptions: Joi.object()
+    .label('query options')
+    .keys({
+      nestTables: Joi.boolean().label('nestTables').strict().optional(),
+      timeout: Joi.number().label('timeout').min(100).optional()
+    })
+    .optional()
+};
 
 /**
  * Constructs a new MySQL Database of the designated properties.
  * @param {object} props connection properties.
- * @param {string} [props.host=localhost] the hostname of the database.
- * @param {number} [props.port=3306] the port number of the database.
- * @param {string} [props.user=root] the user to access the database.
- * @param {string} props.password the password of the user.
  * @param {string} props.database the name of the database.
+ * @param {string} [props.host=localhost] the hostname of the database.
+ * @param {(number|string)} [props.port=3306] the port number of the database.
+ * @param {string} [props.user=root] the user to access the database.
+ * @param {string} [props.password] the password of the user.
  * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
  * @throws {Error} if params are invalid or unspecified.
  * @constructor
@@ -34,7 +53,7 @@ function Database(props) {
   var validationResult;
 
   // validate connection properties
-  validationResult = Joi.validate(props, propsSchema);
+  validationResult = Joi.validate(props, schema.props);
 
   if (validationResult.error) throw validationResult.error;
   props = validationResult.value;
@@ -125,50 +144,102 @@ Database.prototype.releaseClient = function (client) {
 };
 
 /**
- * Runs the given SQL statement to the database server.
- * @param {string} sql a parameterized SQL statement.
+ * Executes the given parameterized SQL statement, using the supplied db client.
+ * @param {Client} client a db client.
+ * @param {(string|object)} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
- * @param {object} options query options.
- * @param {boolean} [options.nestTables] set to true to handle overlapping column names.
- * @param {boolean} [options.timeout] inactivity timeout in millis.
  * @returns {Promise} resolving to the query results.
  * @private
  */
-Database.prototype._query = function (sql, params, options) {
-  var _this = this;
+Database.prototype._exec = function (client, sql, params) {
   var resolver;
 
-  options = options || {};
-
   resolver = function (resolve, reject) {
-    _this.acquireClient(function (err, client) {
+    client.query(sql, params, function (err, records) {
       if (err) return reject(err);
 
-      sql = _.assign({sql: sql}, options);
+      if (_.isArray(records)) { // SELECT statement
+        resolve(records);
 
-      client.query(sql, params, function(err, records) {
-        var data;
-
-        _this.releaseClient(client);
-
-        if (err) return reject(err);
-
-        if (_.isArray(records)) { // SELECT statement
-          resolve(records);
-
-        } else { // DML statement
-          data = {
-            insertId: records.insertId,
-            affectedRows: records.affectedRows
-          };
-
-          resolve(data);
-        }
-      });
+      } else { // DML statement
+        resolve({
+          insertId: records.insertId,
+          affectedRows: records.affectedRows
+        });
+      }
     });
   };
 
   return new Promise(resolver);
+};
+
+/**
+ * Runs the given SQL statement to the database server.
+ * @param {string} sql a parameterized SQL statement.
+ * @param {Array} params an array of parameter values.
+ * @param {object} [options] query options.
+ * @param {boolean} [options.nestTables] set to true to handle overlapping column names.
+ * @param {boolean} [options.timeout] inactivity timeout in millis.
+ * @param {function} [callback] a callback function, i.e. function(err, records).
+ * @returns {Promise} resolving to the query results.
+ */
+Database.prototype.query = function (sql, params, options, callback) {
+  var _this = this;
+  var validationResult;
+
+  // validate sql
+  validationResult = Joi.validate(sql, schema.sql);
+
+  if (validationResult.error) throw validationResult.error;
+  sql = validationResult.value;
+
+  // validate params
+  if (_.isFunction(params)) {
+    callback = params;
+    options = undefined;
+    params = [];
+  } else if (_.isPlainObject(params)) {
+    callback = options;
+    options = params;
+    params = [];
+  } else if (_.isUndefined(params)) {
+    callback = undefined;
+    options = undefined;
+    params = [];
+  }
+
+  validationResult = Joi.validate(params, schema.queryParams);
+
+  if (validationResult.error) throw validationResult.error;
+  params = validationResult.value;
+
+  // validate options
+  if (_.isFunction(options)) {
+    callback = options;
+    options = {};
+  } else if (_.isUndefined(options)) {
+    callback = undefined;
+    options = {};
+  }
+
+  validationResult = Joi.validate(options, schema.queryOptions);
+
+  if (validationResult.error) throw validationResult.error;
+  options = validationResult.value;
+
+  // execute the query
+  return _this.acquireClient()
+    .then(function (client) {
+      if (!_.isEmpty(options)) {
+        sql = _.assign({sql: sql}, options);
+      }
+
+      return _this._exec(client, sql, params)
+        .finally(function () {
+          return _this.releaseClient(client);
+        });
+    })
+    .nodeify(callback);
 };
 
 /**

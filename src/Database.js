@@ -2,6 +2,7 @@ var events = require('events');
 var util = require('util');
 var _ = require('lodash');
 var Promise = require('bluebird');
+var Joi = require('joi');
 var Table = require('./Table');
 var Transaction = require('./Transaction');
 
@@ -94,66 +95,13 @@ Database.prototype.disconnect = function (callback) {
 /**
  * Runs the given SQL statement to the database server.
  * @param {string} sql a parameterized SQL statement.
- * @param {Array} params an array of parameter values.
- * @param {object} options query options.
- * @returns {Promise} resolving to the query results.
- * @private
- */
-Database.prototype._query = function (sql, params, options) {
-  return Promise.resolve(sql, params, options);
-};
-
-/**
- * Runs the given SQL statement to the database server.
- * @param {string} sql a parameterized SQL statement.
  * @param {Array} [params] an array of parameter values.
  * @param {object} [options] query options.
  * @param {function} [callback] a callback function, i.e. function(err, records).
  * @returns {Promise} resolving to the query results.
  */
 Database.prototype.query = function (sql, params, options, callback) {
-  // validate "sql" param
-  if (!_.isString(sql)) {
-    return Promise.reject('Invalid SQL statement: expected string, received ' + typeof(sql)).nodeify(callback);
-  }
-
-  // console.log(sql);
-
-  // handle optional "params" param
-  if (!_.isArray(params)) {
-
-    if (_.isPlainObject(params)) {
-      options = params;
-    } else if (_.isFunction(params)) {
-      options = undefined;
-      callback = params;
-    } else if (!_.isUndefined(params)) {
-      return Promise.reject('Invalid query parameters: expected Array, received ' + typeof(params)).nodeify(callback);
-    }
-
-    params = [];
-  }
-
-  // handle optional "options" param
-  if (!_.isPlainObject(options)) {
-
-    if (_.isFunction(options)) {
-      callback = options;
-    } else if (!_.isUndefined(options)) {
-      return Promise.reject('Invalid query options: expected plain object, received ' + typeof(options)).nodeify(callback);
-    }
-
-    options = {};
-  }
-
-  // make sure db is connected
-  if (!this.isConnected) {
-    return Promise.reject('Connection is closed - did you forget to call #connect()?')
-      .nodeify(callback);
-  }
-
-  // execute the query
-  return this._query(sql, params, options).nodeify(callback);
+  return Promise.resolve().nodeify(callback);
 };
 
 /**

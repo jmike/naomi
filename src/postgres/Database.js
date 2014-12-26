@@ -1,4 +1,5 @@
 var util = require('util');
+var _ = require('lodash');
 var pg = require('pg.js');
 var createPool = require('generic-pool').Pool;
 var Promise = require('bluebird');
@@ -7,27 +8,42 @@ var GenericDatabase = require('../Database');
 var Table = require('./Table');
 var Transaction = require('./Transaction');
 
-var propsSchema = Joi.object()
-  .label('connection properties')
-  .keys({
-    host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
-    port: Joi.number().label('port').min(0).max(65536).optional().default(5432),
-    user: Joi.string().label('user').strict().optional().default('root'),
-    password: Joi.string().label('password').strict().optional().default('').allow(''),
-    database: Joi.string().label('database name').strict().required(),
-    connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
-    poolIdleTimeout: Joi.number().min(1000).strict().optional().default(30000),
-    reapIntervalMillis: Joi.number().min(1000).strict().optional().default(1000)
-  });
+var schema = {
+  props: Joi.object()
+    .label('connection properties')
+    .keys({
+      host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
+      port: Joi.number().label('port').min(0).max(65536).optional().default(5432),
+      user: Joi.string().label('user').strict().optional().default('root'),
+      password: Joi.string().label('password').strict().optional().default('').allow(''),
+      database: Joi.string().label('database name').strict().required(),
+      connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
+      poolIdleTimeout: Joi.number().min(1000).strict().optional().default(30000),
+      reapIntervalMillis: Joi.number().min(1000).strict().optional().default(1000)
+    }),
+
+  sql: Joi.string()
+    .label('SQL statement')
+    .strict()
+    .required(),
+
+  queryParams: Joi.array()
+    .label('query parameters')
+    .optional(),
+
+  queryOptions: Joi.object()
+    .label('query options')
+    .optional()
+};
 
 /**
  * Constructs a new Postgres Database.
  * @param {object} props connection properties.
+ * @param {string} props.database the name of the database.
  * @param {string} [props.host=localhost] the hostname of the database.
  * @param {(string|number)} [props.port] the port number of the database.
  * @param {string} [props.user=root] the user to access the database.
- * @param {string} props.password the password of the user.
- * @param {string} props.database the name of the database.
+ * @param {string} [props.password] the password of the user.
  * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
  * @extends {GenericDatabase}
  * @constructor
@@ -36,7 +52,7 @@ function Database(props) {
   var validationResult;
 
   // validate connection properties
-  validationResult = Joi.validate(props, propsSchema);
+  validationResult = Joi.validate(props, schema.props);
 
   if (validationResult.error) throw validationResult.error;
   props = validationResult.value;
@@ -137,10 +153,30 @@ Database.prototype.releaseClient = function (client) {
   this._pool.release(client);
 };
 
+/**
+ * Executes the given parameterized SQL statement, using the supplied db client.
+ * @param {Client} client a db client.
+ * @param {string} sql a parameterized SQL statement.
+ * @param {Array} params an array of parameter values.
+ * @returns {Promise} resolving to the query results.
+ * @private
+ */
+Database.prototype._exec = function (client, sql, params) {
+  var resolver;
+
+  resolver = function (resolve, reject) {
+    client.query(sql, params, function(err, result) {
+      if (err) return reject(err);
+      resolve(result.rows);
+    });
+  };
+
+  return new Promise(resolver);
+};
 
 /**
- * Converts "?" to "$1", "$2", etc, according to the order they appear in the given SQL statement.
- * This method provides a compatibility layer with MySQL engine, exposing a uniform language for params.
+ * Converts ? chars to $1, $2, etc, according to the order they appear in the given SQL statement.
+ * This method provides a compatibility layer with MySQL engine, exposing a uniform syntax for params.
  * @param {string} sql a parameterized SQL statement, using "?" to denote param.
  * @return {string}
  */
@@ -158,32 +194,65 @@ Database.prototype.prepareSQL = function (sql) {
  * Runs the given SQL statement to the database server.
  * @param {string} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
+ * @param {object} [options] query options.
+ * @param {function} [callback] a callback function, i.e. function(err, records).
  * @returns {Promise} resolving to the query results.
- * @private
  */
-Database.prototype._query = function (sql, params) {
+Database.prototype.query = function (sql, params, options, callback) {
   var _this = this;
-  var resolver;
+  var validationResult;
 
-  sql = this.prepareSQL(sql);
+  // validate sql
+  validationResult = Joi.validate(sql, schema.sql);
 
-  resolver = function (resolve, reject) {
-    _this.acquireClient(function(err, client) {
-      if (err) return reject(err);
+  if (validationResult.error) throw validationResult.error;
+  sql = validationResult.value;
 
-      client.query(sql, params, function(err, result) {
-        _this.releaseClient(client);
+  // validate params
+  if (_.isFunction(params)) {
+    callback = params;
+    options = undefined;
+    params = [];
+  } else if (_.isPlainObject(params)) {
+    callback = options;
+    options = params;
+    params = [];
+  } else if (_.isUndefined(params)) {
+    callback = undefined;
+    options = undefined;
+    params = [];
+  }
 
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result.rows);
-        }
-      });
-    });
-  };
+  validationResult = Joi.validate(params, schema.queryParams);
 
-  return new Promise(resolver);
+  if (validationResult.error) throw validationResult.error;
+  params = validationResult.value;
+
+  // validate options
+  if (_.isFunction(options)) {
+    callback = options;
+    options = {};
+  } else if (_.isUndefined(options)) {
+    callback = undefined;
+    options = {};
+  }
+
+  validationResult = Joi.validate(options, schema.queryOptions);
+
+  if (validationResult.error) throw validationResult.error;
+  options = validationResult.value;
+
+  // execute the query
+  return _this.acquireClient()
+    .then(function (client) {
+      sql = _this.prepareSQL(sql);
+
+      return _this._exec(client, sql, params)
+        .finally(function () {
+          return _this.releaseClient(client);
+        });
+    })
+    .nodeify(callback);
 };
 
 /**
