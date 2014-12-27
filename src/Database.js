@@ -111,6 +111,7 @@ Database.prototype.disconnect = function (callback) {
  * @param {object} [options] query options.
  * @param {function} [callback] a callback function with (err, records) arguments.
  * @returns {Promise} resolving to an array of params.
+ * @private
  */
 Database.prototype._normalizeQueryParams = function (sql, params, options, callback) {
   var validationResult;
@@ -174,6 +175,16 @@ Database.prototype.query = function (sql, params, options, callback) {
 };
 
 /**
+ * Indicates whether the designated table exists in database.
+ * @param {string} tableName the name of the table.
+ * @param {function} [callback] a callback function with (err, verdict) arguments.
+ * @returns {Promise}
+ */
+Database.prototype.hasTable = function (tableName, callback) {
+  return Promise.resolve().nodeify(callback);
+};
+
+/**
  * Begins a new transaction with this database.
  * @param {function} [callback] a callback function.
  * @returns {Promise} resolving to a new Transaction instance.
@@ -193,16 +204,6 @@ Database.prototype.beginTransaction = function (callback) {
  */
 Database.prototype._extractMeta = function () {
   return {};
-};
-
-/**
- * Indicates whether the designated table exists in database.
- * Please note: this method will always return false until the database is ready.
- * @param {string} tableName the name of the table.
- * @returns {boolean}
- */
-Database.prototype.hasTable = function (tableName) {
-  return this.isReady && this._meta.hasOwnProperty(tableName);
 };
 
 /**

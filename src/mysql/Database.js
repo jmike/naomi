@@ -171,7 +171,9 @@ Database.prototype.query = function (sql, params, options, callback) {
     .spread(function (sql, params, options, callback) {
       return _this.acquireClient()
         .then(function (client) {
-          if (!_.isEmpty(options)) sql = _.assign({sql: sql}, options); // convert sql to object
+          if (!_.isEmpty(options)) {
+            sql = _.assign({sql: sql}, options); // convert sql to object
+          }
 
           return _this._exec(client, sql, params)
             .finally(function () {
@@ -180,6 +182,31 @@ Database.prototype.query = function (sql, params, options, callback) {
         })
         .nodeify(callback);
     });
+};
+
+/**
+ * Indicates whether the designated table exists in database.
+ * @param {string} tableName the name of the table.
+ * @param {function} [callback] a callback function with (err, verdict) arguments.
+ * @returns {Promise}
+ */
+Database.prototype.hasTable = function (tableName, callback) {
+  var sql;
+  var params;
+
+  sql = 'SELECT COUNT(*) AS count ' +
+    'FROM information_schema.tables ' +
+    'WHERE table_schema = ? ' +
+    'AND table_name = ? ' +
+    'AND table_type = \'BASE TABLE\'' +
+    'LIMIT 1;';
+  params = [this.name, tableName];
+
+  return this.query(sql, params)
+    .then(function (records) {
+      return records[0].count === 1;
+    })
+    .nodeify(callback);
 };
 
 /**

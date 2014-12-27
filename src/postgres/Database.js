@@ -201,6 +201,32 @@ Database.prototype.query = function (sql, params, options, callback) {
 };
 
 /**
+ * Indicates whether the designated table exists in database.
+ * @param {string} tableName the name of the table.
+ * @param {function} [callback] a callback function with (err, verdict) arguments.
+ * @returns {Promise}
+ */
+Database.prototype.hasTable = function (tableName, callback) {
+  var sql;
+  var params;
+
+  sql = 'SELECT COUNT(*) AS count ' +
+    'FROM information_schema.tables ' +
+    'WHERE table_catalog = $1 ' +
+    'AND table_schema NOT IN (\'pg_catalog\', \'information_schema\')' +
+    'AND table_name = $2' +
+    'AND table_type = \'BASE TABLE\'' +
+    'LIMIT 1;';
+  params = [this.name, tableName];
+
+  return this.query(sql, params)
+    .then(function (records) {
+      return records[0].count === 1;
+    })
+    .nodeify(callback);
+};
+
+/**
  * Extracts and returns meta-data from database.
  * @returns {Promise} resolving to a meta-data object.
  * @private
