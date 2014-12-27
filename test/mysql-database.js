@@ -131,8 +131,20 @@ describe('MySQL Database', function () {
 
   describe('#hasTable()', function () {
 
-    it('returns true on "employees"', function () {
-      assert.strictEqual(db.hasTable('employees'), true);
+    it('returns true on "employees"', function (done) {
+      db.hasTable('employees', function (err, hasTable) {
+        if (err) return done(err);
+        assert.strictEqual(hasTable, true);
+        done();
+      });
+    });
+
+    it('returns false on "foobar"', function (done) {
+      db.hasTable('foobar', function (err, hasTable) {
+        if (err) return done(err);
+        assert.strictEqual(hasTable, false);
+        done();
+      });
     });
 
   });
