@@ -6,6 +6,17 @@ var Joi = require('joi');
 var Table = require('./Table');
 var Transaction = require('./Transaction');
 
+var sqlSchema = Joi.string()
+  .label('SQL statement')
+  .strict()
+  .required();
+
+var queryParamsSchema = Joi.array()
+  .label('query parameters');
+
+var queryOptionsSchema = Joi.object()
+  .label('query options');
+
 /**
  * Constructs a new database of the designated properties.
  * Please note: connection properties may vary depending on the database type.
@@ -93,11 +104,68 @@ Database.prototype.disconnect = function (callback) {
 };
 
 /**
+ * Normalizes the given query params.
+ * @param {string} sql a parameterized SQL statement.
+ * @param {Array} [params] an array of parameter values.
+ * @param {object} [options] query options.
+ * @param {function} [callback] a callback function with (err, records) arguments.
+ * @returns {Promise} resolving to an array of params.
+ */
+Database.prototype._normalizeQueryParams = function (sql, params, options, callback) {
+  var validationResult;
+
+  // validate sql
+  validationResult = Joi.validate(sql, sqlSchema);
+
+  if (validationResult.error) throw validationResult.error;
+  sql = validationResult.value;
+
+  // normalize params
+  if (_.isFunction(params)) {
+    callback = params;
+    options = undefined;
+    params = [];
+  } else if (_.isPlainObject(params)) {
+    callback = options;
+    options = params;
+    params = [];
+  } else if (_.isUndefined(params)) {
+    callback = undefined;
+    options = undefined;
+    params = [];
+  }
+
+  // validate params
+  validationResult = Joi.validate(params, queryParamsSchema);
+
+  if (validationResult.error) throw validationResult.error;
+  params = validationResult.value;
+
+  // normalize options
+  if (_.isFunction(options)) {
+    callback = options;
+    options = {};
+  } else if (_.isUndefined(options)) {
+    callback = undefined;
+    options = {};
+  }
+
+  // validate options
+  validationResult = Joi.validate(options, queryOptionsSchema);
+
+  if (validationResult.error) throw validationResult.error;
+  options = validationResult.value;
+
+  // return
+  return Promise.resolve([sql, params, options, callback]);
+};
+
+/**
  * Runs the given SQL statement to the database server.
  * @param {string} sql a parameterized SQL statement.
  * @param {Array} [params] an array of parameter values.
  * @param {object} [options] query options.
- * @param {function} [callback] a callback function, i.e. function(err, records).
+ * @param {function} [callback] a callback function with (err, records) arguments.
  * @returns {Promise} resolving to the query results.
  */
 Database.prototype.query = function (sql, params, options, callback) {

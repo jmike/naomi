@@ -7,35 +7,16 @@ var GenericDatabase = require('../Database');
 var Table = require('./Table');
 var Transaction = require('./Transaction');
 
-var schema = {
-  props: Joi.object()
-    .label('connection properties')
-    .keys({
-      host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
-      port: Joi.number().label('port').min(0).max(65536).optional().default(3306),
-      user: Joi.string().label('user').strict().optional().default('root'),
-      password: Joi.string().label('password').strict().optional().default('').allow(''),
-      database: Joi.string().label('database name').strict().required(),
-      connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
-    }),
-
-  sql: Joi.string()
-    .label('SQL statement')
-    .strict()
-    .required(),
-
-  queryParams: Joi.array()
-    .label('query parameters')
-    .optional(),
-
-  queryOptions: Joi.object()
-    .label('query options')
-    .keys({
-      nestTables: Joi.boolean().label('nestTables').strict().optional(),
-      timeout: Joi.number().label('timeout').min(100).optional()
-    })
-    .optional()
-};
+var propsSchema = Joi.object()
+  .label('connection properties')
+  .keys({
+    host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
+    port: Joi.number().label('port').min(0).max(65536).optional().default(3306),
+    user: Joi.string().label('user').strict().optional().default('root'),
+    password: Joi.string().label('password').strict().optional().default('').allow(''),
+    database: Joi.string().label('database name').strict().required(),
+    connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
+  });
 
 /**
  * Constructs a new MySQL Database of the designated properties.
@@ -53,7 +34,7 @@ function Database(props) {
   var validationResult;
 
   // validate connection properties
-  validationResult = Joi.validate(props, schema.props);
+  validationResult = Joi.validate(props, propsSchema);
 
   if (validationResult.error) throw validationResult.error;
   props = validationResult.value;
@@ -185,61 +166,20 @@ Database.prototype._exec = function (client, sql, params) {
  */
 Database.prototype.query = function (sql, params, options, callback) {
   var _this = this;
-  var validationResult;
 
-  // validate sql
-  validationResult = Joi.validate(sql, schema.sql);
+  return _this._normalizeQueryParams(sql, params, options, callback)
+    .spread(function (sql, params, options, callback) {
+      return _this.acquireClient()
+        .then(function (client) {
+          if (!_.isEmpty(options)) sql = _.assign({sql: sql}, options); // convert sql to object
 
-  if (validationResult.error) throw validationResult.error;
-  sql = validationResult.value;
-
-  // validate params
-  if (_.isFunction(params)) {
-    callback = params;
-    options = undefined;
-    params = [];
-  } else if (_.isPlainObject(params)) {
-    callback = options;
-    options = params;
-    params = [];
-  } else if (_.isUndefined(params)) {
-    callback = undefined;
-    options = undefined;
-    params = [];
-  }
-
-  validationResult = Joi.validate(params, schema.queryParams);
-
-  if (validationResult.error) throw validationResult.error;
-  params = validationResult.value;
-
-  // validate options
-  if (_.isFunction(options)) {
-    callback = options;
-    options = {};
-  } else if (_.isUndefined(options)) {
-    callback = undefined;
-    options = {};
-  }
-
-  validationResult = Joi.validate(options, schema.queryOptions);
-
-  if (validationResult.error) throw validationResult.error;
-  options = validationResult.value;
-
-  // execute the query
-  return _this.acquireClient()
-    .then(function (client) {
-      if (!_.isEmpty(options)) {
-        sql = _.assign({sql: sql}, options);
-      }
-
-      return _this._exec(client, sql, params)
-        .finally(function () {
-          return _this.releaseClient(client);
-        });
-    })
-    .nodeify(callback);
+          return _this._exec(client, sql, params)
+            .finally(function () {
+              return _this.releaseClient(client);
+            });
+        })
+        .nodeify(callback);
+    });
 };
 
 /**
