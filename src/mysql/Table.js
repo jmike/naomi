@@ -32,7 +32,7 @@ Table.prototype._getColumns = function (callback) {
     'COLLATION_NAME, COLUMN_COMMENT, ORDINAL_POSITION',
     'FROM information_schema.COLUMNS',
     'WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?;'
-  ].join(' ') + ';';
+  ].join(' ');
   params = [this.db.name, this.name];
 
   return this.db.query(sql, params)
@@ -67,8 +67,8 @@ Table.prototype._getForeignKeys = function (callback) {
     'SELECT CONSTRAINT_NAME, TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME',
     'FROM information_schema.KEY_COLUMN_USAGE',
     'WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ?',
-    'AND (TABLE_NAME = ? OR REFERENCED_TABLE_NAME = ?)'
-  ].join(' ') + ';';
+    'AND (TABLE_NAME = ? OR REFERENCED_TABLE_NAME = ?);'
+  ].join(' ');
   params = [this.db.name, this.db.name, this.name, this.name];
 
   return this.db.query(sql, params)

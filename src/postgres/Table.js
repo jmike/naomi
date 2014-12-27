@@ -26,12 +26,16 @@ Table.prototype._getColumns = function (callback) {
   var sql;
   var params;
 
-  sql = 'SELECT column_name, data_type, is_nullable, column_default, collation_name, ordinal_position ' +
-    'FROM information_schema.columns ' +
-    'WHERE table_catalog = $1 AND table_schema = $2;';
+  sql = [
+    'SELECT column_name, data_type, is_nullable, column_default, collation_name, ordinal_position',
+    'FROM information_schema.columns',
+    'WHERE table_catalog = $1',
+    'AND table_schema NOT IN (\'pg_catalog\', \'information_schema\')',
+    'AND table_name = $2;'
+  ].join(' ');
   params = [this.db.name, this.name];
 
-  return this.query(sql, params)
+  return this.db.query(sql, params)
     .then(function (records) {
       return records.map(function (record) {
         return {
@@ -58,21 +62,20 @@ Table.prototype._getForeignKeys = function (callback) {
   var sql;
   var params;
 
-  sql = 'SELECT ' +
-    'tc.constraint_name, ' +
-    'tc.table_name, ' +
-    'kcu.column_name, ' +
-    'ccu.table_name AS referenced_table_name, ' +
-    'ccu.column_name AS referenced_column_name ' +
-    'FROM information_schema.table_constraints AS tc ' +
-    'INNER JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name ' +
-    'INNER JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name ' +
-    'WHERE tc.constraint_type = \'FOREIGN KEY\' ' +
-    'AND tc.constraint_catalog = $1; ' +
-    'AND (tc.table_name = $2 OR ccu.table_name = $2);';
+  sql = [
+    'SELECT tc.constraint_name, tc.table_name, kcu.column_name,',
+    'ccu.table_name AS referenced_table_name,',
+    'ccu.column_name AS referenced_column_name',
+    'FROM information_schema.table_constraints AS tc',
+    'INNER JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name',
+    'INNER JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name',
+    'WHERE tc.constraint_type = \'FOREIGN KEY\'',
+    'AND tc.constraint_catalog = $1',
+    'AND (tc.table_name = $2 OR ccu.table_name = $2);'
+  ].join(' ');
   params = [this.db.name, this.name];
 
-  return this.query(sql, params, {})
+  return this.db.query(sql, params, {})
     .then(function (records) {
       return records.map(function (record) {
         return {
