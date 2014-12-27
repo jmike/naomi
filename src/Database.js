@@ -34,6 +34,7 @@ var queryOptionsSchema = Joi.object()
  */
 function Database(props) {
   this.connectionProperties = props;
+  this.name = props.database;
   this.isConnected = false;
   this.isReady = false;
   this._meta = {};

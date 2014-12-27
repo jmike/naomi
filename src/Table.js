@@ -1,16 +1,17 @@
-var Promise = require('bluebird'),
-  _ = require('lodash'),
-  operators = ['=', '==', '===', '!=', '!==', '<>', '>', '>=', '<', '<=', '~'];
+var Promise = require('bluebird');
+var _ = require('lodash');
+
+var operators = ['=', '==', '===', '!=', '!==', '<>', '>', '>=', '<', '<=', '~'];
 
 /**
- * Constructs a new Table refencing the designated table name in the specified Database.
+ * Constructs a new Table instance.
  * @param {Database} db the database that the table belongs to.
- * @param {string} table the name of the table.
+ * @param {string} name the name of the table.
  * @constructor
  */
-function Table (db, table) {
+function Table (db, name) {
+  this.name = name;
   this._db = db;
-  this._table = table;
   this._columns = {};
   this._primaryKey = [];
   this._uniqueKeys = {};
@@ -25,11 +26,20 @@ function Table (db, table) {
 }
 
 /**
+ * Retrieves column meta-data from database.
+ * @param {function} [callback] an optional callback function with (err, columns) arguments.
+ * @returns {Promise}
+ */
+Table.prototype.getColumns = function (callback) {
+  return Promise.resolve({}).nodeify(callback);
+};
+
+/**
  * Loads table metadata from database.
  * @private
  */
 Table.prototype._loadMeta = function () {
-  var meta = this._db.getTableMeta(this._table);
+  var meta = this._db.getTableMeta(this.name);
 
   if (meta) {
     this._columns = meta.columns;
@@ -78,8 +88,8 @@ Table.prototype.isPrimaryKey = function () {
  * table.isUniqueKey('pid');
  */
 Table.prototype.isUniqueKey = function () {
-  var columns = Array.prototype.slice.call(arguments, 0),
-    verdict = false;
+  var columns = Array.prototype.slice.call(arguments, 0);
+  var verdict = false;
 
   _.forOwn(this._uniqueKeys, function (v) {
     verdict = _.xor(v, columns).length === 0;
@@ -100,8 +110,8 @@ Table.prototype.isUniqueKey = function () {
  * table.isIndexKey('firstName', 'lastName');
  */
 Table.prototype.isIndexKey = function () {
-  var columns = Array.prototype.slice.call(arguments, 0),
-    verdict = false;
+  var columns = Array.prototype.slice.call(arguments, 0);
+  var verdict = false;
 
   _.forOwn(this._indexKeys, function (v) {
     verdict = _.xor(v, columns).length === 0;
@@ -171,7 +181,7 @@ Table.prototype._parseSelector = function (selector, level) {
       if (!this.hasColumn(k)) {
         throw new Error(
           'Invalid query selector; ' +
-          'column ' + k + ' does not exist in table ' + this._table
+          'column ' + k + ' does not exist in table ' + this.name
         );
       }
 
@@ -215,9 +225,11 @@ Table.prototype._parseSelector = function (selector, level) {
  * tables._parseOrder([{'name': 'desc'}, 'id']);
  */
 Table.prototype._parseOrder = function (order) {
-  var re = /^(asc|desc)$/i,
-    obj = {},
-    keys, k, v;
+  var re = /^(asc|desc)$/i;
+  var obj = {};
+  var keys;
+  var k;
+  var v;
 
   // check if order is object, i.e. standard format
   if (_.isPlainObject(order)) {
@@ -232,7 +244,7 @@ Table.prototype._parseOrder = function (order) {
     v = order[k];
 
     if (!this.hasColumn(k)) {
-      throw new Error('Invalid query order: column "' + k + '" cannot be found in table "' + this._table + '"');
+      throw new Error('Invalid query order: column "' + k + '" cannot be found in table "' + this.name + '"');
     }
 
     if (!re.test(v)) {
@@ -330,7 +342,7 @@ Table.prototype._parseAttributes = function (attrs, level) {
       if (!this.hasColumn(column)) {
         throw new Error(
           'Invalid record attributes; ' +
-          'column ' + column + ' does not exist in table ' + this._table
+          'column ' + column + ' does not exist in table ' + this.name
         );
       }
     }, this);
@@ -376,7 +388,8 @@ Table.prototype._get = function (options) {
  * @returns {Promise} resolving to an Array.<object> of records.
  */
 Table.prototype.get = function (selector, options, callback) {
-  var self = this, resolver;
+  var _this = this;
+  var resolver;
 
   // handle optional "options" param
   if (!_.isPlainObject(options)) {
@@ -391,27 +404,27 @@ Table.prototype.get = function (selector, options, callback) {
   }
 
   resolver = function (resolve, reject) {
-    if (!self._db.hasTable(self._table)) {
-      return reject('Table "' + self._table + '" cannot be found in database');
+    if (!_this._db.hasTable(_this.name)) {
+      return reject('Table "' + _this.name + '" cannot be found in database');
     }
 
     try {
-      if (selector) options.selector = self._parseSelector(selector);
-      if (options.order) options.order = self._parseOrder(options.order);
-      if (options.limit) options.limit = self._parseLimit(options.limit);
-      if (options.offset) options.offset = self._parseOffset(options.offset);
+      if (selector) options.selector = _this._parseSelector(selector);
+      if (options.order) options.order = _this._parseOrder(options.order);
+      if (options.limit) options.limit = _this._parseLimit(options.limit);
+      if (options.offset) options.offset = _this._parseOffset(options.offset);
     } catch (err) {
       return reject(err);
     }
 
-    resolve(self._get(options));
+    resolve(_this._get(options));
   };
 
   return new Promise(function(resolve, reject) {
-    if (self._db.isReady) {
+    if (_this._db.isReady) {
       resolver(resolve, reject);
     } else { // delay until ready
-      self._db.once('ready', function () {
+      _this._db.once('ready', function () {
         resolver(resolve, reject);
       });
     }
@@ -440,7 +453,8 @@ Table.prototype._count = function (options) {
  * @returns {Promise} resolving to the count of records.
  */
 Table.prototype.count = function (selector, options, callback) {
-  var self = this, resolver;
+  var _this = this;
+  var resolver;
 
   // handle optional "options" param
   if (!_.isPlainObject(options)) {
@@ -455,26 +469,26 @@ Table.prototype.count = function (selector, options, callback) {
   }
 
   resolver = function (resolve, reject) {
-    if (!self._db.hasTable(self._table)) {
-      return reject('Table "' + self._table + '" cannot be found in database');
+    if (!_this._db.hasTable(_this.name)) {
+      return reject('Table "' + _this.name + '" cannot be found in database');
     }
 
     try {
-      if (selector) options.selector = self._parseSelector(selector);
-      if (options.limit) options.limit = self._parseLimit(options.limit);
-      if (options.offset) options.offset = self._parseOffset(options.offset);
+      if (selector) options.selector = _this._parseSelector(selector);
+      if (options.limit) options.limit = _this._parseLimit(options.limit);
+      if (options.offset) options.offset = _this._parseOffset(options.offset);
     } catch (err) {
       return reject(err);
     }
 
-    resolve(self._count(options));
+    resolve(_this._count(options));
   };
 
   return new Promise(function(resolve, reject) {
-    if (self._db.isReady) {
+    if (_this._db.isReady) {
       resolver(resolve, reject);
     } else { // delay until ready
-      self._db.once('ready', function () {
+      _this._db.once('ready', function () {
         resolver(resolve, reject);
       });
     }
@@ -503,7 +517,8 @@ Table.prototype._del = function (options) {
  * @returns {Promise}
  */
 Table.prototype.del = function (selector, options, callback) {
-  var self = this, resolver;
+  var _this = this;
+  var resolver;
 
   // handle optional "options" param
   if (!_.isPlainObject(options)) {
@@ -518,26 +533,26 @@ Table.prototype.del = function (selector, options, callback) {
   }
 
   resolver = function (resolve, reject) {
-    if (!self._db.hasTable(self._table)) {
-      return reject('Table "' + self._table + '" cannot be found in database');
+    if (!_this._db.hasTable(_this.name)) {
+      return reject('Table "' + _this.name + '" cannot be found in database');
     }
 
     try {
-      if (selector) options.selector = self._parseSelector(selector);
-      if (options.order) options.order = self._parseOrder(options.order);
-      if (options.limit) options.limit = self._parseLimit(options.limit);
+      if (selector) options.selector = _this._parseSelector(selector);
+      if (options.order) options.order = _this._parseOrder(options.order);
+      if (options.limit) options.limit = _this._parseLimit(options.limit);
     } catch (err) {
       return reject(err);
     }
 
-    resolve(self._del(options));
+    resolve(_this._del(options));
   };
 
   return new Promise(function(resolve, reject) {
-    if (self._db.isReady) {
+    if (_this._db.isReady) {
       resolver(resolve, reject);
     } else { // delay until ready
-      self._db.once('ready', function () {
+      _this._db.once('ready', function () {
         resolver(resolve, reject);
       });
     }
@@ -560,36 +575,37 @@ Table.prototype._set = function (attrs) {
  * @returns {Promise} resolving to the primary key of the created/updated record(s).
  */
 Table.prototype.set = function (attrs, callback) {
-  var self = this, resolver;
+  var _this = this;
+  var resolver;
 
   resolver = function (resolve, reject) {
     var values;
 
     // make sure table exists in database
-    if (!self._db.hasTable(self._table)) {
-      return reject('Table "' + self._table + '" cannot be found in database');
+    if (!_this._db.hasTable(_this.name)) {
+      return reject('Table "' + _this.name + '" cannot be found in database');
     }
 
     try {
       if (_.isArray(attrs)) {
         values = attrs.map(function (e) {
-          return self._parseAttributes(e);
+          return _this._parseAttributes(e);
         });
       } else {
-        values = self._parseAttributes(attrs);
+        values = _this._parseAttributes(attrs);
       }
     } catch (err) {
       return reject(err);
     }
 
-    resolve(self._set(values));
+    resolve(_this._set(values));
   };
 
   return new Promise(function(resolve, reject) {
-    if (self._db.isReady) {
+    if (_this._db.isReady) {
       resolver(resolve, reject);
     } else { // delay until ready
-      self._db.once('ready', function () {
+      _this._db.once('ready', function () {
         resolver(resolve, reject);
       });
     }
@@ -612,30 +628,31 @@ Table.prototype._add = function (attrs) {
  * @returns {Promise} resolving to the primary key of the created record(s).
  */
 Table.prototype.add = function (attrs, callback) {
-  var self = this, resolver;
+  var _this = this;
+  var resolver;
 
   resolver = function (resolve, reject) {
     var values;
 
     // make sure table exists in database
-    if (!self._db.hasTable(self._table)) {
-      return reject(new Error('Table "' + self._table + '" cannot be found in database'));
+    if (!_this._db.hasTable(_this.name)) {
+      return reject(new Error('Table "' + _this.name + '" cannot be found in database'));
     }
 
     try {
-      values = self._parseAttributes(attrs);
+      values = _this._parseAttributes(attrs);
     } catch (err) {
       return reject(err);
     }
 
-    resolve(self._add(values));
+    resolve(_this._add(values));
   };
 
   return new Promise(function(resolve, reject) {
-    if (self._db.isReady) {
+    if (_this._db.isReady) {
       resolver(resolve, reject);
     } else { // delay until ready
-      self._db.once('ready', function () {
+      _this._db.once('ready', function () {
         resolver(resolve, reject);
       });
     }
@@ -649,7 +666,7 @@ Table.prototype.add = function (attrs, callback) {
 //  * @param {Function} callback a callback function i.e. function(error, data).
 //  */
 // Table.prototype.getRelated = function (table, selector, callback) {
-//   var self = this,
+//   var _this = this,
 //     sql, params, path, whereClause;
 //
 //   // postpone if not ready
@@ -659,8 +676,8 @@ Table.prototype.add = function (attrs, callback) {
 //   }
 //
 //   // make sure table exists in db
-//   if (!this._db.hasTable(this._table)) return callback(
-//     new Error('Table "' + this._table + '" cannot be found in database')
+//   if (!this._db.hasTable(this.name)) return callback(
+//     new Error('Table "' + this.name + '" cannot be found in database')
 //   );
 //
 //   // make sure related table exists in db
@@ -685,7 +702,7 @@ Table.prototype.add = function (attrs, callback) {
 //         if (i === 0) return 'FROM `' + table + '`';
 //
 //         ref = path[i - 1];
-//         constraints = self._db.getTableMeta(table).related[ref];
+//         constraints = _this._db.getTableMeta(table).related[ref];
 //
 //         return 'INNER JOIN `' + table + '` ON ' +
 //           Object.keys(constraints)

@@ -1,7 +1,8 @@
-var _ = require('lodash'),
-  Promise = require('bluebird'),
-  GenericTable = require('../Table'),
-  querybuilder = require('./querybuilder');
+var util = require('util');
+var _ = require('lodash');
+var Promise = require('bluebird');
+var GenericTable = require('../Table');
+var querybuilder = require('./querybuilder');
 
 /**
  * Constructs a new Postgres Table.
@@ -12,8 +13,49 @@ function Table () {
   GenericTable.apply(this, arguments);
 }
 
-// Table extends GenericTable
-Table.prototype = Object.create(GenericTable.prototype);
+// @extends GenericTable
+util.inherits(Table, GenericTable);
+
+/**
+ * Retrieves column meta-data from database.
+ * @param {function} [callback] an optional callback function with (err, columns) arguments.
+ * @returns {Promise} resolving to an array of column properties.
+ */
+Table.prototype.getColumns = function (callback) {
+  var re = /auto_increment/i;
+  var sql;
+  var params;
+
+  sql = 'SELECT ' +
+    'COLUMN_NAME, ' +
+    'DATA_TYPE, ' +
+    'IS_NULLABLE, ' +
+    'EXTRA, ' +
+    'COLUMN_DEFAULT, ' +
+    'COLLATION_NAME, ' +
+    'COLUMN_COMMENT, ' +
+    'ORDINAL_POSITION ' +
+    'FROM information_schema.COLUMNS ' +
+    'WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?;';
+  params = [this._db.name, this.name];
+
+  return this._db.query(sql, params)
+    .then(function (records) {
+      return records.map(function (record) {
+        return {
+          name: record.COLUMN_NAME,
+          type: record.DATA_TYPE,
+          isNullable: record.IS_NULLABLE === 'YES',
+          isAutoInc: re.test(record.EXTRA),
+          default: record.COLUMN_DEFAULT,
+          collation: record.COLLATION_NAME,
+          comment: (record.COLUMN_COMMENT === '') ? null : record.COLUMN_COMMENT,
+          position: record.ORDINAL_POSITION - 1 // zero-indexed
+        };
+      });
+    })
+    .nodeify(callback);
+};
 
 /**
  * Retrieves the designated record(s) from this table.
@@ -27,7 +69,7 @@ Table.prototype = Object.create(GenericTable.prototype);
 Table.prototype._get = function (options) {
   var query;
 
-  options.table = this._table;
+  options.table = this.name;
   options.columns = Object.keys(this._columns);
   query = querybuilder.select(options);
 
@@ -45,7 +87,7 @@ Table.prototype._get = function (options) {
 Table.prototype._count = function (options) {
   var query;
 
-  options.table = this._table;
+  options.table = this.name;
   query = querybuilder.count(options);
 
   return this._db.query(query.sql, query.params).then(function (records) {
@@ -64,7 +106,7 @@ Table.prototype._count = function (options) {
 Table.prototype._del = function (options) {
   var query;
 
-  options.table = this._table;
+  options.table = this.name;
   query = querybuilder.del(options);
 
   return this._db.query(query.sql, query.params).then(function () {
@@ -89,7 +131,7 @@ Table.prototype._set = function (attrs) {
 
   // compile upsert query
   query = querybuilder.upsert({
-    table: this._table,
+    table: this.name,
     columns: columns,
     values: attrs,
     updateColumns: updateColumns
@@ -134,7 +176,7 @@ Table.prototype._add = function (attrs) {
 
   // compile query
   query = querybuilder.insert({
-    table: this._table,
+    table: this.name,
     columns: columns,
     values: attrs
   });

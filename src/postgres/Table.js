@@ -1,7 +1,8 @@
-var Promise = require('bluebird'),
-  _ = require('lodash'),
-  GenericTable = require('../Table'),
-  querybuilder = require('./querybuilder');
+var util = require('util');
+var Promise = require('bluebird');
+var _ = require('lodash');
+var GenericTable = require('../Table');
+var querybuilder = require('./querybuilder');
 
 /**
  * Constructs a new Postgres Table.
@@ -12,8 +13,39 @@ function Table () {
   GenericTable.apply(this, arguments);
 }
 
-// Table extends GenericTable
-Table.prototype = Object.create(GenericTable.prototype);
+// @extends GenericTable
+util.inherits(Table, GenericTable);
+
+/**
+ * Retrieves column meta-data from database.
+ * @param {function} [callback] an optional callback function with (err, columns) arguments.
+ * @returns {Promise} resolving to an array of column properties.
+ */
+Table.prototype.getColumns = function (callback) {
+  var sql;
+  var params;
+
+  sql = 'SELECT column_name, data_type, is_nullable, column_default, collation_name, ordinal_position ' +
+    'FROM information_schema.columns ' +
+    'WHERE table_catalog = $1 AND table_schema = $2;';
+  params = [this._db.name, this.name];
+
+  return this.query(sql, params)
+    .then(function (records) {
+      return records.map(function (record) {
+        return {
+          name: record.column_name,
+          type: record.data_type,
+          isNullable: record.is_nullable === 'YES',
+          default: record.column_default,
+          collation: record.collation_name,
+          comment: '', // TODO: extract comments
+          position: record.ordinal_position - 1 // zero-indexed
+        };
+      });
+    })
+    .nodeify(callback);
+};
 
 /**
  * Retrieves the designated record(s) from this table.
@@ -27,7 +59,7 @@ Table.prototype = Object.create(GenericTable.prototype);
 Table.prototype._get = function (options) {
   var query;
 
-  options.table = this._table;
+  options.table = this.name;
   options.columns = Object.keys(this._columns);
   query = querybuilder.select(options);
 
@@ -45,7 +77,7 @@ Table.prototype._get = function (options) {
 Table.prototype._count = function (options) {
   var self = this, resolver, query;
 
-  options.table = this._table;
+  options.table = this.name;
   query = querybuilder.count(options);
 
   resolver = function (resolve, reject) {
@@ -70,7 +102,7 @@ Table.prototype._count = function (options) {
 Table.prototype._del = function (options) {
   var self = this, resolver, query;
 
-  options.table = this._table;
+  options.table = this.name;
   query = querybuilder.del(options);
 
   resolver = function (resolve, reject) {
@@ -136,7 +168,7 @@ Table.prototype._set = function (attrs) {
   identifier = this._extractIdentifier(columns);
 
   query = querybuilder.upsert({
-    table: this._table,
+    table: this.name,
     columns: columns,
     values: attrs,
     updateColumns: updateColumns,
@@ -146,7 +178,7 @@ Table.prototype._set = function (attrs) {
 
   resolver = function (resolve, reject) {
     self._db.beginTransaction().then(function () {
-      return this.query('LOCK TABLE "' + self._table + '" IN SHARE ROW EXCLUSIVE MODE;');
+      return this.query('LOCK TABLE "' + self.name + '" IN SHARE ROW EXCLUSIVE MODE;');
     }).then(function () {
       return this.query(query.sql, query.params);
     }).then(function (records) {
@@ -170,7 +202,7 @@ Table.prototype._add = function (attrs) {
   var self = this, query, resolver;
 
   query = querybuilder.insert({
-    table: this._table,
+    table: this.name,
     columns: Object.keys(attrs),
     values: attrs,
     returnColumns: this._primaryKey
