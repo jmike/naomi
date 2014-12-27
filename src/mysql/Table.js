@@ -20,8 +20,9 @@ util.inherits(Table, GenericTable);
  * Retrieves column meta-data from database.
  * @param {function} [callback] an optional callback function with (err, columns) arguments.
  * @returns {Promise} resolving to an array of column properties.
+ * @private
  */
-Table.prototype.getColumns = function (callback) {
+Table.prototype._getColumns = function (callback) {
   var re = /auto_increment/i;
   var sql;
   var params;
@@ -30,9 +31,9 @@ Table.prototype.getColumns = function (callback) {
     'COLUMN_COMMENT, ORDINAL_POSITION ' +
     'FROM information_schema.COLUMNS ' +
     'WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?;';
-  params = [this._db.name, this.name];
+  params = [this.db.name, this.name];
 
-  return this._db.query(sql, params)
+  return this.db.query(sql, params)
     .then(function (records) {
       return records.map(function (record) {
         return {
@@ -54,24 +55,26 @@ Table.prototype.getColumns = function (callback) {
  * Retrieves foreign key meta-data from database.
  * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
  * @returns {Promise}
+ * @private
  */
-Table.prototype.getForeignKeys = function (callback) {
+Table.prototype._getForeignKeys = function (callback) {
   var sql;
   var params;
 
-  sql = 'SELECT INDEX_NAME, TABLE_NAME, COLUMN_NAME, NON_UNIQUE ' +
+  sql = 'SELECT CONSTRAINT_NAME, TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME ' +
     'FROM information_schema.STATISTICS ' +
     'WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?;';
-  params = [this._db.name, this.name];
+  params = [this.db.name, this.name];
 
-  return this.query(sql, params, {})
+  return this.query(sql, params)
     .then(function (records) {
       return records.map(function (record) {
         return {
-          key: record.INDEX_NAME,
+          key: record.CONSTRAINT_NAME,
           table: record.TABLE_NAME,
           column: record.COLUMN_NAME,
-          isUnique: record.NON_UNIQUE === 0
+          refTable: record.REFERENCED_TABLE_NAME,
+          refColumn: record.REFERENCED_COLUMN_NAME
         };
       });
     })
@@ -94,7 +97,7 @@ Table.prototype._get = function (options) {
   options.columns = Object.keys(this._columns);
   query = querybuilder.select(options);
 
-  return this._db.query(query.sql, query.params);
+  return this.db.query(query.sql, query.params);
 };
 
 /**
@@ -111,7 +114,7 @@ Table.prototype._count = function (options) {
   options.table = this.name;
   query = querybuilder.count(options);
 
-  return this._db.query(query.sql, query.params).then(function (records) {
+  return this.db.query(query.sql, query.params).then(function (records) {
     return records[0].count || 0;
   });
 };
@@ -130,7 +133,7 @@ Table.prototype._del = function (options) {
   options.table = this.name;
   query = querybuilder.del(options);
 
-  return this._db.query(query.sql, query.params).then(function () {
+  return this.db.query(query.sql, query.params).then(function () {
     return; // void
   });
 };
@@ -159,7 +162,7 @@ Table.prototype._set = function (attrs) {
   });
 
   // run query
-  return this._db.query(query.sql, query.params)
+  return this.db.query(query.sql, query.params)
     .then(function (result) {
       var primaryKey, isSimpleAutoInc, insertedRows, funct;
 
@@ -203,7 +206,7 @@ Table.prototype._add = function (attrs) {
   });
 
   // run query
-  return this._db.query(query.sql, query.params)
+  return this.db.query(query.sql, query.params)
     .then(function (result) {
       var primaryKey, isSimpleAutoInc, funct;
 

@@ -20,15 +20,16 @@ util.inherits(Table, GenericTable);
  * Retrieves column meta-data from database.
  * @param {function} [callback] an optional callback function with (err, columns) arguments.
  * @returns {Promise} resolving to an array of column properties.
+ * @private
  */
-Table.prototype.getColumns = function (callback) {
+Table.prototype._getColumns = function (callback) {
   var sql;
   var params;
 
   sql = 'SELECT column_name, data_type, is_nullable, column_default, collation_name, ordinal_position ' +
     'FROM information_schema.columns ' +
     'WHERE table_catalog = $1 AND table_schema = $2;';
-  params = [this._db.name, this.name];
+  params = [this.db.name, this.name];
 
   return this.query(sql, params)
     .then(function (records) {
@@ -51,8 +52,9 @@ Table.prototype.getColumns = function (callback) {
  * Retrieves foreign key meta-data from database.
  * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
  * @returns {Promise}
+ * @private
  */
-Table.prototype.getForeignKeys = function (callback) {
+Table.prototype._getForeignKeys = function (callback) {
   var sql;
   var params;
 
@@ -68,7 +70,7 @@ Table.prototype.getForeignKeys = function (callback) {
     'WHERE tc.constraint_type = \'FOREIGN KEY\' ' +
     'AND tc.constraint_catalog = $1; ' +
     'AND (tc.table_name = $2 OR ccu.table_name = $2);';
-  params = [this._db.name, this.name];
+  params = [this.db.name, this.name];
 
   return this.query(sql, params, {})
     .then(function (records) {
@@ -101,7 +103,7 @@ Table.prototype._get = function (options) {
   options.columns = Object.keys(this._columns);
   query = querybuilder.select(options);
 
-  return this._db.query(query.sql, query.params);
+  return this.db.query(query.sql, query.params);
 };
 
 /**
@@ -119,7 +121,7 @@ Table.prototype._count = function (options) {
   query = querybuilder.count(options);
 
   resolver = function (resolve, reject) {
-    self._db.query(query.sql, query.params).then(function (records) {
+    self.db.query(query.sql, query.params).then(function (records) {
       resolve(records[0].count | 0);
     }).catch(function (err) {
       reject(err);
@@ -144,7 +146,7 @@ Table.prototype._del = function (options) {
   query = querybuilder.del(options);
 
   resolver = function (resolve, reject) {
-    self._db.query(query.sql, query.params).then(function () {
+    self.db.query(query.sql, query.params).then(function () {
       resolve();
     }).catch(function (err) {
       reject(err);
@@ -215,7 +217,7 @@ Table.prototype._set = function (attrs) {
   });
 
   resolver = function (resolve, reject) {
-    self._db.beginTransaction().then(function () {
+    self.db.beginTransaction().then(function () {
       return this.query('LOCK TABLE "' + self.name + '" IN SHARE ROW EXCLUSIVE MODE;');
     }).then(function () {
       return this.query(query.sql, query.params);
@@ -237,7 +239,9 @@ Table.prototype._set = function (attrs) {
  * @returns {Promise} resolving to the primary key of the created record(s).
  */
 Table.prototype._add = function (attrs) {
-  var self = this, query, resolver;
+  var self = this;
+  var query;
+  var resolver;
 
   query = querybuilder.insert({
     table: this.name,
@@ -247,7 +251,7 @@ Table.prototype._add = function (attrs) {
   });
 
   resolver = function (resolve, reject) {
-    self._db.query(query.sql, query.params).then(function (records) {
+    self.db.query(query.sql, query.params).then(function (records) {
       resolve(records[0]);
     }).catch(function (err) {
       reject(err);
