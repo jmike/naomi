@@ -194,17 +194,19 @@ Database.prototype.hasTable = function (tableName, callback) {
   var sql;
   var params;
 
-  sql = 'SELECT COUNT(*) AS count ' +
-    'FROM information_schema.tables ' +
-    'WHERE table_schema = ? ' +
-    'AND table_name = ? ' +
-    'AND table_type = \'BASE TABLE\'' +
-    'LIMIT 1;';
+  sql = [
+    'SELECT table_name AS count',
+    'FROM information_schema.tables',
+    'WHERE table_schema = ?',
+    'AND table_name = ?',
+    'AND table_type = \'BASE TABLE\'',
+    'LIMIT 1;'
+  ].join(' ');
   params = [this.name, tableName];
 
   return this.query(sql, params)
     .then(function (records) {
-      return records[0].count === 1;
+      return records.length === 1;
     })
     .nodeify(callback);
 };

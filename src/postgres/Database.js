@@ -210,18 +210,20 @@ Database.prototype.hasTable = function (tableName, callback) {
   var sql;
   var params;
 
-  sql = 'SELECT COUNT(*) AS count ' +
-    'FROM information_schema.tables ' +
-    'WHERE table_catalog = $1 ' +
-    'AND table_schema NOT IN (\'pg_catalog\', \'information_schema\')' +
-    'AND table_name = $2' +
-    'AND table_type = \'BASE TABLE\'' +
-    'LIMIT 1;';
+  sql = [
+    'SELECT table_name',
+    'FROM information_schema.tables',
+    'WHERE table_catalog = $1',
+    'AND table_schema NOT IN (\'pg_catalog\', \'information_schema\')',
+    'AND table_name = $2',
+    'AND table_type = \'BASE TABLE\'',
+    'LIMIT 1;'
+  ].join(' ');
   params = [this.name, tableName];
 
   return this.query(sql, params)
     .then(function (records) {
-      return records[0].count === 1;
+      return records.length === 1;
     })
     .nodeify(callback);
 };
