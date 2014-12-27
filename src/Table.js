@@ -31,7 +31,16 @@ function Table (db, name) {
  * @returns {Promise}
  */
 Table.prototype.getColumns = function (callback) {
-  return Promise.resolve({}).nodeify(callback);
+  return Promise.resolve([]).nodeify(callback);
+};
+
+/**
+ * Retrieves foreign key meta-data from database.
+ * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
+ * @returns {Promise}
+ */
+Table.prototype.getForeignKeys = function (callback) {
+  return Promise.resolve([]).nodeify(callback);
 };
 
 /**

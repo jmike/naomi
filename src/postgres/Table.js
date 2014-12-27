@@ -48,6 +48,44 @@ Table.prototype.getColumns = function (callback) {
 };
 
 /**
+ * Retrieves foreign key meta-data from database.
+ * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
+ * @returns {Promise}
+ */
+Table.prototype.getForeignKeys = function (callback) {
+  var sql;
+  var params;
+
+  sql = 'SELECT ' +
+    'tc.constraint_name, ' +
+    'tc.table_name, ' +
+    'kcu.column_name, ' +
+    'ccu.table_name AS referenced_table_name, ' +
+    'ccu.column_name AS referenced_column_name ' +
+    'FROM information_schema.table_constraints AS tc ' +
+    'INNER JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name ' +
+    'INNER JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name ' +
+    'WHERE tc.constraint_type = \'FOREIGN KEY\' ' +
+    'AND tc.constraint_catalog = $1; ' +
+    'AND (tc.table_name = $2 OR ccu.table_name = $2);';
+  params = [this._db.name, this.name];
+
+  return this.query(sql, params, {})
+    .then(function (records) {
+      return records.map(function (record) {
+        return {
+          key: record.constraint_name,
+          table: record.table_name,
+          column: record.column_name,
+          refTable: record.referenced_table_name,
+          refColumn: record.referenced_column_name
+        };
+      });
+    })
+    .nodeify(callback);
+};
+
+/**
  * Retrieves the designated record(s) from this table.
  * @param {object} options query options.
  * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.

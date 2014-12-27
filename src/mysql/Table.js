@@ -26,15 +26,8 @@ Table.prototype.getColumns = function (callback) {
   var sql;
   var params;
 
-  sql = 'SELECT ' +
-    'COLUMN_NAME, ' +
-    'DATA_TYPE, ' +
-    'IS_NULLABLE, ' +
-    'EXTRA, ' +
-    'COLUMN_DEFAULT, ' +
-    'COLLATION_NAME, ' +
-    'COLUMN_COMMENT, ' +
-    'ORDINAL_POSITION ' +
+  sql = 'SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, EXTRA, COLUMN_DEFAULT, COLLATION_NAME, ' +
+    'COLUMN_COMMENT, ORDINAL_POSITION ' +
     'FROM information_schema.COLUMNS ' +
     'WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?;';
   params = [this._db.name, this.name];
@@ -51,6 +44,34 @@ Table.prototype.getColumns = function (callback) {
           collation: record.COLLATION_NAME,
           comment: (record.COLUMN_COMMENT === '') ? null : record.COLUMN_COMMENT,
           position: record.ORDINAL_POSITION - 1 // zero-indexed
+        };
+      });
+    })
+    .nodeify(callback);
+};
+
+/**
+ * Retrieves foreign key meta-data from database.
+ * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
+ * @returns {Promise}
+ */
+Table.prototype.getForeignKeys = function (callback) {
+  var sql;
+  var params;
+
+  sql = 'SELECT INDEX_NAME, TABLE_NAME, COLUMN_NAME, NON_UNIQUE ' +
+    'FROM information_schema.STATISTICS ' +
+    'WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?;';
+  params = [this._db.name, this.name];
+
+  return this.query(sql, params, {})
+    .then(function (records) {
+      return records.map(function (record) {
+        return {
+          key: record.INDEX_NAME,
+          table: record.TABLE_NAME,
+          column: record.COLUMN_NAME,
+          isUnique: record.NON_UNIQUE === 0
         };
       });
     })
