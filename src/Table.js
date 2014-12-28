@@ -1,3 +1,5 @@
+var EventEmitter = require('events').EventEmitter;
+var util = require('util');
 var Promise = require('bluebird');
 var _ = require('lodash');
 
@@ -12,52 +14,92 @@ var operators = ['=', '==', '===', '!=', '!==', '<>', '>', '>=', '<', '<=', '~']
 function Table (db, name) {
   this.name = name;
   this.db = db;
-  this.columns = {};
-  this._primaryKey = [];
-  this._uniqueKeys = {};
-  this._indexKeys = {};
+  this.columns = [];
+  this.primaryKey = [];
+  this.uniqueKeys = {};
+  this.indexKeys = {};
+  this.isReady = false;
+
+  // init the EventEmitter
+  EventEmitter.call(this);
+  this.setMaxListeners(99);
 
   // load metadata
-  if (db.isReady) {
+  if (db.isConnected) {
     this._loadMeta();
   } else { // async
-    db.on('ready', this._loadMeta.bind(this));
+    db.on('connect', this._loadMeta.bind(this));
   }
 }
 
+// @extends EventEmitter
+util.inherits(Table, EventEmitter);
+
 /**
- * Retrieves column meta-data from database.
+ * Retrieves column metadata from database.
  * @param {function} [callback] an optional callback function with (err, columns) arguments.
  * @returns {Promise}
  * @private
  */
 Table.prototype._getColumns = function (callback) {
-  return Promise.resolve([]).nodeify(callback);
+  return Promise.resolve().nodeify(callback);
 };
 
 /**
- * Retrieves foreign key meta-data from database.
+ * Retrieves primary key from database.
+ * @param {function} [callback] an optional callback function with (err, primaryKey) arguments.
+ * @returns {Promise}
+ * @private
+ */
+Table.prototype._getPrimaryKey = function (callback) {
+  return Promise.resolve().nodeify(callback);
+};
+
+/**
+ * Retrieves unique keys from database.
+ * @param {function} [callback] an optional callback function with (err, uniqueKeys) arguments.
+ * @returns {Promise}
+ * @private
+ */
+Table.prototype._getUniqueKeys = function (callback) {
+  return Promise.resolve().nodeify(callback);
+};
+
+/**
+ * Retrieves foreign key metadata from database.
  * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
  * @returns {Promise}
  * @private
  */
 Table.prototype._getForeignKeys = function (callback) {
-  return Promise.resolve([]).nodeify(callback);
+  return Promise.resolve().nodeify(callback);
 };
 
 /**
  * Loads table metadata from database.
+ * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
+ * @returns {Promise}
+ * @emits Database#ready
  * @private
  */
-Table.prototype._loadMeta = function () {
-  var meta = this.db.getTableMeta(this.name);
+Table.prototype._loadMeta = function (callback) {
+  var _this = this;
 
-  if (meta) {
-    this._columns = meta.columns;
-    this._primaryKey = meta.primaryKey;
-    this._uniqueKeys = meta.uniqueKeys;
-    this._indexKeys = meta.indexKeys;
-  }
+  return Promise.props({
+    columns: this._getColumns(),
+    primaryKey: this._getPrimaryKey(),
+    uniqueKeys: this._getUniqueKeys(),
+    // indices: this._getIndices(),
+    foreignKeys: this._getForeignKeys()
+  })
+    .then(function(results) {
+      _this.columns = results.columns;
+      _this.primaryKey = results.primaryKey;
+      _this.uniqueKeys = results.uniqueKeys;
+      _this.isReady = true;
+      _this.emit('ready');
+    })
+    .nodeify(callback);
 };
 
 /**
@@ -70,7 +112,9 @@ Table.prototype._loadMeta = function () {
  * table.hasColumn('id');
  */
 Table.prototype.hasColumn = function (name) {
-  return this._columns.hasOwnProperty(name);
+  return this.columns.some(function (column) {
+    return column.name === name;
+  });
 };
 
 /**
@@ -85,7 +129,7 @@ Table.prototype.hasColumn = function (name) {
  */
 Table.prototype.isPrimaryKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0);
-  return _.xor(this._primaryKey, columns).length === 0;
+  return _.xor(this.primaryKey, columns).length === 0;
 };
 
 /**
@@ -100,14 +144,9 @@ Table.prototype.isPrimaryKey = function () {
  */
 Table.prototype.isUniqueKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0);
-  var verdict = false;
-
-  _.forOwn(this._uniqueKeys, function (v) {
-    verdict = _.xor(v, columns).length === 0;
-    return !verdict; // exit once verdict is true (return false breaks the loop)
+  return _.some(this.uniqueKeys, function (e) {
+    return _.xor(e, columns).length === 0;
   });
-
-  return verdict;
 };
 
 /**
@@ -122,14 +161,9 @@ Table.prototype.isUniqueKey = function () {
  */
 Table.prototype.isIndexKey = function () {
   var columns = Array.prototype.slice.call(arguments, 0);
-  var verdict = false;
-
-  _.forOwn(this._indexKeys, function (v) {
-    verdict = _.xor(v, columns).length === 0;
-    return !verdict; // exit once verdict is true (return false breaks the loop)
+  return _.some(this.indexKeys, function (e) {
+    return _.xor(e, columns).length === 0;
   });
-
-  return verdict;
 };
 
 /**
@@ -142,8 +176,9 @@ Table.prototype.isIndexKey = function () {
  * table.isAutoInc('id');
  */
 Table.prototype.isAutoInc = function (columnName) {
-  var column = this._columns[columnName];
-  return column && column.isAutoInc;
+  return this.columns.some(function (column) {
+    return column.isAutoInc && column.name === columnName;
+  });
 };
 
 /**
@@ -209,14 +244,14 @@ Table.prototype._parseSelector = function (selector, level) {
 
   // check if selector is number, string, date or boolean
   if (_.isNumber(selector) || _.isString(selector) || _.isDate(selector) || _.isBoolean(selector)) { // plain value selector
-    if (this._primaryKey.length !== 1) {
+    if (this.primaryKey.length !== 1) {
       throw new Error(
         'Invalid query selector; ' +
         'primary key is compound or non existent, thus plain value selectors are useless'
       );
     }
 
-    obj[this._primaryKey[0]] = {'=': selector};
+    obj[this.primaryKey[0]] = {'=': selector};
     return obj;
   }
 

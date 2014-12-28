@@ -17,8 +17,7 @@ describe('Postgres Table', function () {
   describe('@connected', function () {
 
     before(function (done) {
-      db.once('ready', done);
-      db.connect();
+      db.connect(done);
     });
 
     after(function (done) {
@@ -29,40 +28,8 @@ describe('Postgres Table', function () {
 
       var employees = db.extend('employees');
 
-      describe('#_getColumns()', function () {
-
-        it('returns valid columns', function (done) {
-          employees._getColumns(function (err, columns) {
-            if (err) return done(err);
-            assert.isArray(columns);
-            assert.lengthOf(columns, 4);
-            assert.isObject(columns[0]);
-            assert.strictEqual(columns[0].name, 'id');
-            assert.isObject(columns[1]);
-            assert.strictEqual(columns[1].name, 'firstname');
-            assert.isObject(columns[2]);
-            assert.strictEqual(columns[2].name, 'lastname');
-            assert.isObject(columns[3]);
-            assert.strictEqual(columns[3].name, 'age');
-            done();
-          });
-        });
-
-      });
-
-      describe('#_getForeignKeys()', function () {
-
-        it('returns valid foreign keys', function (done) {
-          employees._getForeignKeys(function (err, foreignKeys) {
-            if (err) return done(err);
-            assert.isArray(foreignKeys);
-            assert.lengthOf(foreignKeys, 1);
-            assert.isObject(foreignKeys[0]);
-            assert.strictEqual(foreignKeys[0].key, 'fk_companyEmployee_employee');
-            done();
-          });
-        });
-
+      before(function (done) {
+        employees.once('ready', done);
       });
 
       describe('#isPrimaryKey()', function () {

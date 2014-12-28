@@ -45,10 +45,77 @@ Table.prototype._getColumns = function (callback) {
           isNullable: record.is_nullable === 'YES',
           default: record.column_default,
           collation: record.collation_name,
-          comment: '', // TODO: extract comments
-          position: record.ordinal_position - 1 // zero-indexed
+          comment: '' // TODO: extract comments
         };
       });
+    })
+    .nodeify(callback);
+};
+
+/**
+ * Retrieves primary key from database.
+ * @param {function} [callback] an optional callback function with (err, primaryKey) arguments.
+ * @returns {Promise}
+ * @private
+ */
+Table.prototype._getPrimaryKey = function (callback) {
+  var sql;
+  var params;
+
+  sql = [
+    'SELECT kcu.column_name',
+    'FROM information_schema.table_constraints AS tc',
+    'INNER JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name',
+    'INNER JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name',
+    'WHERE tc.constraint_catalog = $1',
+    'AND tc.table_schema NOT IN (\'pg_catalog\', \'information_schema\')',
+    'AND tc.table_name = $2',
+    'AND tc.constraint_type = \'PRIMARY KEY\'',
+    'ORDER BY ordinal_position ASC;'
+  ].join(' ');
+  params = [this.db.name, this.name];
+
+  return this.db.query(sql, params)
+    .then(function (records) {
+      return records.map(function (record) {
+        return record.column_name;
+      });
+    })
+    .nodeify(callback);
+};
+
+/**
+ * Retrieves unique keys from database.
+ * @param {function} [callback] an optional callback function with (err, uniqueKeys) arguments.
+ * @returns {Promise}
+ * @private
+ */
+Table.prototype._getUniqueKeys = function (callback) {
+  var sql;
+  var params;
+
+  sql = [
+    'SELECT tc.constraint_name, kcu.column_name',
+    'FROM information_schema.table_constraints AS tc',
+    'INNER JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name',
+    'WHERE tc.constraint_catalog = $1',
+    'AND tc.table_schema NOT IN (\'pg_catalog\', \'information_schema\')',
+    'AND tc.table_name = $2',
+    'AND tc.constraint_type = \'UNIQUE\'',
+    'ORDER BY tc.constraint_name ASC, ordinal_position ASC;'
+  ].join(' ');
+  params = [this.db.name, this.name];
+
+  return this.db.query(sql, params)
+    .then(function (records) {
+      var uniqueKeys = {};
+
+      records.forEach(function (record) {
+        uniqueKeys[record.constraint_name] = uniqueKeys[record.constraint_name] || [];
+        uniqueKeys[record.constraint_name].push(record.column_name);
+      });
+
+      return uniqueKeys;
     })
     .nodeify(callback);
 };
@@ -104,7 +171,7 @@ Table.prototype._get = function (options) {
   var query;
 
   options.table = this.name;
-  options.columns = Object.keys(this._columns);
+  options.columns = Object.keys(this.columns);
   query = querybuilder.select(options);
 
   return this.db.query(query.sql, query.params);
@@ -169,14 +236,14 @@ Table.prototype._extractIdentifier = function (columns) {
   var updateKeys = [], arr;
 
   // set primary key intersection
-  arr = _.intersection(columns, this._primaryKey);
+  arr = _.intersection(columns, this.primaryKey);
 
-  if (arr.length === this._primaryKey.length) {
+  if (arr.length === this.primaryKey.length) {
     updateKeys.push(arr);
   }
 
   // set unique keys intersection
-  _.forOwn(this._uniqueKeys, function (uniqueKey) {
+  _.forOwn(this.uniqueKeys, function (uniqueKey) {
     arr = _.intersection(columns, uniqueKey);
 
     if (arr.length === uniqueKey.length) {
@@ -208,7 +275,7 @@ Table.prototype._set = function (attrs) {
   }
 
   columns = Object.keys(attrs);
-  updateColumns = _.difference(columns, this._primaryKey);
+  updateColumns = _.difference(columns, this.primaryKey);
   identifier = this._extractIdentifier(columns);
 
   query = querybuilder.upsert({
@@ -217,7 +284,7 @@ Table.prototype._set = function (attrs) {
     values: attrs,
     updateColumns: updateColumns,
     identifier: identifier,
-    returnColumns: this._primaryKey
+    returnColumns: this.primaryKey
   });
 
   resolver = function (resolve, reject) {
@@ -251,7 +318,7 @@ Table.prototype._add = function (attrs) {
     table: this.name,
     columns: Object.keys(attrs),
     values: attrs,
-    returnColumns: this._primaryKey
+    returnColumns: this.primaryKey
   });
 
   resolver = function (resolve, reject) {

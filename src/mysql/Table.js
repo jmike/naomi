@@ -1,6 +1,5 @@
 var util = require('util');
 var _ = require('lodash');
-var Promise = require('bluebird');
 var GenericTable = require('../Table');
 var querybuilder = require('./querybuilder');
 
@@ -28,11 +27,12 @@ Table.prototype._getColumns = function (callback) {
   var params;
 
   sql = [
-    'SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, EXTRA, COLUMN_DEFAULT,',
-    'COLLATION_NAME, COLUMN_COMMENT, ORDINAL_POSITION',
+    'SELECT `COLUMN_NAME`, `DATA_TYPE`, `IS_NULLABLE`, `EXTRA`, `COLUMN_DEFAULT`,',
+    '`COLLATION_NAME`, `COLUMN_COMMENT`, `ORDINAL_POSITION`',
     'FROM information_schema.COLUMNS',
-    'WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?',
-    'ORDER BY ORDINAL_POSITION ASC;'
+    'WHERE `TABLE_SCHEMA` = ?',
+    'AND `TABLE_NAME` = ?',
+    'ORDER BY `ORDINAL_POSITION` ASC;'
   ].join(' ');
   params = [this.db.name, this.name];
 
@@ -46,10 +46,73 @@ Table.prototype._getColumns = function (callback) {
           isAutoInc: re.test(record.EXTRA),
           default: record.COLUMN_DEFAULT,
           collation: record.COLLATION_NAME,
-          comment: (record.COLUMN_COMMENT === '') ? null : record.COLUMN_COMMENT,
-          position: record.ORDINAL_POSITION - 1 // zero-indexed
+          comment: (record.COLUMN_COMMENT === '') ? null : record.COLUMN_COMMENT
         };
       });
+    })
+    .nodeify(callback);
+};
+
+/**
+ * Retrieves primary key from database.
+ * @param {function} [callback] an optional callback function with (err, primaryKey) arguments.
+ * @returns {Promise}
+ * @private
+ */
+Table.prototype._getPrimaryKey = function (callback) {
+  var sql;
+  var params;
+
+  sql = [
+    'SELECT `COLUMN_NAME`',
+    'FROM information_schema.STATISTICS',
+    'WHERE `TABLE_SCHEMA` = ?',
+    'AND `TABLE_NAME` = ?',
+    'AND `INDEX_NAME` = \'PRIMARY\'',
+    'ORDER BY `SEQ_IN_INDEX` ASC;'
+  ].join(' ');
+  params = [this.db.name, this.name];
+
+  return this.db.query(sql, params)
+    .then(function (records) {
+      return records.map(function (record) {
+        return record.COLUMN_NAME;
+      });
+    })
+    .nodeify(callback);
+};
+
+/**
+ * Retrieves unique keys from database.
+ * @param {function} [callback] an optional callback function with (err, uniqueKeys) arguments.
+ * @returns {Promise}
+ * @private
+ */
+Table.prototype._getUniqueKeys = function (callback) {
+  var sql;
+  var params;
+
+  sql = [
+    'SELECT `INDEX_NAME`, `COLUMN_NAME`',
+    'FROM information_schema.STATISTICS',
+    'WHERE `TABLE_SCHEMA` = ?',
+    'AND `TABLE_NAME` = ?',
+    'AND `INDEX_NAME` != \'PRIMARY\'',
+    'AND `NON_UNIQUE` = 0',
+    'ORDER BY `SEQ_IN_INDEX` ASC;'
+  ].join(' ');
+  params = [this.db.name, this.name];
+
+  return this.db.query(sql, params)
+    .then(function (records) {
+      var uniqueKeys = {};
+
+      records.forEach(function (record) {
+        uniqueKeys[record.INDEX_NAME] = uniqueKeys[record.INDEX_NAME] || [];
+        uniqueKeys[record.INDEX_NAME].push(record.COLUMN_NAME);
+      });
+
+      return uniqueKeys;
     })
     .nodeify(callback);
 };
@@ -100,7 +163,7 @@ Table.prototype._get = function (options) {
   var query;
 
   options.table = this.name;
-  options.columns = Object.keys(this._columns);
+  options.columns = Object.keys(this.columns);
   query = querybuilder.select(options);
 
   return this.db.query(query.sql, query.params);
@@ -157,7 +220,7 @@ Table.prototype._set = function (attrs) {
   columns = _.isArray(attrs) ? Object.keys(attrs[0]) : Object.keys(attrs);
 
   // calculate updateColumns
-  updateColumns = _.difference(columns, this._primaryKey);
+  updateColumns = _.difference(columns, this.primaryKey);
 
   // compile upsert query
   query = querybuilder.upsert({
@@ -172,7 +235,7 @@ Table.prototype._set = function (attrs) {
     .then(function (result) {
       var primaryKey, isSimpleAutoInc, insertedRows, funct;
 
-      primaryKey = self._primaryKey; // note: primaryKey is array
+      primaryKey = self.primaryKey; // note: primaryKey is array
       isSimpleAutoInc = primaryKey.length === 1 && self.isAutoInc(primaryKey[0]);
       insertedRows = 0;
 
@@ -216,7 +279,7 @@ Table.prototype._add = function (attrs) {
     .then(function (result) {
       var primaryKey, isSimpleAutoInc, funct;
 
-      primaryKey = self._primaryKey; // note: primaryKey is array
+      primaryKey = self.primaryKey; // note: primaryKey is array
       isSimpleAutoInc = primaryKey.length === 1 && self.isAutoInc(primaryKey[0]);
 
       funct = function (obj, i) {
