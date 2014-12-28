@@ -17,7 +17,7 @@ function Table () {
 util.inherits(Table, GenericTable);
 
 /**
- * Retrieves column meta-data from database.
+ * Retrieves column metadata from database.
  * @param {function} [callback] an optional callback function with (err, columns) arguments.
  * @returns {Promise} resolving to an array of column properties.
  * @private
@@ -31,7 +31,8 @@ Table.prototype._getColumns = function (callback) {
     'SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, EXTRA, COLUMN_DEFAULT,',
     'COLLATION_NAME, COLUMN_COMMENT, ORDINAL_POSITION',
     'FROM information_schema.COLUMNS',
-    'WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?;'
+    'WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?',
+    'ORDER BY ORDINAL_POSITION ASC;'
   ].join(' ');
   params = [this.db.name, this.name];
 
@@ -54,7 +55,7 @@ Table.prototype._getColumns = function (callback) {
 };
 
 /**
- * Retrieves foreign key meta-data from database.
+ * Retrieves foreign key metadata from database.
  * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
  * @returns {Promise}
  * @private

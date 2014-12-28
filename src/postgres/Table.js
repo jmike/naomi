@@ -17,7 +17,7 @@ function Table () {
 util.inherits(Table, GenericTable);
 
 /**
- * Retrieves column meta-data from database.
+ * Retrieves column metadata from database.
  * @param {function} [callback] an optional callback function with (err, columns) arguments.
  * @returns {Promise} resolving to an array of column properties.
  * @private
@@ -31,7 +31,8 @@ Table.prototype._getColumns = function (callback) {
     'FROM information_schema.columns',
     'WHERE table_catalog = $1',
     'AND table_schema NOT IN (\'pg_catalog\', \'information_schema\')',
-    'AND table_name = $2;'
+    'AND table_name = $2',
+    'ORDER BY ordinal_position ASC;'
   ].join(' ');
   params = [this.db.name, this.name];
 
@@ -53,7 +54,7 @@ Table.prototype._getColumns = function (callback) {
 };
 
 /**
- * Retrieves foreign key meta-data from database.
+ * Retrieves foreign key metadata from database.
  * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
  * @returns {Promise}
  * @private
