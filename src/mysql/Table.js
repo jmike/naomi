@@ -54,7 +54,7 @@ Table.prototype._getColumns = function (callback) {
 };
 
 /**
- * Retrieves primary key from database.
+ * Retrieves primary key metadata from database.
  * @param {function} [callback] an optional callback function with (err, primaryKey) arguments.
  * @returns {Promise}
  * @private
@@ -83,7 +83,7 @@ Table.prototype._getPrimaryKey = function (callback) {
 };
 
 /**
- * Retrieves unique keys from database.
+ * Retrieves unique key metadata from database.
  * @param {function} [callback] an optional callback function with (err, uniqueKeys) arguments.
  * @returns {Promise}
  * @private
@@ -113,6 +113,41 @@ Table.prototype._getUniqueKeys = function (callback) {
       });
 
       return uniqueKeys;
+    })
+    .nodeify(callback);
+};
+
+/**
+ * Retrieves index key metadata from database.
+ * @param {function} [callback] an optional callback function with (err, indexKeys) arguments.
+ * @returns {Promise}
+ * @private
+ */
+Table.prototype._getIndexKeys = function (callback) {
+  var sql;
+  var params;
+
+  sql = [
+    'SELECT `INDEX_NAME`, `COLUMN_NAME`',
+    'FROM information_schema.STATISTICS',
+    'WHERE `TABLE_SCHEMA` = ?',
+    'AND `TABLE_NAME` = ?',
+    'AND `INDEX_NAME` != \'PRIMARY\'',
+    'AND `NON_UNIQUE` = 1',
+    'ORDER BY `SEQ_IN_INDEX` ASC;'
+  ].join(' ');
+  params = [this.db.name, this.name];
+
+  return this.db.query(sql, params)
+    .then(function (records) {
+      var indexKeys = {};
+
+      records.forEach(function (record) {
+        indexKeys[record.INDEX_NAME] = indexKeys[record.INDEX_NAME] || [];
+        indexKeys[record.INDEX_NAME].push(record.COLUMN_NAME);
+      });
+
+      return indexKeys;
     })
     .nodeify(callback);
 };

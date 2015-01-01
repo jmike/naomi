@@ -46,7 +46,7 @@ Table.prototype._getColumns = function (callback) {
 };
 
 /**
- * Retrieves primary key from database.
+ * Retrieves primary key metadata from database.
  * @param {function} [callback] an optional callback function with (err, primaryKey) arguments.
  * @returns {Promise}
  * @private
@@ -56,12 +56,22 @@ Table.prototype._getPrimaryKey = function (callback) {
 };
 
 /**
- * Retrieves unique keys from database.
+ * Retrieves unique key metadata from database.
  * @param {function} [callback] an optional callback function with (err, uniqueKeys) arguments.
  * @returns {Promise}
  * @private
  */
 Table.prototype._getUniqueKeys = function (callback) {
+  return Promise.resolve().nodeify(callback);
+};
+
+/**
+ * Retrieves index key metadata from database.
+ * @param {function} [callback] an optional callback function with (err, indexKeys) arguments.
+ * @returns {Promise}
+ * @private
+ */
+Table.prototype._getIndexKeys = function (callback) {
   return Promise.resolve().nodeify(callback);
 };
 
@@ -89,13 +99,14 @@ Table.prototype._loadMeta = function (callback) {
     columns: this._getColumns(),
     primaryKey: this._getPrimaryKey(),
     uniqueKeys: this._getUniqueKeys(),
-    // indices: this._getIndices(),
+    indexKeys: this._getIndexKeys(),
     foreignKeys: this._getForeignKeys()
   })
     .then(function(results) {
       _this.columns = results.columns;
       _this.primaryKey = results.primaryKey;
       _this.uniqueKeys = results.uniqueKeys;
+      _this.indexKeys = results.indexKeys;
       _this.isReady = true;
       _this.emit('ready');
     })

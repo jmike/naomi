@@ -27,7 +27,7 @@ Table.prototype._getColumns = function (callback) {
   var params;
 
   sql = [
-    'SELECT column_name, data_type, is_nullable, column_default, collation_name, ordinal_position',
+    'SELECT column_name, data_type, is_nullable, column_default, collation_name',
     'FROM information_schema.columns',
     'WHERE table_catalog = $1',
     'AND table_schema NOT IN (\'pg_catalog\', \'information_schema\')',
@@ -53,7 +53,7 @@ Table.prototype._getColumns = function (callback) {
 };
 
 /**
- * Retrieves primary key from database.
+ * Retrieves primary key metadata from database.
  * @param {function} [callback] an optional callback function with (err, primaryKey) arguments.
  * @returns {Promise}
  * @private
@@ -66,12 +66,11 @@ Table.prototype._getPrimaryKey = function (callback) {
     'SELECT kcu.column_name',
     'FROM information_schema.table_constraints AS tc',
     'INNER JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name',
-    'INNER JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name',
     'WHERE tc.constraint_catalog = $1',
     'AND tc.table_schema NOT IN (\'pg_catalog\', \'information_schema\')',
     'AND tc.table_name = $2',
     'AND tc.constraint_type = \'PRIMARY KEY\'',
-    'ORDER BY ordinal_position ASC;'
+    'ORDER BY kcu.ordinal_position ASC;'
   ].join(' ');
   params = [this.db.name, this.name];
 
@@ -85,7 +84,7 @@ Table.prototype._getPrimaryKey = function (callback) {
 };
 
 /**
- * Retrieves unique keys from database.
+ * Retrieves unique key metadata from database.
  * @param {function} [callback] an optional callback function with (err, uniqueKeys) arguments.
  * @returns {Promise}
  * @private
@@ -102,7 +101,7 @@ Table.prototype._getUniqueKeys = function (callback) {
     'AND tc.table_schema NOT IN (\'pg_catalog\', \'information_schema\')',
     'AND tc.table_name = $2',
     'AND tc.constraint_type = \'UNIQUE\'',
-    'ORDER BY tc.constraint_name ASC, ordinal_position ASC;'
+    'ORDER BY tc.constraint_name ASC, kcu.ordinal_position ASC;'
   ].join(' ');
   params = [this.db.name, this.name];
 
@@ -118,6 +117,16 @@ Table.prototype._getUniqueKeys = function (callback) {
       return uniqueKeys;
     })
     .nodeify(callback);
+};
+
+/**
+ * Retrieves index key metadata from database.
+ * @param {function} [callback] an optional callback function with (err, indexKeys) arguments.
+ * @returns {Promise}
+ * @private
+ */
+Table.prototype._getIndexKeys = function (callback) {
+  return Promise.resolve({}).nodeify(callback);
 };
 
 /**
