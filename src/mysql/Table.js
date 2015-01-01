@@ -198,7 +198,9 @@ Table.prototype._get = function (options) {
   var query;
 
   options.table = this.name;
-  options.columns = Object.keys(this.columns);
+  options.columns = this.columns.map(function (column) {
+    return column.name;
+  });
   query = querybuilder.select(options);
 
   return this.db.query(query.sql, query.params);
