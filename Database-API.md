@@ -6,8 +6,8 @@
   * [connect([callback])](#connect)
   * [disconnect([callback])](#disconnect)
   * [query(sql, [params], [options], [callback])](#query)
-  * [hasTable(tableName, [callback])](#hasTable)
-  * [extend(tableName)](#extend)
+  * [hasTable(table, [callback])](#hasTable)
+  * [extend(table, props)](#extend)
 * [Events](#events)
   * [connect](#connect-event)
   * [disconnect](#disconnect-event)
@@ -108,13 +108,13 @@ db.query(sql, params)
   });
 ```
 
-### <a name="hasTable" href="hasTable">#</a>hasTable(tableName, [callback]) -> promise
+### <a name="hasTable" href="hasTable">#</a>hasTable(table, [callback]) -> promise
 
 Indicates whether the designated table exists in database.
 
 ##### Parameters
 
-* `tableName` _(string)_ the name of the table to look for (required)
+* `table` _(string)_ the name of the table to look for (required)
 * `callback` _(function)_ optional callback function with (err, hasTable) arguments
 
 ##### Returns
@@ -137,13 +137,13 @@ db.hasTable('accounts')
   });
 ```
 
-### <a name="extend" href="extend">#</a>extend(tableName) -> Table
+### <a name="extend" href="extend">#</a>extend(table, props) -> Table
 
 Returns a new Table, extended with the given properties and methods. Please note: this method will not create a new table on database - it will merely reference an existing one.
 
 ##### Parameters
 
-* `tableName` _(string)_ the name of the table to look for (required)
+* `table` _(string)_ the name of the table to look for (required)
 * `props` _(object)_ optional properties and methods
 
 ##### Returns
