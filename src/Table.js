@@ -12,23 +12,25 @@ var operators = ['=', '==', '===', '!=', '!==', '<>', '>', '>=', '<', '<=', '~']
  * @constructor
  */
 function Table (db, name) {
-  this.name = name;
   this.db = db;
+  this.name = name;
   this.columns = [];
   this.primaryKey = [];
   this.uniqueKeys = {};
   this.indexKeys = {};
+  // this.foreignKeys = {};
   this.isReady = false;
 
   // init the EventEmitter
   EventEmitter.call(this);
   this.setMaxListeners(99);
 
-  // load metadata
+  // load table metadata
   if (db.isConnected) {
     this._loadMeta();
-  } else { // async
-    db.on('connect', this._loadMeta.bind(this));
+  } else {
+    // wait for db connection
+    db.once('connect', this._loadMeta.bind(this));
   }
 }
 
@@ -38,50 +40,47 @@ util.inherits(Table, EventEmitter);
 /**
  * Retrieves column metadata from database.
  * @param {function} [callback] an optional callback function with (err, columns) arguments.
- * @returns {Promise}
- * @private
+ * @returns {Promise} resolving to Array.<object>
  */
-Table.prototype._getColumns = function (callback) {
+Table.prototype.getColumns = function (callback) {
   return Promise.resolve().nodeify(callback);
 };
 
 /**
  * Retrieves primary key metadata from database.
  * @param {function} [callback] an optional callback function with (err, primaryKey) arguments.
- * @returns {Promise}
- * @private
+ * @returns {Promise} resolving to Array.<string>
  */
-Table.prototype._getPrimaryKey = function (callback) {
+Table.prototype.getPrimaryKey = function (callback) {
   return Promise.resolve().nodeify(callback);
 };
 
 /**
  * Retrieves unique key metadata from database.
  * @param {function} [callback] an optional callback function with (err, uniqueKeys) arguments.
- * @returns {Promise}
- * @private
+ * @returns {Promise} resolving to object
  */
-Table.prototype._getUniqueKeys = function (callback) {
+Table.prototype.getUniqueKeys = function (callback) {
   return Promise.resolve().nodeify(callback);
 };
 
 /**
  * Retrieves index key metadata from database.
  * @param {function} [callback] an optional callback function with (err, indexKeys) arguments.
- * @returns {Promise}
+ * @returns {Promise} resolving to object
  * @private
  */
-Table.prototype._getIndexKeys = function (callback) {
+Table.prototype.getIndexKeys = function (callback) {
   return Promise.resolve().nodeify(callback);
 };
 
 /**
  * Retrieves foreign key metadata from database.
  * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
- * @returns {Promise}
+ * @returns {Promise} resolving to object
  * @private
  */
-Table.prototype._getForeignKeys = function (callback) {
+Table.prototype.getForeignKeys = function (callback) {
   return Promise.resolve().nodeify(callback);
 };
 
@@ -90,25 +89,37 @@ Table.prototype._getForeignKeys = function (callback) {
  * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
  * @returns {Promise}
  * @emits Database#ready
+ * @emits Database#error
  * @private
  */
 Table.prototype._loadMeta = function (callback) {
   var _this = this;
 
-  return Promise.props({
-    columns: this._getColumns(),
-    primaryKey: this._getPrimaryKey(),
-    uniqueKeys: this._getUniqueKeys(),
-    indexKeys: this._getIndexKeys(),
-    foreignKeys: this._getForeignKeys()
-  })
-    .then(function(results) {
-      _this.columns = results.columns;
-      _this.primaryKey = results.primaryKey;
-      _this.uniqueKeys = results.uniqueKeys;
-      _this.indexKeys = results.indexKeys;
-      _this.isReady = true;
-      _this.emit('ready');
+  // make sure table exists in db
+  this.db.hasTable(this.name)
+    .then(function (hasTable) {
+      if (!hasTable) {
+        _this.emit('error', new Error('Table "' + _this.name + '" does not exist in database'));
+        return;
+      }
+      // retrieve metadata
+      return Promise.props({
+        columns: _this.getColumns(),
+        primaryKey: _this.getPrimaryKey(),
+        uniqueKeys: _this.getUniqueKeys(),
+        indexKeys: _this.getIndexKeys(),
+        // foreignKeys: _this._getForeignKeys()
+      })
+        .then(function(results) {
+          // update table properties + emit @ready
+          _this.columns = results.columns;
+          _this.primaryKey = results.primaryKey;
+          _this.uniqueKeys = results.uniqueKeys;
+          _this.indexKeys = results.indexKeys;
+          _this.foreignKeys = results.foreignKeys;
+          _this.isReady = true;
+          _this.emit('ready');
+        });
     })
     .nodeify(callback);
 };

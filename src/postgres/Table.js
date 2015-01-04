@@ -19,7 +19,7 @@ util.inherits(Table, GenericTable);
 /**
  * Retrieves column metadata from database.
  * @param {function} [callback] an optional callback function with (err, columns) arguments.
- * @returns {Promise} resolving to an array of column properties.
+ * @returns {Promise} resolving to Array.<object>
  * @private
  */
 Table.prototype._getColumns = function (callback) {
@@ -55,10 +55,9 @@ Table.prototype._getColumns = function (callback) {
 /**
  * Retrieves primary key metadata from database.
  * @param {function} [callback] an optional callback function with (err, primaryKey) arguments.
- * @returns {Promise}
- * @private
+ * @returns {Promise} resolving to Array.<string>
  */
-Table.prototype._getPrimaryKey = function (callback) {
+Table.prototype.getPrimaryKey = function (callback) {
   var sql;
   var params;
 
@@ -86,10 +85,9 @@ Table.prototype._getPrimaryKey = function (callback) {
 /**
  * Retrieves unique key metadata from database.
  * @param {function} [callback] an optional callback function with (err, uniqueKeys) arguments.
- * @returns {Promise}
- * @private
+ * @returns {Promise} resolving to object
  */
-Table.prototype._getUniqueKeys = function (callback) {
+Table.prototype.getUniqueKeys = function (callback) {
   var sql;
   var params;
 
@@ -122,20 +120,18 @@ Table.prototype._getUniqueKeys = function (callback) {
 /**
  * Retrieves index key metadata from database.
  * @param {function} [callback] an optional callback function with (err, indexKeys) arguments.
- * @returns {Promise}
- * @private
+ * @returns {Promise} resolving to object
  */
-Table.prototype._getIndexKeys = function (callback) {
+Table.prototype.getIndexKeys = function (callback) {
   return Promise.resolve({}).nodeify(callback);
 };
 
 /**
  * Retrieves foreign key metadata from database.
  * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
- * @returns {Promise}
- * @private
+ * @returns {Promise} resolving to object
  */
-Table.prototype._getForeignKeys = function (callback) {
+Table.prototype.getForeignKeys = function (callback) {
   var sql;
   var params;
 
