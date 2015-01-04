@@ -5,6 +5,7 @@
 * [Methods](#methods)
   * [getColumns([callback])](#getColumns)
   * [getPrimaryKey([callback])](#getPrimaryKey)
+  * [getUniqueKeys([callback])](#getUniqueKeys)
 * [Events](#events)
   * [ready](#ready-event)
 
@@ -35,7 +36,7 @@ A promise resolving to array of objects, having the following properties.
 ```javascript
 table.getColumns()
   .then(function (columns) {
-    console.log('Table contains ' + columns.length + ' column(s)');
+    console.log('Table "' + table.name  + '" contains ' + columns.length + ' column(s)');
     columns.forEach(function (column, i) {
       console.log('The name of column #' + i + ' is ' + column.name);
     });
@@ -51,7 +52,7 @@ Retrieves primary key metadata from database. Please note: primary key can be co
 
 ##### Parameters
 
-* `callback` _(function)_ optional callback function with (err, column) arguments
+* `callback` _(function)_ optional callback function with (err, primaryKey) arguments
 
 ##### Returns
 
@@ -61,10 +62,40 @@ A promise resolving to array of strings, where each item represents a column nam
 
 ```javascript
 table.getPrimaryKey()
-  .then(function (columns) {
-    console.log('Primary key consists of ' + columns.length + ' column(s)');
-    columns.forEach(function (column, i) {
-      console.log('The name of column #' + i + ' is ' + column);
+  .then(function (primaryKey) {
+    console.log('Primary-key of table "' + table.name + '" consists of ' + primaryKey.length + ' column(s)');
+    primaryKey.forEach(function (column, i) {
+      console.log('The name of primary-key column #' + i + ' is ' + column);
+    });
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
+### <a name="getUniqueKeys" href="getUniqueKeys">#</a>getUniqueKeys([callback]) -> promise
+
+Retrieves unique key metadata from database. Please note: a table may have multiple, as well as composite, unique keys.
+
+##### Parameters
+
+* `callback` _(function)_ optional callback function with (err, uniqueKeys) arguments
+
+##### Returns
+
+A promise resolving to an object, where each property represents a unique key.
+
+##### Example
+
+```javascript
+table.getUniqueKeys()
+  .then(function (uniqueKeys) {
+    console.log('Table "' + table.name + '" has ' + Object.keys(uniqueKeys).length + ' unique-key(s)');
+    Object.keys(uniqueKeys).forEach(function (key, i) {
+      console.log('The name of unique-key #' + i + ' is ' + key);
+      uniqueKeys[key].forEach(function (column, i) {
+        console.log('The name of column #' + i + ' of unique-key "' + key + '" is ' + column);
+      }
     });
   })
   .catch(function (err) {
