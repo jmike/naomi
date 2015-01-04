@@ -197,7 +197,7 @@ if (table.hasColumn('firstname')) {
 
 ### <a name="isPrimaryKey" href="isPrimaryKey">#</a>isPrimaryKey(columns*) -> boolean
 
-Indicates whether the column(s) represent a primary key. Please note: primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function. This method will always return false until database is ready.
+Indicates whether the designated column(s) represent a primary key. Please note: primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function. This method will always return false until database is ready.
 
 ##### Parameters
 
@@ -217,7 +217,7 @@ if (table.isPrimaryKey('firstname', 'lastname')) {
 
 ### <a name="isUniqueKey" href="isUniqueKey">#</a>isUniqueKey(columns*) -> boolean
 
-Indicates whether the column(s) represent a unique key. Please note: Unique keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function. This method will always return false until database is ready.
+Indicates whether the designated column(s) represent a unique key. Please note: unique keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function. This method will always return false until database is ready.
 
 ##### Parameters
 
@@ -231,6 +231,26 @@ Indicates whether the column(s) represent a unique key. Please note: Unique keys
 
 ```javascript
 if (table.isUniqueKey('firstname', 'lastname')) {
+  // do something
+}
+```
+
+### <a name="isIndexKey" href="isIndexKey">#</a>isIndexKey(columns*) -> boolean
+
+Indicates whether the designated column(s) represent an index key. Please note: index keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params. This method will always return false until database is ready.
+
+##### Parameters
+
+* `column` _(...string)_ the name of the column(s)
+
+##### Returns
+
+`true` if column(s) represent an index key, `false` if not.
+
+##### Example
+
+```javascript
+if (table.isIndexKey('firstname', 'lastname')) {
   // do something
 }
 ```
