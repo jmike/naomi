@@ -51,77 +51,77 @@ describe('Postgres Table', function () {
       //   assert.isFalse(employees.isIndexKey('invalid-column'));
       // });
 
-      it('successfully completes a CRUD [+ Count] operation', function (done) {
-        employees.add({
-          firstname: 'Donnie',
-          lastname: 'Azoff',
-          age: 36
-        })
-        .then(function (key) {
-          assert.isObject(key);
-          assert.isNumber(key.id);
+      // it('successfully completes a CRUD [+ Count] operation', function (done) {
+      //   employees.add({
+      //     firstname: 'Donnie',
+      //     lastname: 'Azoff',
+      //     age: 36
+      //   })
+      //   .then(function (key) {
+      //     assert.isObject(key);
+      //     assert.isNumber(key.id);
 
-          return key;
-        })
-        .then(function (key) { // select
-          return employees.get(key).then(function (records) {
-            assert.isArray(records);
-            assert.lengthOf(records, 1);
-            assert.strictEqual(records[0].id, key.id);
+      //     return key;
+      //   })
+      //   .then(function (key) { // select
+      //     return employees.get(key).then(function (records) {
+      //       assert.isArray(records);
+      //       assert.lengthOf(records, 1);
+      //       assert.strictEqual(records[0].id, key.id);
 
-            return key;
-          });
-        })
-        .then(function (key) { // update (using primary key)
-          return employees.set({
-            id: key.id,
-            firstname: 'Donnie',
-            lastname: 'Azoff',
-            age: 37
-          }).then(function (k) {
-            assert.deepEqual(k, key);
+      //       return key;
+      //     });
+      //   })
+      //   .then(function (key) { // update (using primary key)
+      //     return employees.set({
+      //       id: key.id,
+      //       firstname: 'Donnie',
+      //       lastname: 'Azoff',
+      //       age: 37
+      //     }).then(function (k) {
+      //       assert.deepEqual(k, key);
 
-            return k;
-          });
-        })
-        .then(function (key) { // update (using unique key)
-          return employees.set({
-            firstname: 'Donnie',
-            lastname: 'Azoff',
-            age: 38
-          }).then(function (k) {
-            assert.deepEqual(k, key);
+      //       return k;
+      //     });
+      //   })
+      //   .then(function (key) { // update (using unique key)
+      //     return employees.set({
+      //       firstname: 'Donnie',
+      //       lastname: 'Azoff',
+      //       age: 38
+      //     }).then(function (k) {
+      //       assert.deepEqual(k, key);
 
-            return k;
-          });
-        })
-        .then(function (key) { // count
-          return employees.count().then(function (n) {
-            assert.operator(n, '>=', 1);
-            return key;
-          });
-        })
-        .then(function (k) {
-          return employees.del(k);
-        })
-        .then(function () {
-          done();
-        })
-        .catch(function (err) {
-          throw err;
-        });
-      });
+      //       return k;
+      //     });
+      //   })
+      //   .then(function (key) { // count
+      //     return employees.count().then(function (n) {
+      //       assert.operator(n, '>=', 1);
+      //       return key;
+      //     });
+      //   })
+      //   .then(function (k) {
+      //     return employees.del(k);
+      //   })
+      //   .then(function () {
+      //     done();
+      //   })
+      //   .catch(function (err) {
+      //     throw err;
+      //   });
+      // });
 
-      describe('#get()', function () {
+      // describe('#get()', function () {
 
-        it('throws error when selector contains column that does not exist', function (done) {
-          employees.get({foo: 'bar'}).catch(function (err) {
-            assert.match(err, /invalid query selector/i);
-            done();
-          });
-        });
+      //   it('throws error when selector contains column that does not exist', function (done) {
+      //     employees.get({foo: 'bar'}).catch(function (err) {
+      //       assert.match(err, /invalid query selector/i);
+      //       done();
+      //     });
+      //   });
 
-      });
+      // });
 
     });
 
@@ -129,8 +129,25 @@ describe('Postgres Table', function () {
 
       var companies = db.extend('companies');
 
+      before(function (done) {
+        companies.once('ready', done);
+      });
+
       it('returns true on #isPrimaryKey("id")', function () {
         assert.isTrue(companies.isPrimaryKey('id'));
+      });
+
+    });
+
+    describe('invalid-table', function () {
+
+      it('emits error after instantiation', function (done) {
+        var table = db.extend('invalid-table');
+
+        table.once('error', function (err) {
+          assert.strictEqual(err.message, 'Table "invalid-table" does not exist in database');
+          done();
+        });
       });
 
     });
