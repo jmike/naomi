@@ -6,6 +6,10 @@
   * [connect([callback])](#connect)
   * [disconnect([callback])](#disconnect)
   * [query(sql, [params], [options], [callback])](#query)
+* [Events](#events)
+  * [connect](#connect-event)
+  * [disconnect](#disconnect-event)
+  * [ready](#ready-event)
 
 ## Methods
 
@@ -101,3 +105,17 @@ db.query(sql, params)
     console.error(err);
   });
 ```
+
+## Events
+
+### <a name="connect-event" href="#connect-event">@</a>connect
+
+@connect is emitted when database connection is established.
+
+### <a name="disconnect-event" href="#disconnect-event">@</a>disconnect
+
+@disconnect is emitted when database is disconnected.
+
+### <a name="ready-event" href="#ready-event">@</a>ready
+
+@ready is emitted when db tables are ready to use, i.e. have loaded metadata in memory.
