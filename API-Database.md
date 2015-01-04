@@ -190,7 +190,7 @@ db.on('disconnect', function () {
 
 ### <a name="ready-event" href="#ready-event">@</a>ready
 
-Event "ready" is emitted when db tables are ready to use, i.e. have loaded metadata in memory.
+Event "ready" is emitted when all pending tables tables are ready to use, i.e. have loaded metadata in memory.
 
 ```javascript
 db.once('ready', function () {
