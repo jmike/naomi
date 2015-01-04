@@ -6,6 +6,7 @@
   * [connect([callback])](#connect)
   * [disconnect([callback])](#disconnect)
   * [query(sql, [params], [options], [callback])](#query)
+  * [hasTable(tableName, [callback])](#hasTable)
 * [Events](#events)
   * [connect](#connect-event)
   * [disconnect](#disconnect-event)
@@ -83,7 +84,7 @@ Executes the given parameterized SQL statement.
 
 ##### Returns
 
-Query results
+A promise resolving to an array of records for SELECT statements and an object of metadata for DML statements.
 
 ##### Example
 
@@ -99,6 +100,35 @@ db.query(sql, params)
       records.forEach(function (r) {
         // do something with record
       });
+    }
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
+### <a name="hasTable" href="hasTable">#</a>hasTable(tableName, [callback]) -> promise
+
+Indicates whether the designated table exists in database.
+
+##### Parameters
+
+* `tableName` _(string)_ the name of the table to look for (required)
+* `callback` _(function)_ optional callback function with (err, hasTable) arguments
+
+##### Returns
+
+A promise resolving to a boolean value.
+
+##### Example
+
+```javascript
+db.hasTable('accounts')
+  .then(function (hasTable) {
+    if (hasTable) {
+      // table exists in database
+    } else {) {
+      // table not found in database
     }
   })
   .catch(function (err) {
