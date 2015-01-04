@@ -148,7 +148,7 @@ Returns a new Table, extended with the given properties and methods. Please note
 
 ##### Returns
 
-A new Table instance.
+New Table instance.
 
 ##### Example
 
