@@ -181,7 +181,7 @@ Indicates whether the specified column exists in table. Please note: this method
 
 ##### Parameters
 
-* `column` _(string)_ the name of the column (required)
+* `columns` _(string)_ the name of the column (required)
 
 ##### Returns
 
@@ -201,7 +201,7 @@ Indicates whether the designated column(s) represent a primary key. Please note:
 
 ##### Parameters
 
-* `column` _(...string)_ the name of the column(s)
+* `columns` _(...string)_ the name of the column(s)
 
 ##### Returns
 
@@ -221,7 +221,7 @@ Indicates whether the designated column(s) represent a unique key. Please note: 
 
 ##### Parameters
 
-* `column` _(...string)_ the name of the column(s)
+* `columns` _(...string)_ the name of the column(s)
 
 ##### Returns
 
@@ -241,7 +241,7 @@ Indicates whether the designated column(s) represent an index key. Please note: 
 
 ##### Parameters
 
-* `column` _(...string)_ the name of the column(s)
+* `columns` _(...string)_ the name of the column(s)
 
 ##### Returns
 
@@ -251,6 +251,26 @@ Indicates whether the designated column(s) represent an index key. Please note: 
 
 ```javascript
 if (table.isIndexKey('firstname', 'lastname')) {
+  // do something
+}
+```
+
+### <a name="isAutoInc" href="isAutoInc">#</a>isAutoInc(column) -> boolean
+
+Indicates whether the specified column is automatically incremented. Please note: this method will always return false until database is ready.
+
+##### Parameters
+
+* `column` _(string)_ the name of the column
+
+##### Returns
+
+`true` if column is auto incremented, `false` if not.
+
+##### Example
+
+```javascript
+if (table.isAutoInc('id')) {
   // do something
 }
 ```
