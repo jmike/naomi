@@ -1,4 +1,4 @@
-# API reference
+# Database API reference
 
 ## Table of Contents
 
