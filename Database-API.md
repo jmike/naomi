@@ -112,10 +112,30 @@ db.query(sql, params)
 
 Event "connect" is emitted when database connection is established.
 
+##### Example
+
+```javascript
+db.on('connect', function () {
+  console.log('connected to db');
+});
+```
+
 ### <a name="disconnect-event" href="#disconnect-event">@</a>disconnect
 
 Event "disconnect" is emitted when database is disconnected.
 
+```javascript
+db.on('disconnect', function () {
+  console.log('disconnected from db');
+});
+```
+
 ### <a name="ready-event" href="#ready-event">@</a>ready
 
 Event "ready" is emitted when db tables are ready to use, i.e. have loaded metadata in memory.
+
+```javascript
+db.once('ready', function () {
+  console.log('metadata loaded - tables ready to use');
+});
+```
