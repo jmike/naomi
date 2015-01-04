@@ -60,7 +60,7 @@ table.getColumns()
 
 ### <a name="getPrimaryKey" href="getPrimaryKey">#</a>getPrimaryKey([callback]) -> promise
 
-Retrieves primary key metadata from database.
+Retrieves primary key metadata from database. Please note: primary keys can be composite, i.e. consisting of more-than-one columns.
 
 ##### Parameters
 
@@ -84,13 +84,9 @@ table.getPrimaryKey()
   });
 ```
 
-##### Notes
-
-Primary keys can be composite, i.e. consisting of more-than-one columns.
-
 ### <a name="getUniqueKeys" href="getUniqueKeys">#</a>getUniqueKeys([callback]) -> promise
 
-Retrieves unique key metadata from database.
+Retrieves unique key metadata from database. Please note: a table may have multiple, as well as composite, unique keys.
 
 ##### Parameters
 
@@ -117,13 +113,9 @@ table.getUniqueKeys()
   });
 ```
 
-##### Notes
-
-A table may have multiple, as well as composite, unique keys.
-
 ### <a name="getIndexKeys" href="getIndexKeys">#</a>getIndexKeys([callback]) -> promise
 
-Retrieves index key metadata from database.
+Retrieves index key metadata from database. Please note: A table may have multiple, as well as composite, index keys.
 
 ##### Parameters
 
@@ -150,13 +142,9 @@ table.getIndexKeys()
   });
 ```
 
-##### Notes
-
-A table may have multiple, as well as composite, index keys, hence this function returns an array.
-
 ### <a name="getForeignKeys" href="getForeignKeys">#</a>getForeignKeys([callback]) -> promise
 
-Retrieves foreign key metadata from database.
+Retrieves foreign key metadata from database. Please note: a table may have multiple, as well as composite, foreign keys.
 
 ##### Parameters
 
@@ -187,13 +175,9 @@ table.getForeignKeys()
   });
 ```
 
-##### Notes
-
-A table may have multiple, as well as composite, foreign keys.
-
 ### <a name="hasColumn" href="hasColumn">#</a>hasColumn(column) -> boolean
 
-Indicates whether the specified column exists in table.
+Indicates whether the specified column exists in table. Please note: this method will always return false until database is ready.
 
 ##### Parameters
 
@@ -211,13 +195,9 @@ if (table.hasColumn('firstname')) {
 }
 ```
 
-##### Notes
-
-This method will always return false until database is ready.
-
 ### <a name="isPrimaryKey" href="isPrimaryKey">#</a>isPrimaryKey(columns*) -> boolean
 
-Indicates whether the column(s) represent a primary key.
+Indicates whether the column(s) represent a primary key. Please note: primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function. This method will always return false until database is ready.
 
 ##### Parameters
 
@@ -235,14 +215,9 @@ if (table.isPrimaryKey('firstname', 'lastname')) {
 }
 ```
 
-##### Notes
-
-* Primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function.
-* This method will always return false until database is ready.
-
 ### <a name="isUniqueKey" href="isUniqueKey">#</a>isUniqueKey(columns*) -> boolean
 
-Indicates whether the column(s) represent a unique key.
+Indicates whether the column(s) represent a unique key. Please note: Unique keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function. This method will always return false until database is ready.
 
 ##### Parameters
 
@@ -259,11 +234,6 @@ if (table.isUniqueKey('firstname', 'lastname')) {
   // do something
 }
 ```
-
-##### Notes
-
-* Unique keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function.
-* This method will always return false until database is ready.
 
 ## Events
 
