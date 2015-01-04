@@ -7,6 +7,7 @@
   * [disconnect([callback])](#disconnect)
   * [query(sql, [params], [options], [callback])](#query)
   * [hasTable(tableName, [callback])](#hasTable)
+  * [extend(tableName)](#extend)
 * [Events](#events)
   * [connect](#connect-event)
   * [disconnect](#disconnect-event)
@@ -134,6 +135,33 @@ db.hasTable('accounts')
   .catch(function (err) {
     console.error(err);
   });
+```
+
+### <a name="extend" href="extend">#</a>extend(tableName) -> Table
+
+Returns a new Table, extended with the given properties and methods. Please note: this method will not create a new table on database - it will merely reference an existing one.
+
+##### Parameters
+
+* `tableName` _(string)_ the name of the table to look for (required)
+* `props` _(object)_ optional properties and methods
+
+##### Returns
+
+A new Table instance.
+
+##### Example
+
+```javascript
+var accounts = db.extend('accounts', {
+
+  getAccountProducts: function (accountId) {
+    var sql = 'SELECT * FROM accounts LEFT OUTER JOIN products ON product.account_id = accounts.id AND accounts.id = ?';
+    var params = [accountId];
+    return this.query(sql, params);
+  }
+
+});
 ```
 
 ## Events
