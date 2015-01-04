@@ -6,6 +6,8 @@
   * [getColumns([callback])](#getColumns)
   * [getPrimaryKey([callback])](#getPrimaryKey)
   * [getUniqueKeys([callback])](#getUniqueKeys)
+  * [getIndexKeys([callback])](#getIndexKeys)
+  * [getForeignKeys([callback])](#getForeignKeys)
 * [Events](#events)
   * [ready](#ready-event)
 
@@ -63,9 +65,8 @@ A promise resolving to array of strings, where each item represents a column nam
 ```javascript
 table.getPrimaryKey()
   .then(function (primaryKey) {
-    console.log('Primary-key of table "' + table.name + '" consists of ' + primaryKey.length + ' column(s)');
     primaryKey.forEach(function (column, i) {
-      console.log('The name of primary-key column #' + i + ' is ' + column);
+      console.log('Column #' + i + ' of primary-key is ' + column);
     });
   })
   .catch(function (err) {
@@ -83,19 +84,18 @@ Retrieves unique-key metadata from database. Please note: a table may have multi
 
 ##### Returns
 
-A promise resolving to an object, where each property represents a unique-key.
+A promise resolving to an array of objects, having the following properties.
+
+* `name` _(string)_ the unique-key name
+* `columns` _(Array.<string>)_ the column names of the unique-key
 
 ##### Example
 
 ```javascript
 table.getUniqueKeys()
   .then(function (uniqueKeys) {
-    console.log('Table "' + table.name + '" has ' + Object.keys(uniqueKeys).length + ' unique-key(s)');
-    Object.keys(uniqueKeys).forEach(function (key, i) {
-      console.log('The name of unique-key #' + i + ' is ' + key);
-      uniqueKeys[key].forEach(function (column, i) {
-        console.log('The name of column #' + i + ' of unique-key "' + key + '" is ' + column);
-      }
+    uniqueKeys.forEach(function (key) {
+      console.log('Unique-key ' + key.name + ' contains ' + key.columns.length + ' column(s)');
     });
   })
   .catch(function (err) {
@@ -113,19 +113,51 @@ Retrieves index-key metadata from database. Please note: a table may have multip
 
 ##### Returns
 
-A promise resolving to an object, where each property represents an index-key.
+A promise resolving to an array of objects, having the following properties.
+
+* `name` _(string)_ the unique-key name
+* `columns` _(Array.<string>)_ the column names of the unique-key
 
 ##### Example
 
 ```javascript
 table.getIndexKeys()
   .then(function (indexKeys) {
-    console.log('Table "' + table.name + '" has ' + Object.keys(uniqueKeys).length + ' index-key(s)');
-    Object.keys(indexKeys).forEach(function (key, i) {
-      console.log('The name of index-key #' + i + ' is ' + key);
-      indexKeys[key].forEach(function (column, i) {
-        console.log('The name of column #' + i + ' of index-key "' + key + '" is ' + column);
-      }
+    indexKeys.forEach(function (key) {
+      console.log('Index-key "' + key.name + '" contains ' + key.columns.length + ' column(s)');
+    });
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
+### <a name="getForeignKeys" href="getForeignKeys">#</a>getForeignKeys([callback]) -> promise
+
+Retrieves foreign-key metadata from database. Please note: a table may have multiple, as well as composite, foreign-keys.
+
+##### Parameters
+
+* `callback` _(function)_ optional callback function with (err, foreignKeys) arguments
+
+##### Returns
+
+A promise resolving to an array of objects, having the following properties.
+
+* `name` _(string)_ the foreign-key name
+* `references` _(Array.<object>)_ foreign-key references
+  * `table1` _(string)_ table name #1
+  * `column1` _(string)_ column name #1
+  * `table2` _(string)_ table name #2
+  * `column2` _(string)_ column name #2
+
+##### Example
+
+```javascript
+table.getForeignKeys()
+  .then(function (foreignKeys) {
+    foreignKeys.forEach(function (key) {
+      console.log('Foreign-key "' + key.name + '" contains ' + key.references.length + ' reference(s)');
     });
   })
   .catch(function (err) {
