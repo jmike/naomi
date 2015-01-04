@@ -237,8 +237,33 @@ if (table.isPrimaryKey('firstname', 'lastname')) {
 
 ##### Notes
 
-1. Primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function.
-2. This method will always return false until database is ready.
+* Primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function.
+* This method will always return false until database is ready.
+
+### <a name="isUniqueKey" href="isUniqueKey">#</a>isUniqueKey(columns*) -> boolean
+
+Indicates whether the column(s) represent a unique key.
+
+##### Parameters
+
+* `column` _(...string)_ the name of the column(s)
+
+##### Returns
+
+`true` if column(s) represent a unique key, `false` if not.
+
+##### Example
+
+```javascript
+if (table.isUniqueKey('firstname', 'lastname')) {
+  // do something
+}
+```
+
+##### Notes
+
+* Unique keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function.
+* This method will always return false until database is ready.
 
 ## Events
 
