@@ -164,3 +164,15 @@ table.getForeignKeys()
     console.error(err);
   });
 ```
+
+## Events
+
+### <a name="ready-event" href="#ready-event">@</a>ready
+
+Event "ready" is emitted when table is ready to use, i.e. has loaded metadata in memory.
+
+```javascript
+table.once('ready', function () {
+  console.log('metadata loaded - table ready to use');
+});
+```
