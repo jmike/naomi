@@ -245,9 +245,8 @@ Database.prototype.hasTable = function (tableName, callback) {
 /**
  * Retrieves table names from database.
  * @returns {Promise}
- * @private
  */
-Database.prototype._getTables = function () {
+Database.prototype.getTables = function () {
   var sql;
   var params;
 
