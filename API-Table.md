@@ -60,7 +60,7 @@ table.getColumns()
 
 ### <a name="getPrimaryKey" href="getPrimaryKey">#</a>getPrimaryKey([callback]) -> promise
 
-Retrieves primary-key metadata from database. Please note: primary-key can be composite, i.e. consisting of more-than-one columns. 
+Retrieves primary key metadata from database.
 
 ##### Parameters
 
@@ -76,7 +76,7 @@ A promise resolving to array of strings, where each item represents a column nam
 table.getPrimaryKey()
   .then(function (primaryKey) {
     primaryKey.forEach(function (column, i) {
-      console.log('Column #' + i + ' of primary-key is ' + column);
+      console.log('Column #' + i + ' of primary key is ' + column);
     });
   })
   .catch(function (err) {
@@ -84,9 +84,13 @@ table.getPrimaryKey()
   });
 ```
 
+##### Notes
+
+Primary keys can be composite, i.e. consisting of more-than-one columns.
+
 ### <a name="getUniqueKeys" href="getUniqueKeys">#</a>getUniqueKeys([callback]) -> promise
 
-Retrieves unique-key metadata from database. Please note: a table may have multiple, as well as composite, unique-keys.
+Retrieves unique key metadata from database.
 
 ##### Parameters
 
@@ -96,8 +100,8 @@ Retrieves unique-key metadata from database. Please note: a table may have multi
 
 A promise resolving to an array of objects, having the following properties.
 
-* `name` _(string)_ the unique-key name
-* `columns` _(Array.<string>)_ the column names of the unique-key
+* `name` _(string)_ the name of the unique key
+* `columns` _(Array.<string>)_ the column names of the unique key
 
 ##### Example
 
@@ -105,7 +109,7 @@ A promise resolving to an array of objects, having the following properties.
 table.getUniqueKeys()
   .then(function (uniqueKeys) {
     uniqueKeys.forEach(function (key) {
-      console.log('Unique-key ' + key.name + ' contains ' + key.columns.length + ' column(s)');
+      console.log('Unique key ' + key.name + ' contains ' + key.columns.length + ' column(s)');
     });
   })
   .catch(function (err) {
@@ -113,9 +117,13 @@ table.getUniqueKeys()
   });
 ```
 
+##### Notes
+
+A table may have multiple, as well as composite, unique keys.
+
 ### <a name="getIndexKeys" href="getIndexKeys">#</a>getIndexKeys([callback]) -> promise
 
-Retrieves index-key metadata from database. Please note: a table may have multiple, as well as composite, index-keys.
+Retrieves index key metadata from database.
 
 ##### Parameters
 
@@ -125,8 +133,8 @@ Retrieves index-key metadata from database. Please note: a table may have multip
 
 A promise resolving to an array of objects, having the following properties.
 
-* `name` _(string)_ the unique-key name
-* `columns` _(Array.<string>)_ the column names of the unique-key
+* `name` _(string)_ the name of the index key
+* `columns` _(Array.<string>)_ the column names of the index key
 
 ##### Example
 
@@ -134,7 +142,7 @@ A promise resolving to an array of objects, having the following properties.
 table.getIndexKeys()
   .then(function (indexKeys) {
     indexKeys.forEach(function (key) {
-      console.log('Index-key "' + key.name + '" contains ' + key.columns.length + ' column(s)');
+      console.log('Index key "' + key.name + '" contains ' + key.columns.length + ' column(s)');
     });
   })
   .catch(function (err) {
@@ -142,9 +150,13 @@ table.getIndexKeys()
   });
 ```
 
+##### Notes
+
+A table may have multiple, as well as composite, index keys, hence this function returns an array.
+
 ### <a name="getForeignKeys" href="getForeignKeys">#</a>getForeignKeys([callback]) -> promise
 
-Retrieves foreign-key metadata from database. Please note: a table may have multiple, as well as composite, foreign-keys.
+Retrieves foreign key metadata from database.
 
 ##### Parameters
 
@@ -167,13 +179,66 @@ A promise resolving to an array of objects, having the following properties.
 table.getForeignKeys()
   .then(function (foreignKeys) {
     foreignKeys.forEach(function (key) {
-      console.log('Foreign-key "' + key.name + '" contains ' + key.references.length + ' reference(s)');
+      console.log('Foreign key "' + key.name + '" contains ' + key.references.length + ' reference(s)');
     });
   })
   .catch(function (err) {
     console.error(err);
   });
 ```
+
+##### Notes
+
+A table may have multiple, as well as composite, foreign keys.
+
+### <a name="hasColumn" href="hasColumn">#</a>hasColumn(column) -> boolean
+
+Indicates whether the specified column exists in table.
+
+##### Parameters
+
+* `column` _(string)_ the name of the column (required)
+
+##### Returns
+
+`true` if column exists in table, `false` if not.
+
+##### Example
+
+```javascript
+if (table.hasColumn('firstname')) {
+  // do something
+}
+```
+
+##### Notes
+
+This method will always return false until database is ready.
+
+### <a name="isPrimaryKey" href="isPrimaryKey">#</a>isPrimaryKey(columns*) -> boolean
+
+Indicates whether the column(s) represent a primary key.
+
+##### Parameters
+
+* `column` _(...string)_ the name of the column(s)
+
+##### Returns
+
+`true` if column(s) represent a primary key, `false` if not.
+
+##### Example
+
+```javascript
+if (table.isPrimaryKey('firstname', 'lastname')) {
+  // do something
+}
+```
+
+##### Notes
+
+1. Primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function.
+2. This method will always return false until database is ready.
 
 ## Events
 
