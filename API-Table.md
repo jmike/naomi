@@ -48,7 +48,7 @@ table.getColumns()
 
 ### <a name="getPrimaryKey" href="getPrimaryKey">#</a>getPrimaryKey([callback]) -> promise
 
-Retrieves primary key metadata from database. Please note: primary key can be composite, i.e. consisting of more-than-one columns. 
+Retrieves primary-key metadata from database. Please note: primary-key can be composite, i.e. consisting of more-than-one columns. 
 
 ##### Parameters
 
@@ -75,7 +75,7 @@ table.getPrimaryKey()
 
 ### <a name="getUniqueKeys" href="getUniqueKeys">#</a>getUniqueKeys([callback]) -> promise
 
-Retrieves unique key metadata from database. Please note: a table may have multiple, as well as composite, unique keys.
+Retrieves unique-key metadata from database. Please note: a table may have multiple, as well as composite, unique-keys.
 
 ##### Parameters
 
@@ -83,7 +83,7 @@ Retrieves unique key metadata from database. Please note: a table may have multi
 
 ##### Returns
 
-A promise resolving to an object, where each property represents a unique key.
+A promise resolving to an object, where each property represents a unique-key.
 
 ##### Example
 
@@ -95,6 +95,36 @@ table.getUniqueKeys()
       console.log('The name of unique-key #' + i + ' is ' + key);
       uniqueKeys[key].forEach(function (column, i) {
         console.log('The name of column #' + i + ' of unique-key "' + key + '" is ' + column);
+      }
+    });
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
+### <a name="getIndexKeys" href="getIndexKeys">#</a>getIndexKeys([callback]) -> promise
+
+Retrieves index-key metadata from database. Please note: a table may have multiple, as well as composite, index-keys.
+
+##### Parameters
+
+* `callback` _(function)_ optional callback function with (err, indexKeys) arguments
+
+##### Returns
+
+A promise resolving to an object, where each property represents an index-key.
+
+##### Example
+
+```javascript
+table.getIndexKeys()
+  .then(function (indexKeys) {
+    console.log('Table "' + table.name + '" has ' + Object.keys(uniqueKeys).length + ' index-key(s)');
+    Object.keys(indexKeys).forEach(function (key, i) {
+      console.log('The name of index-key #' + i + ' is ' + key);
+      indexKeys[key].forEach(function (column, i) {
+        console.log('The name of column #' + i + ' of index-key "' + key + '" is ' + column);
       }
     });
   })
