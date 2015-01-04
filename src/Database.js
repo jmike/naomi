@@ -6,16 +6,18 @@ var Joi = require('joi');
 var Table = require('./Table');
 var Transaction = require('./Transaction');
 
-var sqlSchema = Joi.string()
-  .label('SQL statement')
-  .strict()
-  .required();
+var queryFunctSchema = {
+  sql: Joi.string()
+    .label('SQL statement')
+    .strict()
+    .required(),
 
-var queryParamsSchema = Joi.array()
-  .label('query parameters');
+  params: Joi.array()
+    .label('query parameters'),
 
-var queryOptionsSchema = Joi.object()
-  .label('query options');
+  options: Joi.object()
+    .label('query options')
+};
 
 /**
  * Constructs a new database of the designated properties.
@@ -36,33 +38,35 @@ function Database(props) {
   this.connectionProperties = props;
   this.name = props.database;
   this.isConnected = false;
-  this.isReady = false;
-  this._meta = {};
 
   // init the EventEmitter
   events.EventEmitter.call(this);
-  this.setMaxListeners(99);
-
-  // load metadata from database server
-  this.on('connect', function () {
-    this._extractMeta()
-      .bind(this)
-      .then(function (meta) {
-        this._meta = meta;
-        this.isReady = true;
-        this.emit('ready');
-      });
-  });
+  this.setMaxListeners(999);
 }
 
 // @extends EventEmitter
 util.inherits(Database, events.EventEmitter);
 
-// associate with Table class
-Database.prototype.Table = Table;
+/**
+ * Enqueues the given resolver function until Database is connected.
+ * @param {function} resolver
+ * @return {Promise}
+ * @private
+ */
+Database.prototype._enqueue = function (resolver) {
+  var _this = this;
 
-// associate with Transaction class
-Database.prototype.Transaction = Transaction;
+  return new Promise(function(resolve, reject) {
+    if (_this.isConnected) {
+      resolver(resolve, reject);
+    } else {
+      // wait for db connection
+      _this.once('connect', function () {
+        resolver(resolve, reject);
+      });
+    }
+  });
+};
 
 /**
  * Attempts to connect to database server using the connection properties supplied at construction time.
@@ -110,14 +114,15 @@ Database.prototype.disconnect = function (callback) {
  * @param {Array} [params] an array of parameter values.
  * @param {object} [options] query options.
  * @param {function} [callback] a callback function with (err, records) arguments.
- * @returns {Promise} resolving to an array of params.
+ * @returns {object} with sql, params, options and callback properties.
+ * @throws {Error} if arguments are invalid.
  * @private
  */
 Database.prototype._normalizeQueryParams = function (sql, params, options, callback) {
   var validationResult;
 
   // validate sql
-  validationResult = Joi.validate(sql, sqlSchema);
+  validationResult = Joi.validate(sql, queryFunctSchema.sql);
 
   if (validationResult.error) throw validationResult.error;
   sql = validationResult.value;
@@ -138,7 +143,7 @@ Database.prototype._normalizeQueryParams = function (sql, params, options, callb
   }
 
   // validate params
-  validationResult = Joi.validate(params, queryParamsSchema);
+  validationResult = Joi.validate(params, queryFunctSchema.params);
 
   if (validationResult.error) throw validationResult.error;
   params = validationResult.value;
@@ -153,13 +158,12 @@ Database.prototype._normalizeQueryParams = function (sql, params, options, callb
   }
 
   // validate options
-  validationResult = Joi.validate(options, queryOptionsSchema);
+  validationResult = Joi.validate(options, queryFunctSchema.options);
 
   if (validationResult.error) throw validationResult.error;
   options = validationResult.value;
 
-  // return
-  return Promise.resolve([sql, params, options, callback]);
+  return {sql: sql, params: params, options: options, callback: callback};
 };
 
 /**
@@ -184,37 +188,8 @@ Database.prototype.hasTable = function (tableName, callback) {
   return Promise.resolve().nodeify(callback);
 };
 
-/**
- * Begins a new transaction with this database.
- * @param {function} [callback] a callback function.
- * @returns {Promise} resolving to a new Transaction instance.
- */
-Database.prototype.beginTransaction = function (callback) {
-  var t = new this.Transaction(this);
-
-  return t.begin().then(function () {
-    return t;
-  }).nodeify(callback);
-};
-
-/**
- * Extracts and returns meta-data from database.
- * @returns {Promise} resolving to a meta-data object.
- * @private
- */
-Database.prototype._extractMeta = function () {
-  return {};
-};
-
-/**
- * Returns the designated table's metadata.
- * Please note: this method will always return null until the database is ready.
- * @param {string} tableName the name of the table.
- * @returns {(object|null)}
- */
-Database.prototype.getTableMeta = function (tableName) {
-  return this._meta[tableName] || null;
-};
+// associate with Table class
+Database.prototype.Table = Table;
 
 /**
  * Returns a new Table, extended with the given properties and methods.
@@ -242,45 +217,62 @@ Database.prototype.extend = function (tableName, customProperties) {
   return table;
 };
 
+
+// associate with Transaction class
+Database.prototype.Transaction = Transaction;
+
 /**
- * Returns the shortest path from table A to table B.
- * Please note: this method is meant to be called after the database is ready.
- * @param {string} tableA the name of the table A.
- * @param {string} tableB the name of the table B.
- * @returns {(Array.<string>|null)}
+ * Begins a new transaction with this database.
+ * @param {function} [callback] a callback function.
+ * @returns {Promise} resolving to a new Transaction instance.
  */
-Database.prototype.findPath = function (tableA, tableB, path, solutions) {
-  // check if database is ready
-  if (!this.isReady) return null;
+Database.prototype.beginTransaction = function (callback) {
+  var t = new this.Transaction(this);
 
-  // handle optional "path" param
-  path = path || [tableA];
-
-  // handle optional "solutions" param
-  solutions = solutions || [];
-
-  // this is Sparta...
-  if (_.last(path) !== tableB) { // are we there yet?
-    _.forOwn(this._meta[tableA].refTables, function (columns, table) {
-      var arr = path.slice(0);
-
-      if (arr.indexOf(table) === -1) { // avoid running in circles
-        arr.push(table);
-        this.findPath(table, tableB, arr, solutions);
-      }
-    }, this);
-
-  } else { // destination reached
-    solutions.push(path);
-  }
-
-  // check if solutions is empty
-  if (solutions.length === 0) return null;
-
-  // return shortest path
-  return _.min(solutions, function(solution) {
-    return solution.length;
-  });
+  return t.begin().then(function () {
+    return t;
+  }).nodeify(callback);
 };
+
+// /**
+//  * Returns the shortest path from table A to table B.
+//  * Please note: this method is meant to be called after the database is ready.
+//  * @param {string} tableA the name of the table A.
+//  * @param {string} tableB the name of the table B.
+//  * @returns {(Array.<string>|null)}
+//  */
+// Database.prototype.findPath = function (tableA, tableB, path, solutions) {
+//   // check if database is ready
+//   if (!this.isReady) return null;
+
+//   // handle optional "path" param
+//   path = path || [tableA];
+
+//   // handle optional "solutions" param
+//   solutions = solutions || [];
+
+//   // this is Sparta...
+//   if (_.last(path) !== tableB) { // are we there yet?
+//     _.forOwn(this._meta[tableA].refTables, function (columns, table) {
+//       var arr = path.slice(0);
+
+//       if (arr.indexOf(table) === -1) { // avoid running in circles
+//         arr.push(table);
+//         this.findPath(table, tableB, arr, solutions);
+//       }
+//     }, this);
+
+//   } else { // destination reached
+//     solutions.push(path);
+//   }
+
+//   // check if solutions is empty
+//   if (solutions.length === 0) return null;
+
+//   // return shortest path
+//   return _.min(solutions, function(solution) {
+//     return solution.length;
+//   });
+// };
 
 module.exports = Database;

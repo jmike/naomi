@@ -125,24 +125,26 @@ Database.prototype.releaseClient = function (client) {
 };
 
 /**
- * Executes the given parameterized SQL statement, using the supplied db client.
+ * Runs the given parameterized SQL statement on the supplied db client.
  * @param {Client} client a db client.
  * @param {(string|object)} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
  * @returns {Promise} resolving to the query results.
  * @private
+ * @static
  */
-Database.prototype._exec = function (client, sql, params) {
+function queryClient(client, sql, params) {
   var resolver;
 
   resolver = function (resolve, reject) {
     client.query(sql, params, function (err, records) {
       if (err) return reject(err);
 
-      if (_.isArray(records)) { // SELECT statement
+      if (_.isArray(records)) {
+        // SELECT statement
         resolve(records);
-
-      } else { // DML statement
+      } else {
+        // DML statement
         resolve({
           insertId: records.insertId,
           affectedRows: records.affectedRows
@@ -152,7 +154,7 @@ Database.prototype._exec = function (client, sql, params) {
   };
 
   return new Promise(resolver);
-};
+}
 
 /**
  * Runs the given SQL statement to the database server.
@@ -166,22 +168,36 @@ Database.prototype._exec = function (client, sql, params) {
  */
 Database.prototype.query = function (sql, params, options, callback) {
   var _this = this;
+  var args;
+  var resolver;
 
-  return _this._normalizeQueryParams(sql, params, options, callback)
-    .spread(function (sql, params, options, callback) {
-      return _this.acquireClient()
-        .then(function (client) {
-          if (!_.isEmpty(options)) {
-            sql = _.assign({sql: sql}, options); // convert sql to object
-          }
+  // normalize arguments
+  args = this._normalizeQueryParams(sql, params, options, callback);
+  sql = args.sql;
+  params = args.params;
+  options = args.options;
+  callback = args.callback;
 
-          return _this._exec(client, sql, params)
-            .finally(function () {
-              return _this.releaseClient(client);
-            });
-        })
-        .nodeify(callback);
-    });
+  resolver = function (resolve, reject) {
+    // acquire client
+    return _this.acquireClient()
+      .then(function (client) {
+        // check if options is empty
+        if (!_.isEmpty(options)) {
+          // merge sql with options
+          sql = _.assign({sql: sql}, options);
+        }
+        // execute query
+        return queryClient(client, sql, params)
+          .finally(function () {
+            // always release previously acquired client
+            return _this.releaseClient(client);
+          });
+      })
+      .then(resolve, reject);
+  };
+
+  return this._enqueue(resolver).nodeify(callback);
 };
 
 /**
@@ -212,222 +228,25 @@ Database.prototype.hasTable = function (tableName, callback) {
 };
 
 /**
- * Extracts and returns meta-data from database.
- * @returns {Promise} resolving to a meta-data object.
- * @private
- *
- * @example output
- * {
- *   table1: {
- *     columns: {
- *       column1: {
- *         type: "",
- *         position: 1,
- *         isNullable: true
- *       },
- *       column2: {..},
- *       column3: {..}
- *     },
- *     primaryKey: ["column1", "column2"],
- *     uniqueKeys: {
- *       uniqueKey1: ["column2", "column3"]
- *     },
- *     indexKeys: {
- *       indexKey1: ["column2", "column3"]
- *     },
- *     refTables: {
- *       table2: [
- *         {
- *           column: "column1",
- *           refColumn: "table2Column1"
- *         },
- *         {
- *           column: "column2",
- *           refColumn: "table2Column2"
- *         }
- *       ]
- *     }
- *   }
- * }
- */
-Database.prototype._extractMeta = function () {
-  return Promise.props({
-    tables: this._getTables(),
-    columns: this._getColumns(),
-    indices: this._getIndices(),
-    foreignKeys: this._getForeignKeys()
-  }).then(function(result) {
-    var meta = {};
-
-    // add tables + empty properties
-    result.tables.forEach(function (table) {
-      meta[table] = {
-        columns: {},
-        primaryKey: [],
-        uniqueKeys: {},
-        indexKeys: {},
-        refTables: {}
-      };
-    });
-
-    // set columns in table(s)
-    result.columns.forEach(function (e) {
-      var table = meta[e.table];
-
-      table.columns[e.name] = {
-        type: e.type,
-        position: e.position,
-        isNullable: e.isNullable,
-        isAutoInc: e.isAutoInc,
-        default: e.default,
-        collation: e.collation,
-        comment: e.comment
-      };
-    });
-
-    // set indices in table(s)
-    result.indices.forEach(function (index) {
-      var table = meta[index.table];
-
-      if (index.key === 'PRIMARY') {
-        table.primaryKey.push(index.column);
-
-      } else if (index.isUnique) {
-        table.uniqueKeys[index.key] = table.uniqueKeys[index.key] || [];
-        table.uniqueKeys[index.key].push(index.column);
-
-      } else {
-        table.indexKeys[index.key] = table.indexKeys[index.key] || [];
-        table.indexKeys[index.key].push(index.column);
-      }
-    });
-
-    // set foreign keys in table(s)
-    result.foreignKeys.forEach(function (foreignKey) {
-      var table = meta[foreignKey.table];
-
-      table.refTables[foreignKey.refTable] = table.refTables[foreignKey.refTable] || [];
-      table.refTables[foreignKey.refTable].push({
-        column: foreignKey.column,
-        refColumn: foreignKey.refColumn
-      });
-
-      // do the other side of the relation
-      table = meta[foreignKey.refTable];
-
-      table.refTables[foreignKey.table] = table.refTables[foreignKey.table] || [];
-      table.refTables[foreignKey.table].push({
-        column: foreignKey.refColumn,
-        refColumn: foreignKey.column
-      });
-    });
-
-    return meta;
-  });
-};
-
-
-/**
  * Retrieves table names from database.
  * @returns {Promise}
  * @private
  */
 Database.prototype._getTables = function () {
-  var schema = this.connectionProperties.database;
+  var _this = this;
   var sql;
   var params;
 
   sql = 'SHOW FULL TABLES FROM ??;';
-  params = [schema];
+  params = [this.name];
 
-  return this.query(sql, params, {}).then(function (records) {
-    return records.filter(function (record) {
+  return this.query(sql, params)
+    .filter(function (record) {
       return record.Table_type === 'BASE TABLE';
-    }).map(function (record) {
-      return record['Tables_in_' + schema];
+    })
+    .map(function (record) {
+      return record['Tables_in_' + _this.name];
     });
-  });
-};
-
-/**
- * Retrieves column properties from database.
- * @returns {Promise}
- * @private
- */
-Database.prototype._getColumns = function () {
-  var re = /auto_increment/i;
-  var sql;
-  var params;
-
-  sql = 'SELECT * FROM information_schema.COLUMNS WHERE table_schema = ?;';
-  params = [this.connectionProperties.database];
-
-  return this.query(sql, params).then(function (records) {
-    return records.map(function (record) {
-      return {
-        name: record.COLUMN_NAME,
-        table: record.TABLE_NAME,
-        type: record.DATA_TYPE,
-        isNullable: record.IS_NULLABLE === 'YES',
-        isAutoInc: re.test(record.EXTRA),
-        default: record.COLUMN_DEFAULT,
-        collation: record.COLLATION_NAME,
-        comment: record.COLUMN_COMMENT === '' ? null : record.COLUMN_COMMENT,
-        position: record.ORDINAL_POSITION - 1 // zero-indexed
-      };
-    });
-  });
-};
-
-/**
- * Retrieves index properties from database.
- * @returns {Promise}
- * @private
- */
-Database.prototype._getIndices = function () {
-  var sql;
-  var params;
-
-  sql = 'SELECT * FROM information_schema.STATISTICS WHERE table_schema = ?;';
-  params = [this.connectionProperties.database];
-
-  return this.query(sql, params, {}).then(function (records) {
-    return records.map(function (record) {
-      return {
-        key: record.INDEX_NAME,
-        table: record.TABLE_NAME,
-        column: record.COLUMN_NAME,
-        isUnique: record.NON_UNIQUE === 0
-      };
-    });
-  });
-};
-
-/**
- * Retrieves foreign key properties from database.
- * @returns {Promise}
- * @private
- */
-Database.prototype._getForeignKeys = function () {
-  var schema = this.connectionProperties.database;
-  var sql;
-  var params;
-
-  sql = 'SELECT * FROM information_schema.KEY_COLUMN_USAGE ' +
-    'WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ?;';
-  params = [schema, schema];
-
-  return this.query(sql, params, {}).then(function (records) {
-    return records.map(function (record) {
-      return {
-        key: record.CONSTRAINT_NAME,
-        table: record.TABLE_NAME,
-        column: record.COLUMN_NAME,
-        refTable: record.REFERENCED_TABLE_NAME,
-        refColumn: record.REFERENCED_COLUMN_NAME
-      };
-    });
-  });
 };
 
 module.exports = Database;

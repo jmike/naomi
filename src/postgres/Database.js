@@ -138,14 +138,15 @@ Database.prototype.releaseClient = function (client) {
 };
 
 /**
- * Executes the given parameterized SQL statement, using the supplied db client.
+ * Runs the given parameterized SQL statement on the supplied db client.
  * @param {Client} client a db client.
  * @param {string} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
  * @returns {Promise} resolving to the query results.
  * @private
+ * @static
  */
-Database.prototype._exec = function (client, sql, params) {
+function queryClient(client, sql, params) {
   var resolver;
 
   resolver = function (resolve, reject) {
@@ -156,7 +157,7 @@ Database.prototype._exec = function (client, sql, params) {
   };
 
   return new Promise(resolver);
-};
+}
 
 /**
  * Converts ? chars to $1, $2, etc, according to the order they appear in the given SQL statement.
@@ -184,20 +185,33 @@ Database.prototype.prepareSQL = function (sql) {
  */
 Database.prototype.query = function (sql, params, options, callback) {
   var _this = this;
+  var args;
+  var resolver;
 
-  return _this._normalizeQueryParams(sql, params, options, callback)
-    .spread(function (sql, params, options, callback) {
-      return _this.acquireClient()
-        .then(function (client) {
-          sql = _this.prepareSQL(sql);
+  // normalize arguments
+  args = this._normalizeQueryParams(sql, params, options, callback);
+  sql = args.sql;
+  params = args.params;
+  options = args.options;
+  callback = args.callback;
 
-          return _this._exec(client, sql, params)
-            .finally(function () {
-              return _this.releaseClient(client);
-            });
-        })
-        .nodeify(callback);
-    });
+  resolver = function (resolve, reject) {
+    // acquire client
+    return _this.acquireClient()
+      .then(function (client) {
+        // replace "?" with "$#"
+        sql = _this.prepareSQL(sql);
+        // execute query
+        return queryClient(client, sql, params)
+          .finally(function () {
+            // always release acquired client
+            return _this.releaseClient(client);
+          });
+      })
+      .then(resolve, reject);
+  };
+
+  return this._enqueue(resolver).nodeify(callback);
 };
 
 /**
@@ -229,113 +243,6 @@ Database.prototype.hasTable = function (tableName, callback) {
 };
 
 /**
- * Extracts and returns meta-data from database.
- * @returns {Promise} resolving to a meta-data object.
- * @private
- *
- * @example output
- * {
- *   table1: {
- *     columns: {
- *       column1: {
- *         type: "",
- *         position: 1,
- *         isNullable: true
- *       },
- *       column2: {..},
- *       column3: {..}
- *     },
- *     primaryKey: ["column1", "column2"],
- *     uniqueKeys: {
- *       uniqueKey1: ["column2", "column3"]
- *     },
- *     indexKeys: {
- *       indexKey1: ["column2", "column3"]
- *     },
- *     refTables: {
- *       table2: [
- *         {
- *           column: "column1",
- *           refColumn: "table2Column1"
- *         },
- *         {
- *           column: "column2",
- *           refColumn: "table2Column2"
- *         }
- *       ]
- *     }
- *   }
- * }
- */
-Database.prototype._extractMeta = function () {
-  return Promise.props({
-    tables: this._getTables(),
-    columns: this._getColumns(),
-    constraints: this._getConstraints(),
-    foreignKeys: this._getForeignKeys()
-  }).then(function(result) {
-    var meta = {};
-
-    // add tables + empty properties
-    result.tables.forEach(function (table) {
-      meta[table] = {
-        columns: {},
-        primaryKey: [],
-        uniqueKeys: {},
-        indexKeys: {},
-        refTables: {}
-      };
-    });
-
-    // set columns in table(s)
-    result.columns.forEach(function (column) {
-      var table = meta[column.table];
-
-      table.columns[column.name] = {
-        type: column.type,
-        position: column.position,
-        isNullable: column.isNullable
-      };
-    });
-
-    // set indices in table(s)
-    result.constraints.forEach(function (constraint) {
-      var table = meta[constraint.table];
-
-      if (constraint.type === 'PRIMARY KEY') {
-        table.primaryKey.push(constraint.column);
-
-      } else if (constraint.type === 'UNIQUE') {
-        table.uniqueKeys[constraint.key] = table.uniqueKeys[constraint.key] || [];
-        table.uniqueKeys[constraint.key].push(constraint.column);
-      }
-    });
-
-    // set foreign keys in table(s)
-    result.foreignKeys.forEach(function (foreignKey) {
-      var table = meta[foreignKey.table];
-
-      table.refTables[foreignKey.refTable] = table.refTables[foreignKey.refTable] || [];
-      table.refTables[foreignKey.refTable].push({
-        column: foreignKey.column,
-        refColumn: foreignKey.refColumn
-      });
-
-      // do the other side of the relation
-      table = meta[foreignKey.refTable];
-
-      table.refTables[foreignKey.table] = table.refTables[foreignKey.table] || [];
-      table.refTables[foreignKey.table].push({
-        column: foreignKey.refColumn,
-        refColumn: foreignKey.column
-      });
-    });
-
-    return meta;
-  });
-};
-
-/**
  * Retrieves table names from database.
  * @returns {Promise}
  * @private
@@ -344,102 +251,18 @@ Database.prototype._getTables = function () {
   var sql;
   var params;
 
-  sql = 'SELECT table_name FROM information_schema.tables ' +
-    'WHERE table_type = \'BASE TABLE\' AND table_catalog = $1 ' +
-    'AND table_schema NOT IN (\'pg_catalog\', \'information_schema\');';
-  params = [this.connectionProperties.database];
+  sql = [
+    'SELECT table_name',
+    'FROM information_schema.tables',
+    'WHERE table_type = \'BASE TABLE\'',
+    'AND table_catalog = $1',
+    'AND table_schema NOT IN (\'pg_catalog\', \'information_schema\');'
+  ].join(' ');
+  params = [this.name];
 
   return this.query(sql, params).then(function (records) {
     return records.map(function (record) {
       return record.table_name;
-    });
-  });
-};
-
-/**
- * Retrieves column properties from database.
- * @returns {Promise}
- * @private
- */
-Database.prototype._getColumns = function () {
-  var sql;
-  var params;
-
-  sql = 'SELECT column_name, table_name, data_type, is_nullable, column_default, collation_name, ordinal_position ' +
-    'FROM information_schema.columns ' +
-    'WHERE table_catalog = $1 AND table_schema NOT IN (\'pg_catalog\', \'information_schema\');';
-  params = [this.connectionProperties.database];
-
-  return this.query(sql, params).then(function (records) {
-    return records.map(function (record) {
-      return {
-        name: record.column_name,
-        table: record.table_name,
-        type: record.data_type,
-        isNullable: record.is_nullable === 'YES',
-        default: record.column_default,
-        collation: record.collation_name,
-        comment: '', // TODO: extract comments
-        position: record.ordinal_position - 1 // zero-indexed
-      };
-    });
-  });
-};
-
-/**
- * Retrieves constraint properties from database.
- * @returns {Promise}
- * @private
- */
-Database.prototype._getConstraints = function () {
-  var sql;
-  var params;
-
-  sql = 'SELECT tc.constraint_name, tc.constraint_type, ccu.table_name, ccu.column_name ' +
-    'FROM information_schema.table_constraints AS tc ' +
-    'INNER JOIN information_schema.constraint_column_usage AS ccu ON tc.constraint_name = ccu.constraint_name ' +
-    'WHERE tc.constraint_catalog = $1;';
-  params = [this.connectionProperties.database];
-
-  return this.query(sql, params).then(function (records) {
-    return records.map(function (record) {
-      return {
-        key: record.constraint_name,
-        table: record.table_name,
-        column: record.column_name,
-        type: record.constraint_type
-      };
-    });
-  });
-};
-
-/**
- * Retrieves foreign key properties from database.
- * @returns {Promise}
- * @private
- */
-Database.prototype._getForeignKeys = function () {
-  var sql;
-  var params;
-
-  sql = 'SELECT tc.constraint_name, tc.table_name, kcu.column_name, ' +
-    'ccu.table_name AS referenced_table_name, ' +
-    'ccu.column_name AS referenced_column_name ' +
-    'FROM information_schema.table_constraints AS tc ' +
-    'INNER JOIN information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name ' +
-    'INNER JOIN information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name ' +
-    'WHERE tc.constraint_type = \'FOREIGN KEY\' AND tc.constraint_catalog = $1;';
-  params = [this.connectionProperties.database];
-
-  return this.query(sql, params, {}).then(function (records) {
-    return records.map(function (record) {
-      return {
-        key: record.constraint_name,
-        table: record.table_name,
-        column: record.column_name,
-        refTable: record.referenced_table_name,
-        refColumn: record.referenced_column_name
-      };
     });
   });
 };
