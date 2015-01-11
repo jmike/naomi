@@ -7,19 +7,6 @@ var GenericDatabase = require('../Database');
 var Table = require('./Table');
 var Transaction = require('./Transaction');
 
-var propsSchema = Joi.object()
-  .label('connection properties')
-  .keys({
-    host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
-    port: Joi.number().label('port').min(0).max(65536).optional().default(5432),
-    user: Joi.string().label('user').strict().optional().default('root'),
-    password: Joi.string().label('password').strict().optional().default('').allow(''),
-    database: Joi.string().label('database name').strict().required(),
-    connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
-    poolIdleTimeout: Joi.number().min(1000).strict().optional().default(30000),
-    reapIntervalMillis: Joi.number().min(1000).strict().optional().default(1000)
-  });
-
 /**
  * Constructs a new Postgres Database.
  * @param {object} props connection properties.
@@ -30,17 +17,34 @@ var propsSchema = Joi.object()
  * @param {string} [props.password] the password of the user.
  * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
  * @extends {GenericDatabase}
+ * @throws {Error} if props is unspecified or invalid.
  * @constructor
  */
 function Database(props) {
+  var schema;
   var validationResult;
 
+  // set connection properties schema
+  schema = Joi.object()
+    .label('connection properties')
+    .keys({
+      host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
+      port: Joi.number().label('port').min(0).max(65536).optional().default(5432),
+      user: Joi.string().label('user').strict().optional().default('root'),
+      password: Joi.string().label('password').strict().optional().default('').allow(''),
+      database: Joi.string().label('database name').strict().required(),
+      connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
+      poolIdleTimeout: Joi.number().min(1000).strict().optional().default(30000),
+      reapIntervalMillis: Joi.number().min(1000).strict().optional().default(1000)
+    });
+
   // validate connection properties
-  validationResult = Joi.validate(props, propsSchema);
+  validationResult = Joi.validate(props, schema);
 
   if (validationResult.error) throw validationResult.error;
   props = validationResult.value;
 
+  // init GenericDatabase
   GenericDatabase.call(this, props);
   this._pool = null;
 }
@@ -48,14 +52,8 @@ function Database(props) {
 // @extends GenericDatabase
 util.inherits(Database, GenericDatabase);
 
-// associate with Postgres Table class
-Database.prototype.Table = Table;
-
-// associate with Postgres Transaction class
-Database.prototype.Transaction = Transaction;
-
 /**
- * Attempts to connect to database server using the connection properties supplied at construction time.
+ * Attempts to connect to server using the connection properties supplied at construction time.
  * @param {function} [callback] an optional callback function with (err) arguments.
  * @returns {Promise}
  * @emits Database#connect
@@ -63,8 +61,10 @@ Database.prototype.Transaction = Transaction;
 Database.prototype.connect = function (callback) {
   var _this = this;
 
-  if (this.isConnected) Promise.resolve().nodeify(callback); // already connected
+  // check if database is already connected
+  if (this.isConnected) Promise.resolve().nodeify(callback);
 
+  // connect
   return Promise.try(function () {
     _this._pool = createPool({
       create: function(callback) {
@@ -90,8 +90,8 @@ Database.prototype.connect = function (callback) {
 };
 
 /**
- * Gracefully closes any open connection to the database server.
- * Please note: this instance will become practically useless after calling this method.
+ * Gracefully closes any open connection to the server.
+ * Please note: the database will become practically useless after calling this method.
  * @param {function} [callback] an optional callback function with (err) arguments.
  * @returns {Promise}
  * @emits Database#disconnect
@@ -99,8 +99,10 @@ Database.prototype.connect = function (callback) {
 Database.prototype.disconnect = function (callback) {
   var _this = this;
 
-  if (!this.isConnected) return Promise.resolve().nodeify(callback); // already disconnected
+  // check if database is already disconnected
+  if (!this.isConnected) return Promise.resolve().nodeify(callback);
 
+  // disconnect
   return Promise.try(function () {
     _this._pool.drain(function () {
       _this._pool.destroyAllNow();
@@ -138,7 +140,7 @@ Database.prototype.releaseClient = function (client) {
 };
 
 /**
- * Runs the given parameterized SQL statement on the supplied db client.
+ * Runs the given parameterized SQL statement to the supplied db client.
  * @param {Client} client a db client.
  * @param {string} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
@@ -176,7 +178,7 @@ Database.prototype.prepareSQL = function (sql) {
 };
 
 /**
- * Runs the given SQL statement to the database server.
+ * Executes the given parameterized SQL statement.
  * @param {string} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
  * @param {object} [options] query options.
@@ -189,11 +191,11 @@ Database.prototype.query = function (sql, params, options, callback) {
   var resolver;
 
   // normalize arguments
-  args = this._normalizeQueryParams(sql, params, options, callback);
-  sql = args.sql;
-  params = args.params;
-  options = args.options;
-  callback = args.callback;
+  args = this._normalizeQueryArgs(sql, params, options, callback);
+  sql = args[0];
+  params = args[1];
+  options = args[2];
+  callback = args[3];
 
   resolver = function (resolve, reject) {
     // acquire client
@@ -216,11 +218,11 @@ Database.prototype.query = function (sql, params, options, callback) {
 
 /**
  * Indicates whether the designated table exists in database.
- * @param {string} tableName the name of the table.
- * @param {function} [callback] a callback function with (err, verdict) arguments.
+ * @param {string} table the name of the table.
+ * @param {function} [callback] a callback function with (err, bool) arguments.
  * @returns {Promise}
  */
-Database.prototype.hasTable = function (tableName, callback) {
+Database.prototype.hasTable = function (table, callback) {
   var sql;
   var params;
 
@@ -233,7 +235,7 @@ Database.prototype.hasTable = function (tableName, callback) {
     'AND table_type = \'BASE TABLE\'',
     'LIMIT 1;'
   ].join(' ');
-  params = [this.name, tableName];
+  params = [this.name, table];
 
   return this.query(sql, params)
     .then(function (records) {
@@ -244,9 +246,10 @@ Database.prototype.hasTable = function (tableName, callback) {
 
 /**
  * Retrieves table names from database.
+ * @param {function} [callback] a callback function with (err, tables) arguments.
  * @returns {Promise}
  */
-Database.prototype.getTables = function () {
+Database.prototype.getTables = function (callback) {
   var sql;
   var params;
 
@@ -259,11 +262,17 @@ Database.prototype.getTables = function () {
   ].join(' ');
   params = [this.name];
 
-  return this.query(sql, params).then(function (records) {
-    return records.map(function (record) {
+  return this.query(sql, params)
+    .map(function (record) {
       return record.table_name;
-    });
-  });
+    })
+    .nodeify(callback);
 };
+
+// associate with Postgres Table class
+Database.prototype.Table = Table;
+
+// associate with Postgres Transaction class
+Database.prototype.Transaction = Transaction;
 
 module.exports = Database;

@@ -2,22 +2,8 @@ var events = require('events');
 var util = require('util');
 var _ = require('lodash');
 var Promise = require('bluebird');
-var Joi = require('joi');
 var Table = require('./Table');
 var Transaction = require('./Transaction');
-
-var queryFunctSchema = {
-  sql: Joi.string()
-    .label('SQL statement')
-    .strict()
-    .required(),
-
-  params: Joi.array()
-    .label('query parameters'),
-
-  options: Joi.object()
-    .label('query options')
-};
 
 /**
  * Constructs a new database of the designated properties.
@@ -48,7 +34,8 @@ function Database(props) {
 util.inherits(Database, events.EventEmitter);
 
 /**
- * Enqueues the given resolver function until Database is connected.
+ * Enqueues the given resolver function until the database is connected.
+ * Executes the resolver immediately if database is already connected.
  * @param {function} resolver
  * @return {Promise}
  * @private
@@ -69,7 +56,7 @@ Database.prototype._enqueue = function (resolver) {
 };
 
 /**
- * Attempts to connect to database server using the connection properties supplied at construction time.
+ * Attempts to connect to server using the connection properties supplied at construction time.
  * @param {function} [callback] an optional callback function with (err) arguments.
  * @returns {Promise}
  * @emits Database#connect
@@ -88,8 +75,8 @@ Database.prototype.connect = function (callback) {
 };
 
 /**
- * Gracefully closes any open connection to the database server.
- * Please note: this instance will become practically useless after calling this method.
+ * Gracefully closes any open connection to the server.
+ * Please note: the  will become practically useless after calling this method.
  * @param {function} [callback] an optional callback function with (err) arguments.
  * @returns {Promise}
  * @emits Database#disconnect
@@ -109,23 +96,20 @@ Database.prototype.disconnect = function (callback) {
 };
 
 /**
- * Normalizes the given query params.
+ * Normalizes the given #query() arguments.
  * @param {string} sql a parameterized SQL statement.
  * @param {Array} [params] an array of parameter values.
  * @param {object} [options] query options.
  * @param {function} [callback] a callback function with (err, records) arguments.
- * @returns {object} with sql, params, options and callback properties.
+ * @returns {Array} with sql, params, options and callback arguments.
  * @throws {Error} if arguments are invalid.
  * @private
  */
-Database.prototype._normalizeQueryParams = function (sql, params, options, callback) {
-  var validationResult;
-
+Database.prototype._normalizeQueryArgs = function (sql, params, options, callback) {
   // validate sql
-  validationResult = Joi.validate(sql, queryFunctSchema.sql);
-
-  if (validationResult.error) throw validationResult.error;
-  sql = validationResult.value;
+  if (!_.isString(sql)) {
+    throw new Error('Invalid sql argument; expected string, received ' + typeof(sql));
+  }
 
   // normalize params
   if (_.isFunction(params)) {
@@ -143,10 +127,9 @@ Database.prototype._normalizeQueryParams = function (sql, params, options, callb
   }
 
   // validate params
-  validationResult = Joi.validate(params, queryFunctSchema.params);
-
-  if (validationResult.error) throw validationResult.error;
-  params = validationResult.value;
+  if (!_.isArray(params)) {
+    throw new Error('Invalid params argument; expected Array, received ' + typeof(sql));
+  }
 
   // normalize options
   if (_.isFunction(options)) {
@@ -158,12 +141,11 @@ Database.prototype._normalizeQueryParams = function (sql, params, options, callb
   }
 
   // validate options
-  validationResult = Joi.validate(options, queryFunctSchema.options);
+  if (!_.isObject(params)) {
+    throw new Error('Invalid options argument; expected object, received ' + typeof(sql));
+  }
 
-  if (validationResult.error) throw validationResult.error;
-  options = validationResult.value;
-
-  return {sql: sql, params: params, options: options, callback: callback};
+  return [sql, params, options, callback];
 };
 
 /**
@@ -180,59 +162,59 @@ Database.prototype.query = function (sql, params, options, callback) {
 
 /**
  * Indicates whether the designated table exists in database.
- * @param {string} tableName the name of the table.
- * @param {function} [callback] a callback function with (err, verdict) arguments.
+ * @param {string} table the name of the table.
+ * @param {function} [callback] a callback function with (err, bool) arguments.
  * @returns {Promise}
  */
-Database.prototype.hasTable = function (tableName, callback) {
+Database.prototype.hasTable = function (table, callback) {
   return Promise.resolve().nodeify(callback);
 };
 
-// associate with Table class
-Database.prototype.Table = Table;
+// // associate with Table class
+// Database.prototype.Table = Table;
 
-/**
- * Returns a new Table, extended with the given properties and methods.
- * Please note: this method will not create a new table on database - it will merely reference an existing one.
- * @param {string} tableName the name of the table in database.
- * @param {object} [customProperties] the table's custom properties and methods.
- * @returns {Table}
- */
-Database.prototype.extend = function (tableName, customProperties) {
-  var table;
+// /**
+//  * Returns a new Table, extended with the given properties and methods.
+//  * Please note: this method will not create a new table on database - it will merely reference an existing one.
+//  * @param {string} tableName the name of the table in database.
+//  * @param {object} [customProperties] the table's custom properties and methods.
+//  * @returns {Table}
+//  */
+// Database.prototype.extend = function (tableName, customProperties) {
+//   var table;
 
-  // validate "tableName" param
-  if (!_.isString(tableName)) {
-    throw new Error('Invalid table name: expected string, received ' + typeof(tableName));
-  }
+//   // validate "tableName" param
+//   if (!_.isString(tableName)) {
+//     throw new Error('Invalid table name: expected string, received ' + typeof(tableName));
+//   }
 
-  // create table
-  table = new this.Table(this, tableName);
+//   // create table
+//   table = new this.Table(this, tableName);
 
-  // extend with custom properties
-  if (_.isPlainObject(customProperties)) {
-    table = _.extend(table, customProperties);
-  }
+//   // extend with custom properties
+//   if (_.isPlainObject(customProperties)) {
+//     table = _.extend(table, customProperties);
+//   }
 
-  return table;
-};
+//   return table;
+// };
 
 
-// associate with Transaction class
-Database.prototype.Transaction = Transaction;
+// // associate with Transaction class
+// Database.prototype.Transaction = Transaction;
 
-/**
- * Begins a new transaction with this database.
- * @param {function} [callback] a callback function.
- * @returns {Promise} resolving to a new Transaction instance.
- */
-Database.prototype.beginTransaction = function (callback) {
-  var t = new this.Transaction(this);
+// /**
+//  * Begins a new transaction with this database.
+//  * @param {function} [callback] a callback function.
+//  * @returns {Promise} resolving to a new Transaction instance.
+//  */
+// Database.prototype.beginTransaction = function (callback) {
+//   var t = new this.Transaction(this);
 
-  return t.begin().then(function () {
-    return t;
-  }).nodeify(callback);
-};
+//   return t.begin().then(function () {
+//     return t;
+//   }).nodeify(callback);
+// };
 
 // /**
 //  * Returns the shortest path from table A to table B.

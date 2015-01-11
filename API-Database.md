@@ -7,6 +7,7 @@
   * [disconnect([callback])](#disconnect)
   * [query(sql, [params], [options], [callback])](#query)
   * [hasTable(table, [callback])](#hasTable)
+  * [getTables([callback])](#getTables)
   * [extend(table, props)](#extend)
 * [Events](#events)
   * [connect](#connect-event)
@@ -17,7 +18,7 @@
 
 ### <a name="connect" href="connect">#</a>connect([callback]) -> promise
 
-Attempts to connect to the database server.
+Attempts to connect to the server.
 
 ##### Parameters
 
@@ -45,7 +46,7 @@ db.connect()
 
 ### <a name="disconnect" href="disconnect">#</a>disconnect([callback]) -> promise
 
-Gracefully closes any open connection to the database server.
+Gracefully closes any open connection to the server.
 Please note: database will become practically useless after calling this method.
 
 ##### Parameters
@@ -115,7 +116,7 @@ Indicates whether the designated table exists in database.
 ##### Parameters
 
 * `table` _(string)_ the name of the table to look for (required)
-* `callback` _(function)_ optional callback function with (err, hasTable) arguments
+* `callback` _(function)_ optional callback function with (err, bool) arguments
 
 ##### Returns
 
@@ -125,12 +126,38 @@ A promise resolving to a boolean value.
 
 ```javascript
 db.hasTable('accounts')
-  .then(function (hasTable) {
-    if (hasTable) {
+  .then(function (bool) {
+    if (bool) {
       // table exists in database
     } else {) {
       // table not found in database
     }
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
+### <a name="getTables" href="getTables">#</a>getTables([callback]) -> promise
+
+Retreives table names from database.
+
+##### Parameters
+
+* `callback` _(function)_ optional callback function with (err, tables) arguments
+
+##### Returns
+
+A promise resolving to an array of table names.
+
+##### Example
+
+```javascript
+db.getTables()
+  .then(function (tables) {
+    tables.forEach(function (table) {
+      // do something with table name
+    })
   })
   .catch(function (err) {
     console.error(err);
