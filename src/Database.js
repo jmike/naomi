@@ -128,7 +128,7 @@ Database.prototype._normalizeQueryArgs = function (sql, params, options, callbac
 
   // validate params
   if (!_.isArray(params)) {
-    throw new Error('Invalid params argument; expected Array, received ' + typeof(sql));
+    throw new Error('Invalid params argument; expected array, received ' + typeof(params));
   }
 
   // normalize options
@@ -141,8 +141,8 @@ Database.prototype._normalizeQueryArgs = function (sql, params, options, callbac
   }
 
   // validate options
-  if (!_.isObject(params)) {
-    throw new Error('Invalid options argument; expected object, received ' + typeof(sql));
+  if (!_.isPlainObject(options)) {
+    throw new Error('Invalid options argument; expected object, received ' + typeof(options));
   }
 
   return [sql, params, options, callback];
