@@ -42,7 +42,7 @@ function Database(props) {
 util.inherits(Database, GenericDatabase);
 
 /**
- * @extends GenericDatabase#connect
+ * @extends {GenericDatabase#connect}
  */
 Database.prototype.connect = function (callback) {
   var _this = this;
@@ -60,7 +60,7 @@ Database.prototype.connect = function (callback) {
 };
 
 /**
- * @extends Database#disconnect
+ * @extends {GenericDatabase#disconnect}
  */
 Database.prototype.disconnect = function (callback) {
   var _this = this;
@@ -143,14 +143,7 @@ function _query(client, sql, params) {
 }
 
 /**
- * Executes the given SQL statement.
- * @param {string} sql a parameterized SQL statement.
- * @param {Array} params an array of parameter values.
- * @param {object} [options] query options.
- * @param {boolean} [options.nestTables] set to true to handle overlapping column names.
- * @param {boolean} [options.timeout] inactivity timeout in millis.
- * @param {function} [callback] a callback function, i.e. function(err, records).
- * @returns {Promise} resolving to the query results.
+ * @extends {GenericDatabase#query}
  */
 Database.prototype.query = function (sql, params, options, callback) {
   var _this = this;
@@ -216,10 +209,7 @@ Database.prototype.query = function (sql, params, options, callback) {
 };
 
 /**
- * Indicates whether the designated table exists in database.
- * @param {string} table the name of the table.
- * @param {function} [callback] a callback function with (err, bool) arguments.
- * @returns {Promise}
+ * @extends {GenericDatabase#hasTable}
  */
 Database.prototype.hasTable = function (table, callback) {
   var sql;
@@ -248,9 +238,7 @@ Database.prototype.hasTable = function (table, callback) {
 };
 
 /**
- * Retrieves names of the tables in database.
- * @param {function} [callback] a callback function with (err, tables) arguments.
- * @returns {Promise}
+ * @extends {GenericDatabase#getTables}
  */
 Database.prototype.getTables = function (callback) {
   var _this = this;
