@@ -1,45 +1,37 @@
 var util = require('util');
 var mysql = require('mysql');
 var _ = require('lodash');
-var Joi = require('joi');
+var type = require('type-of');
 var Promise = require('bluebird');
 var GenericDatabase = require('../Database');
 var Table = require('./Table');
 var Transaction = require('./Transaction');
 
 /**
- * Constructs a new MySQL Database of the designated properties.
- * @param {object} props connection properties.
- * @param {string} props.database the name of the database.
- * @param {string} [props.host=localhost] the hostname of the database.
- * @param {(number|string)} [props.port=3306] the port number of the database.
- * @param {string} [props.user=root] the user to access the database.
- * @param {string} [props.password] the password of the user.
- * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
- * @throws {Error} if props is unspecified or invalid.
+ * Constructs a new MySQL Database client of the designated properties.
+ * @param {object} props connection properties
+ * @param {string} props.database the name of the database
+ * @param {string} [props.host=localhost] optional hostname; defaults to "localhost"
+ * @param {number} [props.port=3306] optional port number; defaults to 3306
+ * @param {string} [props.user=root] optional user name to access the database; defaults to "root"
+ * @param {string} [props.password] optional password to access the database; defaults to "" (empty string)
+ * @param {number} [props.connectionLimit=10] optional maximum number of connections to maintain in the pool
  * @constructor
  */
 function Database(props) {
-  var schema;
-  var validationResult;
+  // validate props argument
+  if (!_.isPlainObject(props)) {
+    throw new Error('Invalid props argument; expected object, received ' + type(props));
+  }
 
-  // set connection properties schema
-  schema = Joi.object()
-    .label('connection properties')
-    .keys({
-      host: Joi.string().label('host').hostname().strict().optional().default('localhost'),
-      port: Joi.number().label('port').min(0).max(65536).optional().default(3306),
-      user: Joi.string().label('user').strict().optional().default('root'),
-      password: Joi.string().label('password').strict().optional().default('').allow(''),
-      database: Joi.string().label('database name').strict().required(),
-      connectionLimit: Joi.number().label('connection limit').min(1).max(1000).strict().optional().default(10),
-    });
-
-  // validate connection properties
-  validationResult = Joi.validate(props, schema);
-
-  if (validationResult.error) throw validationResult.error;
-  props = validationResult.value;
+  // handle optional props
+  props = _.defaults(props, {
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: '',
+    connectionLimit: 10
+  });
 
   // init GenericDatabase
   GenericDatabase.call(this, props);
@@ -50,10 +42,7 @@ function Database(props) {
 util.inherits(Database, GenericDatabase);
 
 /**
- * Attempts to connect to server using the connection properties supplied at construction time.
- * @param {function} [callback] an optional callback function with (err) arguments.
- * @returns {Promise}
- * @emits Database#connect
+ * @extends GenericDatabase#connect
  */
 Database.prototype.connect = function (callback) {
   var _this = this;
@@ -71,11 +60,7 @@ Database.prototype.connect = function (callback) {
 };
 
 /**
- * Gracefully closes any open connection to the server.
- * Please note: this instance will become practically useless after calling this method.
- * @param {function} [callback] an optional callback function with (err) arguments.
- * @returns {Promise}
- * @emits Database#disconnect
+ * @extends Database#disconnect
  */
 Database.prototype.disconnect = function (callback) {
   var _this = this;
@@ -128,13 +113,13 @@ Database.prototype.releaseClient = function (client) {
 /**
  * Runs the given parameterized SQL statement to the supplied db client.
  * @param {Client} client a db client.
- * @param {(string|object)} sql a parameterized SQL statement.
+ * @param {(String|Object)} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
  * @returns {Promise} resolving to the query results.
  * @private
  * @static
  */
-function queryClient(client, sql, params) {
+function _query(client, sql, params) {
   var resolver;
 
   resolver = function (resolve, reject) {
@@ -169,26 +154,56 @@ function queryClient(client, sql, params) {
  */
 Database.prototype.query = function (sql, params, options, callback) {
   var _this = this;
-  var args;
   var resolver;
 
-  // normalize arguments
-  args = this._normalizeQueryArgs(sql, params, options, callback);
-  sql = args[0];
-  params = args[1];
-  options = args[2];
-  callback = args[3];
+  // validate sql argument
+  if (!_.isString(sql)) {
+    throw new Error('Invalid sql argument; expected string, received ' + type(sql));
+  }
 
+  // handle optional params argument
+  if (_.isFunction(params)) {
+    callback = params;
+    options = undefined;
+    params = [];
+  } else if (_.isPlainObject(params)) {
+    callback = options;
+    options = params;
+    params = [];
+  } else if (_.isUndefined(params)) {
+    callback = undefined;
+    options = undefined;
+    params = [];
+  }
+
+  // validate params argument
+  if (!_.isArray(params)) {
+    throw new Error('Invalid params argument; expected array, received ' + type(params));
+  }
+
+  // handle optional options argument
+  if (_.isFunction(options)) {
+    callback = options;
+    options = {};
+  } else if (_.isUndefined(options)) {
+    callback = undefined;
+    options = {};
+  }
+
+  // validate options argument
+  if (!_.isPlainObject(options)) {
+    throw new Error('Invalid options argument; expected object, received ' + type(options));
+  }
+
+  // define promise resolver
   resolver = function (resolve, reject) {
     // acquire client
     return _this.acquireClient()
       .then(function (client) {
-        // merge sql with options
-        if (!_.isEmpty(options)) {
-          sql = _.assign({sql: sql}, options);
-        }
+        // merge sql with options, if the latter is specified
+        if (!_.isEmpty(options)) sql = _.assign({sql: sql}, options);
         // execute query
-        return queryClient(client, sql, params)
+        return _query(client, sql, params)
           .finally(function () {
             // always release previously acquired client
             return _this.releaseClient(client);
@@ -210,6 +225,11 @@ Database.prototype.hasTable = function (table, callback) {
   var sql;
   var params;
 
+  // validate table argument
+  if (!_.isString(table)) {
+    throw new Error('Invalid table argument; expected string, received ' + type(table));
+  }
+
   sql = [
     'SELECT table_name AS count',
     'FROM information_schema.tables',
@@ -228,17 +248,15 @@ Database.prototype.hasTable = function (table, callback) {
 };
 
 /**
- * Retrieves table names from database.
+ * Retrieves names of the tables in database.
  * @param {function} [callback] a callback function with (err, tables) arguments.
  * @returns {Promise}
  */
 Database.prototype.getTables = function (callback) {
   var _this = this;
-  var sql;
-  var params;
 
-  sql = 'SHOW FULL TABLES FROM ??;';
-  params = [this.name];
+  var sql = 'SHOW FULL TABLES FROM ??;';
+  var params = [this.name];
 
   return this.query(sql, params)
     .filter(function (record) {

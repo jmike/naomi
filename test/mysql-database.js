@@ -1,7 +1,6 @@
 require('dotenv').load(); // load environmental variables
 
-var chai = require('chai');
-var assert = chai.assert;
+var assert = require('chai').assert;
 var naomi = require('../src/naomi');
 
 describe('MySQL Database', function () {
@@ -16,104 +15,106 @@ describe('MySQL Database', function () {
 
   describe('@disconnected', function () {
 
-    describe('#isConnected', function () {
+    describe('#query()', function () {
 
-      it('returns false', function () {
-        assert.strictEqual(db.isConnected, false);
+      it('throws error when sql statement is unspecified', function () {
+        assert.throws(function () { db.query(); }, /invalid sql argument/i);
+      });
+
+      it('throws error when sql statement is Number', function () {
+        assert.throws(function () { db.query(-1); }, /invalid sql argument/i);
+        assert.throws(function () { db.query(0); }, /invalid sql argument/i);
+        assert.throws(function () { db.query(1); }, /invalid sql argument/i);
+      });
+
+      it('throws error when sql statement is Boolean', function () {
+        assert.throws(function () { db.query(true); }, /invalid sql argument/i);
+        assert.throws(function () { db.query(false); }, /invalid sql argument/i);
+      });
+
+      it('throws error when sql statement is Object', function () {
+        assert.throws(function () { db.query({}); }, /invalid sql argument/i);
+      });
+
+      it('throws error when sql statement is Array', function () {
+        assert.throws(function () { db.query([]); }, /invalid sql argument/i);
+      });
+
+      it('throws error when sql statement is null', function () {
+        assert.throws(function () { db.query(null); }, /invalid sql argument/i);
+      });
+
+      it('throws error when params is Number', function () {
+        assert.throws(function () { db.query('sql', -1); }, /invalid params argument/i);
+        assert.throws(function () { db.query('sql', 0); }, /invalid params argument/i);
+        assert.throws(function () { db.query('sql', 1); }, /invalid params argument/i);
+      });
+
+      it('throws error when params is Boolean', function () {
+        assert.throws(function () { db.query('sql', true); }, /invalid params argument/i);
+        assert.throws(function () { db.query('sql', false); }, /invalid params argument/i);
+      });
+
+      it('throws error when params is String', function () {
+        assert.throws(function () { db.query('sql', ''); }, /invalid params argument/i);
+      });
+
+      it('throws error when params is null', function () {
+        assert.throws(function () { db.query('sql', null); }, /invalid params argument/i);
+      });
+
+      it('throws error when options is Number', function () {
+        assert.throws(function () { db.query('sql', [], -1); }, /invalid options argument/i);
+        assert.throws(function () { db.query('sql', [], 0); }, /invalid options argument/i);
+        assert.throws(function () { db.query('sql', [], 1); }, /invalid options argument/i);
+      });
+
+      it('throws error when options is Boolean', function () {
+        assert.throws(function () { db.query('sql', [], true); }, /invalid options argument/i);
+        assert.throws(function () { db.query('sql', [], false); }, /invalid options argument/i);
+      });
+
+      it('throws error when options is String', function () {
+        assert.throws(function () { db.query('sql', [], ''); }, /invalid options argument/i);
+      });
+
+      it('throws error when options is Array', function () {
+        assert.throws(function () { db.query('sql', [], []); }, /invalid options argument/i);
+      });
+
+      it('throws error when options is null', function () {
+        assert.throws(function () { db.query('sql', [], null); }, /invalid options argument/i);
       });
 
     });
 
-    describe('#query()', function () {
+    describe('#hasTable()', function () {
 
-      it('throws error when sql statement is unspecified', function () {
-        assert.throws(function () {
-          db.query();
-        }, 'Invalid sql argument; expected string, received undefined');
+      it('throws error when table is unspecified', function () {
+        assert.throws(function () { db.hasTable(); }, /invalid table argument/i);
       });
 
-      it('throws error when sql statement is Number', function () {
-        assert.throws(function () {
-          db.query(1);
-        }, 'Invalid sql argument; expected string, received number');
+      it('throws error when table is Number', function () {
+        assert.throws(function () { db.hasTable(-1); }, /invalid table argument/i);
+        assert.throws(function () { db.hasTable(0); }, /invalid table argument/i);
+        assert.throws(function () { db.hasTable(1); }, /invalid table argument/i);
       });
 
-      it('throws error when sql statement is Boolean', function () {
-        assert.throws(function () {
-          db.query(true);
-        }, 'Invalid sql argument; expected string, received boolean');
+      it('throws error when table is Boolean', function () {
+        assert.throws(function () { db.hasTable(true); }, /invalid table argument/i);
+        assert.throws(function () { db.hasTable(false); }, /invalid table argument/i);
       });
 
-      it('throws error when sql statement is Object', function () {
-        assert.throws(function () {
-          db.query({});
-        }, 'Invalid sql argument; expected string, received object');
+      it('throws error when table is Object', function () {
+        assert.throws(function () { db.hasTable({}); }, /invalid table argument/i);
       });
 
-      it('throws error when sql statement is Array', function () {
-        assert.throws(function () {
-          db.query([]);
-        }, 'Invalid sql argument; expected string, received object');
+      it('throws error when table is Array', function () {
+        assert.throws(function () { db.hasTable([]); }, /invalid table argument/i);
       });
 
-      it('throws error when sql statement is null', function () {
-        assert.throws(function () {
-          db.query(null);
-        }, 'Invalid sql argument; expected string, received object');
-      });
-
-      it('throws error when params is Number', function () {
-        assert.throws(function () {
-          db.query('SELECT 1;', 1);
-        }, 'Invalid params argument; expected array, received number');
-      });
-
-      it('throws error when params is Boolean', function () {
-        assert.throws(function () {
-          db.query('SELECT 1;', true);
-        }, 'Invalid params argument; expected array, received boolean');
-      });
-
-      it('throws error when params is String', function () {
-        assert.throws(function () {
-          db.query('SELECT 1;', '');
-        }, 'Invalid params argument; expected array, received string');
-      });
-
-      it('throws error when params is null', function () {
-        assert.throws(function () {
-          db.query('SELECT 1;', null);
-        }, 'Invalid params argument; expected array, received object');
-      });
-
-      it('throws error when options is Number', function () {
-        assert.throws(function () {
-          db.query('SELECT 1;', [], 1);
-        }, 'Invalid options argument; expected object, received number');
-      });
-
-      it('throws error when options is Boolean', function () {
-        assert.throws(function () {
-          db.query('SELECT 1;', [], true);
-        }, 'Invalid options argument; expected object, received boolean');
-      });
-
-      it('throws error when options is String', function () {
-        assert.throws(function () {
-          db.query('SELECT 1;', [], '');
-        }, 'Invalid options argument; expected object, received string');
-      });
-
-      it('throws error when options is Array', function () {
-        assert.throws(function () {
-          db.query('SELECT 1;', [], []);
-        }, 'Invalid options argument; expected object, received object');
-      });
-
-      it('throws error when options is null', function () {
-        assert.throws(function () {
-          db.query('SELECT 1;', [], null);
-        }, 'Invalid options argument; expected object, received object');
+      it('throws error when table is null', function () {
+        assert.throws(function () { db.hasTable(null); }, /invalid table argument/i);
       });
 
     });

@@ -1,15 +1,10 @@
 var events = require('events');
 var util = require('util');
-var _ = require('lodash');
 var Promise = require('bluebird');
-var Table = require('./Table');
-var Transaction = require('./Transaction');
 
 /**
- * Constructs a new database of the designated properties.
+ * Creates new Database client of the designated properties.
  * Please note: connection properties may vary depending on the database type.
- * @see {@link https://github.com/felixge/node-mysql#connection-options} for MySQL connection properties.
- * @see {@link https://github.com/brianc/node-postgres/wiki/Client#constructor} for Postgres connection properties.
  * @param {object} props connection properties.
  * @param {string} [props.host=localhost] the hostname of the database.
  * @param {(string|number)} [props.port] the port number of the database.
@@ -17,7 +12,6 @@ var Transaction = require('./Transaction');
  * @param {string} props.password the password of the user.
  * @param {string} props.database the name of the database.
  * @param {number} [props.connectionLimit=10] number maximum number of connections to maintain in the pool.
- * @throws {Error} if params are invalid or unspecified.
  * @constructor
  */
 function Database(props) {
@@ -34,8 +28,8 @@ function Database(props) {
 util.inherits(Database, events.EventEmitter);
 
 /**
- * Enqueues the given resolver function until the database is connected.
- * Executes the resolver immediately if database is already connected.
+ * Enqueues the given resolver function until the database client is connected.
+ * Executes the resolver immediately after connection.
  * @param {function} resolver
  * @return {Promise}
  * @private
@@ -56,7 +50,7 @@ Database.prototype._enqueue = function (resolver) {
 };
 
 /**
- * Attempts to connect to server using the connection properties supplied at construction time.
+ * Connects to server using the connection properties supplied at construction time.
  * @param {function} [callback] an optional callback function with (err) arguments.
  * @returns {Promise}
  * @emits Database#connect
@@ -75,8 +69,8 @@ Database.prototype.connect = function (callback) {
 };
 
 /**
- * Gracefully closes any open connection to the server.
- * Please note: the  will become practically useless after calling this method.
+ * Gracefully closes open connection(s) to the server.
+ * Please note: the database client will become practically useless after calling this method.
  * @param {function} [callback] an optional callback function with (err) arguments.
  * @returns {Promise}
  * @emits Database#disconnect
@@ -96,61 +90,8 @@ Database.prototype.disconnect = function (callback) {
 };
 
 /**
- * Normalizes the given #query() arguments.
- * @param {string} sql a parameterized SQL statement.
- * @param {Array} [params] an array of parameter values.
- * @param {object} [options] query options.
- * @param {function} [callback] a callback function with (err, records) arguments.
- * @returns {Array} with sql, params, options and callback arguments.
- * @throws {Error} if arguments are invalid.
- * @private
- */
-Database.prototype._normalizeQueryArgs = function (sql, params, options, callback) {
-  // validate sql
-  if (!_.isString(sql)) {
-    throw new Error('Invalid sql argument; expected string, received ' + typeof(sql));
-  }
-
-  // normalize params
-  if (_.isFunction(params)) {
-    callback = params;
-    options = undefined;
-    params = [];
-  } else if (_.isPlainObject(params)) {
-    callback = options;
-    options = params;
-    params = [];
-  } else if (_.isUndefined(params)) {
-    callback = undefined;
-    options = undefined;
-    params = [];
-  }
-
-  // validate params
-  if (!_.isArray(params)) {
-    throw new Error('Invalid params argument; expected array, received ' + typeof(params));
-  }
-
-  // normalize options
-  if (_.isFunction(options)) {
-    callback = options;
-    options = {};
-  } else if (_.isUndefined(options)) {
-    callback = undefined;
-    options = {};
-  }
-
-  // validate options
-  if (!_.isPlainObject(options)) {
-    throw new Error('Invalid options argument; expected object, received ' + typeof(options));
-  }
-
-  return [sql, params, options, callback];
-};
-
-/**
- * Runs the given SQL statement to the database server.
- * @param {string} sql a parameterized SQL statement.
+ * Runs the given parameterized SQL statement.
+ * @param {string} sql the SQL statement.
  * @param {Array} [params] an array of parameter values.
  * @param {object} [options] query options.
  * @param {function} [callback] a callback function with (err, records) arguments.
