@@ -15,7 +15,7 @@
     "npm": "1.4.x"
   },
   "dependencies": {
-    "bluebird": "^2.4.0",
+    "bluebird": "^2.9.3",
     "dotenv": "^0.5.1",
     "generic-pool": "~2.1.1",
     "handlebars": "^2.0.0",
