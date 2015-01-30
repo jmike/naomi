@@ -1,319 +1,427 @@
-var fs = require('fs'),
-  path = require('path'),
-  _ = require('lodash'),
-  Handlebars = require('handlebars').create(),
-  operators = require('./operators.json'),
-  selectTemplate, countTemplate, deleteTemplate, insertTemplate, upsertTemplate;
+var _ = require('lodash');
+var type = require('type-of');
 
-/**
- * Escapes the given identifier to use safely in a SQL query.
- * @param {string} identifier
- * @returns {string}
- * @private
- * @static
- */
-function escapeSQL(identifier) {
-  return '`' + identifier + '`';
+function QueryBuilder(props) {
+  this.columns = props.columns;
 }
 
-/**
- * Compiles and returns a column SQL expression to use in a SELECT query, based on the supplied column array.
- * @param {Array<string>} columns an array of column names.
- * @return {string}
- * @private
- * @static
- */
-function compileSelectColumns(columns) {
-  if (_.isArray(columns)) {
-    return columns.map(function (column) {
-      return escapeSQL(column);
-    }).join(', ');
+QueryBuilder.prototype.escape = function (identifier) {
+  return '`' + identifier + '`';
+};
+
+QueryBuilder.prototype.projection = function ($projection) {
+  var _this = this;
+  var $include = [];
+  var $exclude = [];
+  var columns;
+  var sql;
+
+  // handle optional $projection argument
+  if (_.isUndefined($projection)) {
+    $projection = {};
   }
 
-  return '*';
-}
+  // validate $projection argument
+  if (!_.isPlainObject($projection)) {
+    throw new Error('Invalid $projection argument; expected object, received ' + type($projection));
+  }
 
-/**
- * Compiles and returns a parameterized SQL where clause based on the given selector.
- * @param {(object|Array.<object>)} selector
- * @returns {object} with two properties: "sql" and "params".
- * @static
- */
-function compileWhereClause(selector) {
-  var params = [], sql;
+  // flatten the columns array
+  columns = this.columns.map(function (e) {
+    return e.name;
+  });
 
-  // make sure selector is array
-  if (!_.isArray(selector)) selector = [selector];
+  // check if $projection is empty
+  if (_.isEmpty($projection)) {
+    sql = columns
+      .map(function (e) {
+        return _this.escape(e);
+      })
+      .join(', ');
 
-  sql = selector.map(function (obj) {
+    return {sql: sql, params: []};
+  }
 
-    return Object.keys(obj).map(function (k) {
-      var expr = obj[k],
-        columnName = escapeSQL(k),
-        operator,
-        value;
+  _.forOwn($projection, function (v, k) {
+    // make sure $projection columns exist in table
+    if (columns.indexOf(k) === -1) {
+      throw new Error('Unknown column "' + k + '"');
+    }
+    // separate exclusive from inclusive columns
+    if (v === 1) {
+      $include.push(k);
+    } else if (v === 0 || v === -1) {
+      $exclude.push(k);
+    }
+  });
 
-      _.forOwn(expr, function (v, o) {
-        operator = operators[o]; // convert to sql equivalent operator
-        value = v;
-        return false; // exit
-      });
+  // check if inclusive columns are specified
+  if (!_.isEmpty($include)) {
+    sql = $include
+      .map(function (e) {
+        return _this.escape(e);
+      })
+      .join(', ');
 
-      if (value === null && operator === '=') return columnName + ' IS NULL';
-      if (value === null && operator === '!=') return columnName + ' IS NOT NULL';
+    return {sql: sql, params: []};
+  }
 
-      params.push(value);
-      return columnName + ' ' + operator + ' ?';
+  // process exclusive columns
+  sql = _.chain(columns)
+    .difference($exclude)
+    .map(function (e) {
+      return _this.escape(e);
+    })
+    .value()
+    .join(', ');
 
-    }).join(' AND ');
+  return {sql: sql, params: []};
+};
 
-  }).join(' OR ');
+QueryBuilder.prototype.limit = function ($limit) {
+  if (_.isNumber($limit)) {
+    if ($limit % 1 !== 0 || $limit < 1) {
+      throw new Error('Invalid $limit argument; expected positive integer');
+    }
+    return $limit;
+  }
 
-  return {sql: sql, params: params};
-}
+  if (_.isUndefined($limit)) {
+    return null;
+  }
 
-/**
- * Compiles and returns a SQL order clause based on the given order.
- * @param {(object|Array.<object>)} order
- * @returns {string}
- * @static
- */
-function compileOrderByClause(order) {
-  // make sure order is array
-  if (!_.isArray(order)) order = [order];
+  throw new Error('Invalid $limit argument; expected number, received ' + type($limit));
+};
 
-  return order.map(function (obj) {
-    var columnName, type;
 
-    _.forOwn(obj, function (v, k) {
-      columnName = escapeSQL(k);
-      type =  v.toUpperCase();
-      return false; // exit
-    });
+QueryBuilder.prototype.select = function (query) {
+  var sql = [];
+  var params = [];
 
-    return columnName + ' ' + type;
+  var projection = this.projection(query.$projection);
+  var limit = this.limit(query.$projection);
 
-  }).join(', ');
-}
+  return {sql: sql.join(' ') + ';', params: params};
+};
 
-/**
- * Compiles and returns a parameterized value SQL expression to use in an INSERT query, based on the given keys and tuples.
- * @param {Array.<string>} keys the array of keys.
- * @param {(object|Array.<object>)} tuples values mapped with keys.
- * @returns {object} with two properties: "sql" and "params".
- * @static
- * @private
- */
-function compileInsertValues(keys, tuples) {
-  var params = [], sql;
+module.exports = QueryBuilder;
 
-  // make sure tuples is array
-  if (!_.isArray(tuples)) tuples = [tuples];
+// var fs = require('fs');
+// var path = require('path');
+// var _ = require('lodash');
+// var Handlebars = require('handlebars').create();
+// var operators = require('./operators.json');
+// var selectTemplate, countTemplate, deleteTemplate, insertTemplate, upsertTemplate;
 
-  sql = tuples.map(function (tuple) {
+// /**
+//  * Escapes the given identifier to use safely in a SQL query.
+//  * @param {string} identifier
+//  * @returns {string}
+//  * @private
+//  * @static
+//  */
+// function escapeSQL(identifier) {
+//   return '`' + identifier + '`';
+// }
 
-    return '(' + keys.map(function (key) {
-      params.push(tuple[key]);
-      return '?';
-    }).join(', ') + ')';
+// /**
+//  * Compiles and returns a column SQL expression to use in a SELECT query, based on the supplied column array.
+//  * @param {Array<string>} columns an array of column names.
+//  * @return {string}
+//  * @private
+//  * @static
+//  */
+// function compileSelectColumns(columns) {
+//   if (_.isArray(columns)) {
+//     return columns.map(function (column) {
+//       return escapeSQL(column);
+//     }).join(', ');
+//   }
 
-  }).join(', ');
+//   return '*';
+// }
 
-  return {sql: sql, params: params};
-}
+// /**
+//  * Compiles and returns a parameterized SQL where clause based on the given selector.
+//  * @param {(object|Array.<object>)} selector
+//  * @returns {object} with two properties: "sql" and "params".
+//  * @static
+//  */
+// function compileWhereClause(selector) {
+//   var params = [], sql;
 
-/**
- * Compiles and returns an expression to use in an ON DUPLICATE KEY UPDATE statement.
- * @param {Array.<string>} columns array of columns to update on duplicate key.
- * @returns {string}
- * @static
- * @private
- */
-function compileDuplicateKeyAssignments(columns) {
-  return columns.map(function (column) {
-    column = escapeSQL(column);
-    return column + ' = VALUES(' + column + ')';
-  }).join(', ');
-}
+//   // make sure selector is array
+//   if (!_.isArray(selector)) selector = [selector];
 
-/**
- * Compiles and returns the designated handlebars template.
- * @param {string} name the template name, e.g. "select".
- * @return {Handlebars.template}
- * @static
- * @private
- */
-function compileTemplate(name) {
-  var file, source;
+//   sql = selector.map(function (obj) {
 
-  file = path.resolve(__dirname, '../templates/mysql.' + name + '.hbs');
-  source = fs.readFileSync(file, {encoding: 'utf8'});
+//     return Object.keys(obj).map(function (k) {
+//       var expr = obj[k],
+//         columnName = escapeSQL(k),
+//         operator,
+//         value;
 
-  return Handlebars.compile(source, {noEscape: true});
-}
+//       _.forOwn(expr, function (v, o) {
+//         operator = operators[o]; // convert to sql equivalent operator
+//         value = v;
+//         return false; // exit
+//       });
 
-// register handlebars helpers
-Handlebars.registerHelper('escape', function(identifier) {
-  return new Handlebars.SafeString(escapeSQL(identifier));
-});
+//       if (value === null && operator === '=') return columnName + ' IS NULL';
+//       if (value === null && operator === '!=') return columnName + ' IS NOT NULL';
 
-// compile template(s)
-selectTemplate = compileTemplate('select');
-countTemplate = compileTemplate('count');
-deleteTemplate = compileTemplate('delete');
-insertTemplate = compileTemplate('insert');
-upsertTemplate = compileTemplate('upsert');
+//       params.push(value);
+//       return columnName + ' ' + operator + ' ?';
 
-/**
- * Compiles and returns a parameterized SELECT query.
- * @param {object} options query options.
- * @param {string} options.table the name of the table to select records from.
- * @param {Array.<string>} [options.columns] the name of the columns to select.
- * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
- * @param {(object|Array.<object>)} [options.order] an order expression to sort records.
- * @param {number} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
- * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
- * @returns {object} with "sql" and "params" properties.
- * @static
- *
- * @example output format:
- * {
- *   sql: 'SELECT name FROM table WHERE id = ?;',
- *   params: [1],
- * }
- */
-function compileSelectQuery(options) {
-  var sql, params, where, orderBy;
+//     }).join(' AND ');
 
-  where = options.selector && compileWhereClause(options.selector);
-  orderBy = options.order && compileOrderByClause(options.order);
-  params = where && where.params || [];
+//   }).join(' OR ');
 
-  sql = selectTemplate({
-    columns: compileSelectColumns(options.columns),
-    table: options.table,
-    where: where && where.sql,
-    orderBy: orderBy,
-    limit: options.limit,
-    offset: options.offset
-  }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
+//   return {sql: sql, params: params};
+// }
 
-  return {sql: sql, params: params};
-}
+// /**
+//  * Compiles and returns a SQL order clause based on the given order.
+//  * @param {(object|Array.<object>)} order
+//  * @returns {string}
+//  * @static
+//  */
+// function compileOrderByClause(order) {
+//   // make sure order is array
+//   if (!_.isArray(order)) order = [order];
 
-/**
- * Compiles and returns a parameterized SELECT COUNT query.
- * @param {object} options query properties.
- * @param {string} options.table the name of the table to count records from.
- * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
- * @param {number} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
- * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
- * @return {object} with "sql" and "params" properties.
- * @static
- */
-function compileCountQuery(options) {
-  var sql, params, where, orderBy;
+//   return order.map(function (obj) {
+//     var columnName, type;
 
-  where = options.selector && compileWhereClause(options.selector);
-  orderBy = options.order && compileOrderByClause(options.order);
-  params = where && where.params || [];
+//     _.forOwn(obj, function (v, k) {
+//       columnName = escapeSQL(k);
+//       type =  v.toUpperCase();
+//       return false; // exit
+//     });
 
-  sql = countTemplate({
-    table: options.table,
-    where: where && where.sql,
-    orderBy: orderBy,
-    limit: options.limit,
-    offset: options.offset
-  }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
+//     return columnName + ' ' + type;
 
-  return {sql: sql, params: params};
-}
+//   }).join(', ');
+// }
 
-/**
- * Compiles and returns a parameterized DELETE statement.
- * @param {object} options query properties.
- * @param {string} options.table the name of the table to delete records from.
- * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
- * @param {(object|Array.<object>)} [options.order] an order expression to sort records.
- * @param {number} [options.limit] max number of records to delete from database - must be a positive integer, i.e. limit > 0.
- * @return {object} with "sql" and "params" properties.
- * @static
- */
-function compileDeleteQuery(options) {
-  var sql, params, where, orderBy;
+// /**
+//  * Compiles and returns a parameterized value SQL expression to use in an INSERT query, based on the given keys and tuples.
+//  * @param {Array.<string>} keys the array of keys.
+//  * @param {(object|Array.<object>)} tuples values mapped with keys.
+//  * @returns {object} with two properties: "sql" and "params".
+//  * @static
+//  * @private
+//  */
+// function compileInsertValues(keys, tuples) {
+//   var params = [], sql;
 
-  where = options.selector && compileWhereClause(options.selector);
-  orderBy = options.order && compileOrderByClause(options.order);
-  params = where && where.params || [];
+//   // make sure tuples is array
+//   if (!_.isArray(tuples)) tuples = [tuples];
 
-  sql = deleteTemplate({
-    table: options.table,
-    where: where && where.sql,
-    orderBy: orderBy,
-    limit: options.limit
-  }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
+//   sql = tuples.map(function (tuple) {
 
-  return {sql: sql, params: params};
-}
+//     return '(' + keys.map(function (key) {
+//       params.push(tuple[key]);
+//       return '?';
+//     }).join(', ') + ')';
 
-/**
- * Compiles and returns a parameterized UPSERT statement.
- * @param {object} options query properties.
- * @param {string} options.table
- * @param {Array.<string>} options.columns column names to insert.
- * @param {object} options.values values to upsert.
- * @param {Array.<string>} [options.updateColumns] columns to update if record already exists - defaults to all columns.
- * @return {object} with "sql" and "params" properties.
- * @static
- */
-function compileUpsertQuery(options) {
-  var sql, params, values;
+//   }).join(', ');
 
-  // handle optional updateColumns param
-  options.updateColumns = options.updateColumns || options.columns;
+//   return {sql: sql, params: params};
+// }
 
-  values = compileInsertValues(options.columns, options.values);
-  params = values.params;
+// /**
+//  * Compiles and returns an expression to use in an ON DUPLICATE KEY UPDATE statement.
+//  * @param {Array.<string>} columns array of columns to update on duplicate key.
+//  * @returns {string}
+//  * @static
+//  * @private
+//  */
+// function compileDuplicateKeyAssignments(columns) {
+//   return columns.map(function (column) {
+//     column = escapeSQL(column);
+//     return column + ' = VALUES(' + column + ')';
+//   }).join(', ');
+// }
 
-  sql = upsertTemplate({
-    table: options.table,
-    columns: compileSelectColumns(options.columns),
-    values: values.sql,
-    duplicateKeyAssignments: options.updateColumns.length > 0 &&
-      compileDuplicateKeyAssignments(options.updateColumns)
-  }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
+// /**
+//  * Compiles and returns the designated handlebars template.
+//  * @param {string} name the template name, e.g. "select".
+//  * @return {Handlebars.template}
+//  * @static
+//  * @private
+//  */
+// function compileTemplate(name) {
+//   var file, source;
 
-  return {sql: sql, params: params};
-}
+//   file = path.resolve(__dirname, '../templates/mysql.' + name + '.hbs');
+//   source = fs.readFileSync(file, {encoding: 'utf8'});
 
-/**
- * Compiles and returns a parameterized INSERT statement.
- * @param {object} options query properties.
- * @param {string} options.table the table name to insert data.
- * @param {Array.<string>} options.columns column names to insert.
- * @param {(object|Array.<object>)} options.values values to insert.
- * @return {object} with "sql" and "params" properties.
- * @static
- */
-function compileInsertQuery(options) {
-  var sql, params, values;
+//   return Handlebars.compile(source, {noEscape: true});
+// }
 
-  values = compileInsertValues(options.columns, options.values);
-  params = values.params;
+// // register handlebars helpers
+// Handlebars.registerHelper('escape', function(identifier) {
+//   return new Handlebars.SafeString(escapeSQL(identifier));
+// });
 
-  sql = insertTemplate({
-    table: options.table,
-    columns: compileSelectColumns(options.columns),
-    values: values.sql
-  }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
+// // compile template(s)
+// selectTemplate = compileTemplate('select');
+// countTemplate = compileTemplate('count');
+// deleteTemplate = compileTemplate('delete');
+// insertTemplate = compileTemplate('insert');
+// upsertTemplate = compileTemplate('upsert');
 
-  return {sql: sql, params: params};
-}
+// *
+//  * Compiles and returns a parameterized SELECT query.
+//  * @param {object} options query options.
+//  * @param {string} options.table the name of the table to select records from.
+//  * @param {Array.<string>} [options.columns] the name of the columns to select.
+//  * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
+//  * @param {(object|Array.<object>)} [options.order] an order expression to sort records.
+//  * @param {number} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
+//  * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
+//  * @returns {object} with "sql" and "params" properties.
+//  * @static
+//  *
+//  * @example output format:
+//  * {
+//  *   sql: 'SELECT name FROM table WHERE id = ?;',
+//  *   params: [1],
+//  * }
 
-exports.select = compileSelectQuery;
-exports.insert = compileInsertQuery;
-exports.upsert = compileUpsertQuery;
-exports.del = compileDeleteQuery;
-exports.count = compileCountQuery;
-exports.where = compileWhereClause;
-exports.orderBy = compileOrderByClause;
+// function compileSelectQuery(options) {
+//   var sql, params, where, orderBy;
+
+//   where = options.selector && compileWhereClause(options.selector);
+//   orderBy = options.order && compileOrderByClause(options.order);
+//   params = where && where.params || [];
+
+//   sql = selectTemplate({
+//     columns: compileSelectColumns(options.columns),
+//     table: options.table,
+//     where: where && where.sql,
+//     orderBy: orderBy,
+//     limit: options.limit,
+//     offset: options.offset
+//   }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
+
+//   return {sql: sql, params: params};
+// }
+
+// /**
+//  * Compiles and returns a parameterized SELECT COUNT query.
+//  * @param {object} options query properties.
+//  * @param {string} options.table the name of the table to count records from.
+//  * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
+//  * @param {number} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
+//  * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
+//  * @return {object} with "sql" and "params" properties.
+//  * @static
+//  */
+// function compileCountQuery(options) {
+//   var sql, params, where, orderBy;
+
+//   where = options.selector && compileWhereClause(options.selector);
+//   orderBy = options.order && compileOrderByClause(options.order);
+//   params = where && where.params || [];
+
+//   sql = countTemplate({
+//     table: options.table,
+//     where: where && where.sql,
+//     orderBy: orderBy,
+//     limit: options.limit,
+//     offset: options.offset
+//   }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
+
+//   return {sql: sql, params: params};
+// }
+
+// /**
+//  * Compiles and returns a parameterized DELETE statement.
+//  * @param {object} options query properties.
+//  * @param {string} options.table the name of the table to delete records from.
+//  * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
+//  * @param {(object|Array.<object>)} [options.order] an order expression to sort records.
+//  * @param {number} [options.limit] max number of records to delete from database - must be a positive integer, i.e. limit > 0.
+//  * @return {object} with "sql" and "params" properties.
+//  * @static
+//  */
+// function compileDeleteQuery(options) {
+//   var sql, params, where, orderBy;
+
+//   where = options.selector && compileWhereClause(options.selector);
+//   orderBy = options.order && compileOrderByClause(options.order);
+//   params = where && where.params || [];
+
+//   sql = deleteTemplate({
+//     table: options.table,
+//     where: where && where.sql,
+//     orderBy: orderBy,
+//     limit: options.limit
+//   }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
+
+//   return {sql: sql, params: params};
+// }
+
+// /**
+//  * Compiles and returns a parameterized UPSERT statement.
+//  * @param {object} options query properties.
+//  * @param {string} options.table
+//  * @param {Array.<string>} options.columns column names to insert.
+//  * @param {object} options.values values to upsert.
+//  * @param {Array.<string>} [options.updateColumns] columns to update if record already exists - defaults to all columns.
+//  * @return {object} with "sql" and "params" properties.
+//  * @static
+//  */
+// function compileUpsertQuery(options) {
+//   var sql, params, values;
+
+//   // handle optional updateColumns param
+//   options.updateColumns = options.updateColumns || options.columns;
+
+//   values = compileInsertValues(options.columns, options.values);
+//   params = values.params;
+
+//   sql = upsertTemplate({
+//     table: options.table,
+//     columns: compileSelectColumns(options.columns),
+//     values: values.sql,
+//     duplicateKeyAssignments: options.updateColumns.length > 0 &&
+//       compileDuplicateKeyAssignments(options.updateColumns)
+//   }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
+
+//   return {sql: sql, params: params};
+// }
+
+// /**
+//  * Compiles and returns a parameterized INSERT statement.
+//  * @param {object} options query properties.
+//  * @param {string} options.table the table name to insert data.
+//  * @param {Array.<string>} options.columns column names to insert.
+//  * @param {(object|Array.<object>)} options.values values to insert.
+//  * @return {object} with "sql" and "params" properties.
+//  * @static
+//  */
+// function compileInsertQuery(options) {
+//   var sql, params, values;
+
+//   values = compileInsertValues(options.columns, options.values);
+//   params = values.params;
+
+//   sql = insertTemplate({
+//     table: options.table,
+//     columns: compileSelectColumns(options.columns),
+//     values: values.sql
+//   }).replace(/\s+/g, ' ').replace(/\s+$/, ';');
+
+//   return {sql: sql, params: params};
+// }
+
+// exports.select = compileSelectQuery;
+// exports.insert = compileInsertQuery;
+// exports.upsert = compileUpsertQuery;
+// exports.del = compileDeleteQuery;
+// exports.count = compileCountQuery;
+// exports.where = compileWhereClause;
+// exports.orderBy = compileOrderByClause;

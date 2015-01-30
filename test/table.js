@@ -2,17 +2,19 @@ require('dotenv').load(); // load environmental variables
 
 var assert = require('chai').assert;
 var Database = require('../src/Database');
+var Table = require('../src/Table');
 
 describe('Database', function () {
 
   var db = new Database({database: 'something'});
+  var table = new Table(db, 'name');
 
-  describe('@disconnected', function () {
+  describe('@not-ready', function () {
 
-    describe('#isConnected', function () {
+    describe('#isReady', function () {
 
       it('returns false', function () {
-        assert.strictEqual(db.isConnected, false);
+        assert.strictEqual(table.isReady, false);
       });
 
     });
