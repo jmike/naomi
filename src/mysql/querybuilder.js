@@ -1,105 +1,101 @@
 var _ = require('lodash');
-var type = require('type-of');
 
-function QueryBuilder(props) {
-  this.columns = props.columns;
+function QueryBuilder(table) {
+  this._table = table;
 }
 
-QueryBuilder.prototype.escape = function (identifier) {
+QueryBuilder.prototype._escape = function (identifier) {
   return '`' + identifier + '`';
 };
 
-QueryBuilder.prototype.projection = function ($projection) {
+QueryBuilder.prototype._projection = function ($projection) {
   var _this = this;
-  var $include = [];
-  var $exclude = [];
-  var columns;
-  var sql;
-
-  // handle optional $projection argument
-  if (_.isUndefined($projection)) {
-    $projection = {};
-  }
-
-  // validate $projection argument
-  if (!_.isPlainObject($projection)) {
-    throw new Error('Invalid $projection argument; expected object, received ' + type($projection));
-  }
-
-  // flatten the columns array
-  columns = this.columns.map(function (e) {
+  var $include = $projection.$include;
+  var $exclude = $projection.$exclude;
+  var columns = this._table.columns.map(function (e) {
     return e.name;
   });
 
-  // check if $projection is empty
-  if (_.isEmpty($projection)) {
-    sql = columns
+  // check if $include is not empty
+  if (!_.isEmpty($include)) {
+    $include.forEach(function (e) {
+      if (columns.indexOf(e) === -1) {
+        throw new Error('Unknown column "' + e + '" not found in table "' + _this._table.name + '"');
+      }
+    });
+
+    return $include
       .map(function (e) {
-        return _this.escape(e);
+        return _this._escape(e);
       })
       .join(', ');
-
-    return {sql: sql, params: []};
   }
 
-  _.forOwn($projection, function (v, k) {
-    // make sure $projection columns exist in table
-    if (columns.indexOf(k) === -1) {
-      throw new Error('Unknown column "' + k + '"');
-    }
-    // separate exclusive from inclusive columns
-    if (v === 1) {
-      $include.push(k);
-    } else if (v === 0 || v === -1) {
-      $exclude.push(k);
-    }
+  // check if $exclude is not empty
+  if (!_.isEmpty($exclude)) {
+    $exclude.forEach(function (e) {
+      if (columns.indexOf(e) === -1) {
+        throw new Error('Unknown column "' + e + '" not found in table "' + _this._table.name + '"');
+      }
+    });
+
+    return _.chain(columns)
+      .difference($exclude)
+      .map(function (e) {
+        return _this._escape(e);
+      })
+      .join(', ')
+      .value();
+  }
+
+  // both $include and $exclude are empty
+  return columns
+    .map(function (e) {
+      return _this._escape(e);
+    })
+    .join(', ');
+};
+
+QueryBuilder.prototype._orderby = function ($orderby) {
+  var _this = this;
+  var columns = this._table.columns.map(function (e) {
+    return e.name;
   });
 
-  // check if inclusive columns are specified
-  if (!_.isEmpty($include)) {
-    sql = $include
-      .map(function (e) {
-        return _this.escape(e);
-      })
-      .join(', ');
+  // check if $include is not empty
+  if (_.isEmpty($orderby)) return null;
 
-    return {sql: sql, params: []};
-  }
-
-  // process exclusive columns
-  sql = _.chain(columns)
-    .difference($exclude)
+  return $orderby
     .map(function (e) {
-      return _this.escape(e);
+      var k = Object.keys(e)[0];
+      var v = e[k];
+
+      if (columns.indexOf(k) === -1) {
+        throw new Error('Unknown column "' + k + '" not found in table "' + _this._table.name + '"');
+      }
+
+      return _this._escape(k) + ' ' + (v === 1 ? 'ASC' : 'DESC');
     })
-    .value()
     .join(', ');
-
-  return {sql: sql, params: []};
 };
 
-QueryBuilder.prototype.limit = function ($limit) {
-  if (_.isNumber($limit)) {
-    if ($limit % 1 !== 0 || $limit < 1) {
-      throw new Error('Invalid $limit argument; expected positive integer');
-    }
-    return $limit;
-  }
-
-  if (_.isUndefined($limit)) {
-    return null;
-  }
-
-  throw new Error('Invalid $limit argument; expected number, received ' + type($limit));
-};
-
-
-QueryBuilder.prototype.select = function (query) {
+QueryBuilder.prototype.select = function ($query) {
   var sql = [];
   var params = [];
 
-  var projection = this.projection(query.$projection);
-  var limit = this.limit(query.$projection);
+  var projection = this._projection($query.$projection);
+  sql.push('SELECT', projection);
+
+  var table = this._escape(this._table.name);
+  sql.push('FROM', table);
+
+  // TODO: add filter
+
+  var orderby = this._orderby($query.$orderby);
+  if (orderby) sql.push('ORDER BY', orderby);
+
+  if ($query.$limit) sql.push('LIMIT', $query.$limit);
+  if ($query.$offset) sql.push('OFFSET', $query.$offset);
 
   return {sql: sql.join(' ') + ';', params: params};
 };
