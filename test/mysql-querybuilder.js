@@ -385,6 +385,16 @@ describe('MySQL QueryBuilder', function () {
 
   });
 
+  describe('$primarykey', function () {
+
+    it('resolves to the table\'s primary key', function () {
+      var query = querybuilder.$primarykey({'$lte': 10});
+      assert.strictEqual(query.sql, '`id` <= ?');
+      assert.strictEqual(query.params[0], 10);
+    });
+
+  });
+
   describe('#select()', function () {
 
     it('returns a valid SQL with no specific $query properties', function () {
@@ -503,6 +513,22 @@ describe('MySQL QueryBuilder', function () {
       assert.strictEqual(query.params[2], 20);
       assert.strictEqual(query.params[3], 30);
       assert.strictEqual(query.params[4], 40);
+    });
+
+    it('returns a valid SQL with $primarykey specified', function () {
+      var query = querybuilder.select({
+        $projection: {
+          $include: [],
+          $exclude: []
+        },
+        $orderby: [],
+        $limit: null,
+        $offset: null,
+        $filter: {$primarykey: 10}
+      });
+
+      assert.strictEqual(query.sql, 'SELECT `id`, `name`, `age`, `country` FROM `employees` WHERE `id` = ?;');
+      assert.strictEqual(query.params[0], 10);
     });
 
   });

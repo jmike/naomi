@@ -288,6 +288,33 @@ QueryBuilder.prototype.$like = function ($like) {
   return {sql: sql.join(' '), params: params};
 };
 
+QueryBuilder.prototype.$primarykey = function ($primarykey) {
+  var sql = [];
+  var params = [];
+  var query;
+
+  if (this.table.primaryKey.length !== 1) {
+    throw new Error(
+      'Invalid $query expression; ' +
+      'primary key is compound or non existent'
+    );
+  }
+
+  sql.push(this.escape(this.table.primaryKey[0]));
+
+  if (_.isPlainObject($primarykey)) {
+    query = this.$expression($primarykey);
+    sql.push(query.sql);
+    params = params.concat(query.params);
+  } else {
+    query = this.$eq($primarykey);
+    sql.push(query.sql);
+    params = params.concat(query.params);
+  }
+
+  return {sql: sql.join(' '), params: params};
+};
+
 QueryBuilder.prototype.$expression = function ($expression) {
   var sql = [];
   var params = [];

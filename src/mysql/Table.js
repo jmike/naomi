@@ -17,11 +17,9 @@ util.inherits(Table, GenericTable);
 _.extend(Table, GenericTable);
 
 /**
- * Retrieves column metadata from database.
- * @param {function} [callback] an optional callback function with (err, columns) arguments.
- * @returns {Promise} resolving to Array.<object>
+ * @extends GenericTable#_getColumns
  */
-Table.prototype.getColumns = function (callback) {
+Table.prototype._getColumns = function (callback) {
   var re = /auto_increment/i;
   var sql;
   var params;
@@ -54,11 +52,9 @@ Table.prototype.getColumns = function (callback) {
 };
 
 /**
- * Retrieves primary key metadata from database.
- * @param {function} [callback] an optional callback function with (err, primaryKey) arguments.
- * @returns {Promise} resolving to Array.<string>
+ * @extends GenericTable#_getPrimaryKey
  */
-Table.prototype.getPrimaryKey = function (callback) {
+Table.prototype._getPrimaryKey = function (callback) {
   var sql;
   var params;
 
@@ -82,11 +78,9 @@ Table.prototype.getPrimaryKey = function (callback) {
 };
 
 /**
- * Retrieves unique key metadata from database.
- * @param {function} [callback] an optional callback function with (err, uniqueKeys) arguments.
- * @returns {Promise} resolving to object
+ * @extends GenericTable#_getUniqueKeys
  */
-Table.prototype.getUniqueKeys = function (callback) {
+Table.prototype._getUniqueKeys = function (callback) {
   var sql;
   var params;
 
@@ -116,11 +110,9 @@ Table.prototype.getUniqueKeys = function (callback) {
 };
 
 /**
- * Retrieves index key metadata from database.
- * @param {function} [callback] an optional callback function with (err, indexKeys) arguments.
- * @returns {Promise} resolving to object
+ * @extends GenericTable#_getIndexKeys
  */
-Table.prototype.getIndexKeys = function (callback) {
+Table.prototype._getIndexKeys = function (callback) {
   var sql;
   var params;
 
@@ -150,11 +142,9 @@ Table.prototype.getIndexKeys = function (callback) {
 };
 
 /**
- * Retrieves foreign key metadata from database.
- * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
- * @returns {Promise} resolving to object
+ * @extends GenericTable#_getForeignKeys
  */
-Table.prototype.getForeignKeys = function (callback) {
+Table.prototype._getForeignKeys = function (callback) {
   var sql;
   var params;
 
