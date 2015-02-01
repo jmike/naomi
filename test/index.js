@@ -13,6 +13,7 @@ mocha.addFile(path.resolve(__dirname, './database'));
 mocha.addFile(path.resolve(__dirname, './mysql-database'));
 mocha.addFile(path.resolve(__dirname, './postgres-database'));
 mocha.addFile(path.resolve(__dirname, './queryparser'));
+mocha.addFile(path.resolve(__dirname, './mysql-querybuilder'));
 mocha.addFile(path.resolve(__dirname, './table'));
 // mocha.addFile(path.resolve(__dirname, './mysql-table'));
 // mocha.addFile(path.resolve(__dirname, './mysql-transaction'));

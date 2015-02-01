@@ -9,34 +9,20 @@ QueryBuilder.prototype.escape = function (identifier) {
   return '`' + identifier + '`';
 };
 
-QueryBuilder.prototype.hasColumn = function (column) {
-  return this.table.columns.some(function (e) {
-    return e.name === column;
-  });
-};
-
-QueryBuilder.prototype.getTableName = function () {
-  return this.table.name;
-};
-
-QueryBuilder.prototype.getColumns = function () {
-  return this.table.columns.map(function (e) {
-    return e.name;
-  });
-};
-
 QueryBuilder.prototype.$projection = function ($projection) {
   var _this = this;
   var $include = $projection.$include;
   var $exclude = $projection.$exclude;
-  var columns = this.getColumns();
+  var columns = this.table.columns.map(function (e) {
+    return e.name;
+  });
 
   // check if $include is not empty
   if (!_.isEmpty($include)) {
     return $include
       .map(function (e) {
-        if (_this.hasColumn(e)) return _this.escape(e);
-        throw new Error('Unknown column "' + e + '"; not found in table "' + _this.getTableName() + '"');
+        if (_this.table.hasColumn(e)) return _this.escape(e);
+        throw new Error('Unknown column "' + e + '"; not found in table "' + _this.table.name + '"');
       })
       .join(', ');
   }
@@ -46,8 +32,8 @@ QueryBuilder.prototype.$projection = function ($projection) {
     return _.chain($exclude)
       .xor(columns)
       .map(function (e) {
-        if (_this.hasColumn(e)) return _this.escape(e);
-        throw new Error('Unknown column "' + e + '"; not found in table "' + _this.getTableName() + '"');
+        if (_this.table.hasColumn(e)) return _this.escape(e);
+        throw new Error('Unknown column "' + e + '"; not found in table "' + _this.table.name + '"');
       })
       .join(', ')
       .value();
@@ -71,8 +57,8 @@ QueryBuilder.prototype.$orderby = function ($orderby) {
       var k = Object.keys(e)[0];
       var v = e[k];
 
-      if (!_this.hasColumn(k)) {
-        throw new Error('Unknown column "' + k + '"; not found in table "' + _this.getTableName() + '"');
+      if (!_this.table.hasColumn(k)) {
+        throw new Error('Unknown column "' + k + '"; not found in table "' + _this.table.name + '"');
       }
       return _this.escape(k) + ' ' + (v === 1 ? 'ASC' : 'DESC');
     })
@@ -316,8 +302,8 @@ QueryBuilder.prototype.$expression = function ($expression) {
     sql.push(query.sql);
     params = params.concat(query.params);
   } else {
-      if (!this.hasColumn(key)) {
-        throw new Error('Unknown column "' + key + '"; not found in table "' + this.getTableName() + '"');
+      if (!this.table.hasColumn(key)) {
+        throw new Error('Unknown column "' + key + '"; not found in table "' + this.table.name + '"');
       }
 
       sql.push(this.escape(key));
