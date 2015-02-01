@@ -18,13 +18,13 @@ describe('MySQL QueryBuilder', function () {
 
   var querybuilder = new QueryBuilder(table);
 
-  describe('constructor', function () {
+  // describe('constructor', function () {
 
-    it('throws error when table is not a Table instance', function () {
-      assert.throws(function () { new QueryBuilder({}); }, /invalid table argument/i);
-    });
+  //   it('throws error when table is not a Table instance', function () {
+  //     assert.throws(function () { new QueryBuilder({}); }, /invalid table argument/i);
+  //   });
 
-  });
+  // });
 
   describe('$projection()', function () {
 
@@ -395,6 +395,59 @@ describe('MySQL QueryBuilder', function () {
 
   });
 
+  describe('$updateColumns', function () {
+
+    it('throws error when $updateColumns is Object', function () {
+      assert.throws(function () { querybuilder.$updateColumns({}); }, /invalid value for \$updateColumns expression/i);
+    });
+
+    it('throws error when $updateColumns is Boolean', function () {
+      assert.throws(function () { querybuilder.$updateColumns(true); }, /invalid value for \$updateColumns expression/i);
+      assert.throws(function () { querybuilder.$updateColumns(false); }, /invalid value for \$updateColumns expression/i);
+    });
+
+    it('throws error when $updateColumns is String', function () {
+      assert.throws(function () { querybuilder.$updateColumns(''); }, /invalid value for \$updateColumns expression/i);
+    });
+
+    it('throws error when $updateColumns is null', function () {
+      assert.throws(function () { querybuilder.$updateColumns(null); }, /invalid value for \$updateColumns expression/i);
+    });
+
+    it('throws error when $updateColumns is number', function () {
+      assert.throws(function () { querybuilder.$updateColumns(123); }, /invalid value for \$updateColumns expression/i);
+    });
+
+    it('accepts empty $updateColumns array', function () {
+      var query = querybuilder.$updateColumns([]);
+      assert.strictEqual(query, null);
+    });
+
+    it('successfully returns parameterized SQL on valid $updateColumns', function () {
+      var query = querybuilder.$updateColumns(['country', 'age']);
+      assert.strictEqual(query.sql, '`country` = VALUES(`country`), `age` = VALUES(`age`)');
+    });
+
+  });
+
+  describe('$values', function () {
+
+    it('successfully returns parameterized SQL on valid $values', function () {
+      var query = querybuilder.$values([
+        {
+          name: 'James Bond',
+          country: 'UK',
+          age: 42
+        }
+      ]);
+      assert.strictEqual(query.sql, '(?, ?, ?)');
+      assert.strictEqual(query.params[0], 'James Bond');
+      assert.strictEqual(query.params[1], 'UK');
+      assert.strictEqual(query.params[2], 42);
+    });
+
+  });
+
   describe('#select()', function () {
 
     it('returns a valid SQL with no specific $query properties', function () {
@@ -529,6 +582,37 @@ describe('MySQL QueryBuilder', function () {
 
       assert.strictEqual(query.sql, 'SELECT `id`, `name`, `age`, `country` FROM `employees` WHERE `id` = ?;');
       assert.strictEqual(query.params[0], 10);
+    });
+
+  });
+
+  describe('#count()', function () {
+
+    it('returns a valid SQL with $orderby, $limit, $offset, $filter specified', function () {
+      var query = querybuilder.count({
+        $orderby: [{id: -1}],
+        $limit: 999,
+        $offset: 1,
+        $filter: {age: {$lte: 30}}
+      });
+
+      assert.strictEqual(query.sql, 'SELECT COUNT(*) AS `count` FROM `employees` WHERE `age` <= ? ORDER BY `id` DESC LIMIT 999 OFFSET 1;');
+      assert.strictEqual(query.params[0], 30);
+    });
+
+  });
+
+  describe('#delete()', function () {
+
+    it('returns a valid SQL with $orderby, $limit, $filter specified', function () {
+      var query = querybuilder.delete({
+        $orderby: [{id: -1}],
+        $limit: 10,
+        $filter: {age: {$lte: 30}}
+      });
+
+      assert.strictEqual(query.sql, 'DELETE FROM `employees` WHERE `age` <= ? ORDER BY `id` DESC LIMIT 10;');
+      assert.strictEqual(query.params[0], 30);
     });
 
   });

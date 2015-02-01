@@ -1,7 +1,8 @@
 var util = require('util');
 var _ = require('lodash');
 var GenericTable = require('../Table');
-var querybuilder = require('./querybuilder');
+var queryparser = require('../query/parser');
+var QueryBuilder = require('./QueryBuilder');
 
 /**
  * Constructs a new Postgres Table.
@@ -10,11 +11,11 @@ var querybuilder = require('./querybuilder');
  */
 function Table () {
   GenericTable.apply(this, arguments);
+  this.querybuilder = new QueryBuilder(this);
 }
 
 // @extends GenericTable
 util.inherits(Table, GenericTable);
-_.extend(Table, GenericTable);
 
 /**
  * @extends GenericTable#_getColumns
@@ -172,62 +173,40 @@ Table.prototype._getForeignKeys = function (callback) {
 };
 
 /**
- * Retrieves the designated record(s) from this table.
- * @param {object} options query options.
- * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
- * @param {(object|Array.<object>)} [options.order] an order expression to sort records.
- * @param {number} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
- * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
- * @returns {promise} resolving to an Array.<object> of records.
+ * @extends GenericTable#get()
  */
-Table.prototype._get = function (options) {
-  var query;
+Table.prototype.get = function (query, callback) {
+  var $query = queryparser.parse(query);
+  var obj = this.querybuilder.select($query);
 
-  options.table = this.name;
-  options.columns = this.columns.map(function (column) {
-    return column.name;
-  });
-  query = querybuilder.select(options);
-
-  return this.db.query(query.sql, query.params);
+  return this.db.query(obj.sql, obj.params)
+    .nodeify(callback);
 };
 
 /**
- * Counts the designated record(s) in this table.
- * @param {object} options query options.
- * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
- * @param {number} [options.limit] max number of records to return from table - must be a positive integer, i.e. limit > 0.
- * @param {number} [options.offset] number of records to skip from table - must be a non-negative integer, i.e. offset >= 0.
- * @returns {promise} resolving to the count of records.
+ * @extends GenericTable#count()
  */
-Table.prototype._count = function (options) {
-  var query;
+Table.prototype.count = function (query, callback) {
+  var $query = queryparser.parse(query);
+  var obj = this.querybuilder.count($query);
 
-  options.table = this.name;
-  query = querybuilder.count(options);
-
-  return this.db.query(query.sql, query.params).then(function (records) {
-    return records[0].count || 0;
-  });
+  return this.db.query(obj.sql, obj.params)
+    .then(function (records) {
+      return records[0].count || 0;
+    })
+    .nodeify(callback);
 };
 
 /**
- * Deletes the designated record(s) from this table.
- * @param {object} options query options.
- * @param {(object|Array.<object>)} [options.selector] a selector to match record(s) in table.
- * @param {(object|Array.<object>)} [options.order] an order expression to sort records.
- * @param {number} [options.limit] max number of records to delete from database - must be a positive integer, i.e. limit > 0.
- * @returns {promise}
+ * @extends GenericTable#del()
  */
-Table.prototype._del = function (options) {
-  var query;
+Table.prototype.del = function (query, callback) {
+  var $query = queryparser.parse(query);
+  var obj = this.querybuilder.count($query);
 
-  options.table = this.name;
-  query = querybuilder.del(options);
-
-  return this.db.query(query.sql, query.params).then(function () {
-    return; // void
-  });
+  return this.db.query(obj.sql, obj.params)
+    .return() // void
+    .nodeify(callback);
 };
 
 /**

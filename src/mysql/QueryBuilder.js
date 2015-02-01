@@ -1,11 +1,7 @@
 var _ = require('lodash');
 var type = require('type-of');
-var Table = require('./Table');
 
 function QueryBuilder(table) {
-  if (!Table.isTable(table)) {
-    throw new Error('Invalid table argument; expected a Table instance');
-  }
   this.table = table;
 }
 
@@ -353,6 +349,48 @@ QueryBuilder.prototype.$expression = function ($expression) {
   return {sql: sql.join(' '), params: params};
 };
 
+QueryBuilder.prototype.$updateColumns = function ($updateColumns) {
+  var _this = this;
+  var sql;
+
+  if (!_.isArray($updateColumns)) {
+    throw new Error('Invalid value for $updateColumns expression; expected array, received ' + type($updateColumns));
+  }
+
+  if ($updateColumns.length === 0) return null;
+
+  sql = $updateColumns
+    .map(function (column) {
+      column = _this.escape(column);
+      return column + ' = VALUES(' + column + ')';
+    })
+    .join(', ');
+
+  return {sql: sql, params: []};
+};
+
+QueryBuilder.prototype.$values = function ($values) {
+  var sql = [];
+  var params = [];
+
+  var keys = Object.keys($values[0]);
+
+  sql = $values
+    .map(function (e) {
+      var group = keys
+        .map(function (k) {
+          params.push(e[k]);
+          return '?';
+        })
+        .join(', ');
+
+      return '(' + group + ')';
+    })
+    .join(', ');
+
+  return {sql: sql, params: params};
+};
+
 QueryBuilder.prototype.select = function ($query) {
   var sql = [];
   var params = [];
@@ -377,6 +415,88 @@ QueryBuilder.prototype.select = function ($query) {
     if ($query.$offset) {
       sql.push('OFFSET', $query.$offset);
     }
+  }
+
+  return {sql: sql.join(' ') + ';', params: params};
+};
+
+QueryBuilder.prototype.count = function ($query) {
+  var sql = [];
+  var params = [];
+
+  sql.push('SELECT COUNT(*) AS `count`');
+
+  var table = this.escape(this.table.name);
+  sql.push('FROM', table);
+
+  var filter = this.$expression($query.$filter);
+  if (filter) {
+    sql.push('WHERE', filter.sql);
+    params = params.concat(filter.params);
+  }
+
+  var orderby = this.$orderby($query.$orderby);
+  if (orderby) sql.push('ORDER BY', orderby);
+
+  if ($query.$limit) {
+    sql.push('LIMIT', $query.$limit);
+    if ($query.$offset) {
+      sql.push('OFFSET', $query.$offset);
+    }
+  }
+
+  return {sql: sql.join(' ') + ';', params: params};
+};
+
+QueryBuilder.prototype.delete = function ($query) {
+  var sql = [];
+  var params = [];
+
+  sql.push('DELETE');
+
+  var table = this.escape(this.table.name);
+  sql.push('FROM', table);
+
+  var filter = this.$expression($query.$filter);
+  if (filter) {
+    sql.push('WHERE', filter.sql);
+    params = params.concat(filter.params);
+  }
+
+  var orderby = this.$orderby($query.$orderby);
+  if (orderby) sql.push('ORDER BY', orderby);
+
+  if ($query.$limit) sql.push('LIMIT', $query.$limit);
+
+  return {sql: sql.join(' ') + ';', params: params};
+};
+
+QueryBuilder.prototype.upsert = function ($attrs) {
+  var sql = [];
+  var params = [];
+
+  // make sure $attrs is array
+  if (!_.isArray($attrs)) $attrs = [$attrs];
+
+  // extract keys from attrs
+  var keys = Object.keys($attrs[0]);
+
+  sql.push('INSERT');
+
+  var $updateColumns = this.$updateColumns(_.difference(keys, this.primaryKey));
+  if ($updateColumns === null) sql.push('IGNORE');
+
+  var table = this.escape(this.table.name);
+  sql.push('INTO', table);
+
+  var $projection = this.$projection(keys);
+  sql.push('(' + $projection + ')');
+
+  var $values = this.$values($attrs);
+  sql.push('VALUES', $values);
+
+  if ($updateColumns !== null) {
+    sql.push('ON DUPLICATE KEY UPDATE', $updateColumns);
   }
 
   return {sql: sql.join(' ') + ';', params: params};
