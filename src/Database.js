@@ -1,6 +1,9 @@
 var events = require('events');
 var util = require('util');
+var _ = require('lodash');
+var type = require('type-of');
 var Promise = require('bluebird');
+var Table = require('./Table');
 
 /**
  * Creates new Database client of the designated properties.
@@ -111,35 +114,42 @@ Database.prototype.hasTable = function (table, callback) {
   return Promise.resolve().nodeify(callback);
 };
 
-// // associate with Table class
-// Database.prototype.Table = Table;
+// associate with Table class
+Database.prototype.Table = Table;
 
-// /**
-//  * Returns a new Table, extended with the given properties and methods.
-//  * Please note: this method will not create a new table on database - it will merely reference an existing one.
-//  * @param {string} tableName the name of the table in database.
-//  * @param {object} [customProperties] the table's custom properties and methods.
-//  * @returns {Table}
-//  */
-// Database.prototype.extend = function (tableName, customProperties) {
-//   var table;
+/**
+ * Returns a new Table, augmented with the given properties and methods.
+ * Please note: this method will not create a new table on database - it will merely reference an existing one.
+ * @param {string} tableName the name of the table in database.
+ * @param {object} [customProperties] the table's custom properties and methods.
+ * @returns {Table}
+ */
+Database.prototype.extend = function (tableName, customProperties) {
+  var table;
 
-//   // validate "tableName" param
-//   if (!_.isString(tableName)) {
-//     throw new Error('Invalid table name: expected string, received ' + typeof(tableName));
-//   }
+  // validate tableName argument
+  if (!_.isString(tableName)) {
+    throw new Error('Invalid tableName argument: expected string, received ' + type(tableName));
+  }
 
-//   // create table
-//   table = new this.Table(this, tableName);
+  // create table
+  table = new this.Table(this, tableName);
 
-//   // extend with custom properties
-//   if (_.isPlainObject(customProperties)) {
-//     table = _.extend(table, customProperties);
-//   }
+  // extend with custom properties
+  if (_.isPlainObject(customProperties)) {
+    table = _.extend(table, customProperties);
+  }
 
-//   return table;
-// };
+  // load table metadata
+  if (this.isConnected) {
+    table.loadMeta();
+  } else {
+    // wait for db connection
+    this.once('connect', table.loadMeta.bind(table));
+  }
 
+  return table;
+};
 
 // // associate with Transaction class
 // Database.prototype.Transaction = Transaction;

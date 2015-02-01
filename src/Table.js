@@ -22,14 +22,6 @@ function Table (db, name) {
   // init the EventEmitter
   EventEmitter.call(this);
   this.setMaxListeners(99);
-
-  // load table metadata
-  if (db.isConnected) {
-    this._loadMeta();
-  } else {
-    // wait for db connection
-    db.once('connect', this._loadMeta.bind(this));
-  }
 }
 
 // @extends EventEmitter
@@ -39,8 +31,9 @@ util.inherits(Table, EventEmitter);
  * Retrieves column metadata from database.
  * @param {Function} [callback] an optional callback function with (err, columns) arguments.
  * @returns {Promise} resolving to Array.<object>
+ * @private
  */
-Table.prototype.getColumns = function (callback) {
+Table.prototype._getColumns = function (callback) {
   return Promise.resolve().nodeify(callback);
 };
 
@@ -48,8 +41,9 @@ Table.prototype.getColumns = function (callback) {
  * Retrieves primary key metadata from database.
  * @param {Function} [callback] an optional callback function with (err, primaryKey) arguments.
  * @returns {Promise} resolving to Array.<string>
+ * @private
  */
-Table.prototype.getPrimaryKey = function (callback) {
+Table.prototype._getPrimaryKey = function (callback) {
   return Promise.resolve().nodeify(callback);
 };
 
@@ -57,8 +51,9 @@ Table.prototype.getPrimaryKey = function (callback) {
  * Retrieves unique key metadata from database.
  * @param {Function} [callback] an optional callback function with (err, uniqueKeys) arguments.
  * @returns {Promise} resolving to object
+ * @private
  */
-Table.prototype.getUniqueKeys = function (callback) {
+Table.prototype._getUniqueKeys = function (callback) {
   return Promise.resolve().nodeify(callback);
 };
 
@@ -68,7 +63,7 @@ Table.prototype.getUniqueKeys = function (callback) {
  * @returns {Promise} resolving to object
  * @private
  */
-Table.prototype.getIndexKeys = function (callback) {
+Table.prototype._getIndexKeys = function (callback) {
   return Promise.resolve().nodeify(callback);
 };
 
@@ -78,7 +73,7 @@ Table.prototype.getIndexKeys = function (callback) {
  * @returns {Promise} resolving to object
  * @private
  */
-Table.prototype.getForeignKeys = function (callback) {
+Table.prototype._getForeignKeys = function (callback) {
   return Promise.resolve().nodeify(callback);
 };
 
@@ -86,20 +81,20 @@ Table.prototype.getForeignKeys = function (callback) {
  * Loads table metadata from database.
  * @param {function} [callback] an optional callback function with (err, foreignKeys) arguments.
  * @returns {Promise}
- * @emits Database#ready
- * @emits Database#error
- * @private
+ * @emits Table#ready
+ * @emits Table#error
  */
-Table.prototype._loadMeta = function (callback) {
+Table.prototype.loadMeta = function (callback) {
   var _this = this;
 
   this.db.hasTable(this.name)
-    .then(function (bool) {
-      // make sure table exists in db
-      if (!bool) {
+    .then(function (hasTable) {
+      // make sure table exists
+      if (!hasTable) {
         _this.emit('error', new Error('Table "' + _this.name + '" does not exist in database'));
         return;
       }
+
       // retrieve metadata
       return Promise.props({
         columns: _this.getColumns(),
@@ -107,17 +102,17 @@ Table.prototype._loadMeta = function (callback) {
         uniqueKeys: _this.getUniqueKeys(),
         indexKeys: _this.getIndexKeys(),
         // foreignKeys: _this._getForeignKeys()
-      });
-    })
-    // update table properties + emit @ready
-    .then(function(results) {
-      _this.columns = results.columns;
-      _this.primaryKey = results.primaryKey;
-      _this.uniqueKeys = results.uniqueKeys;
-      _this.indexKeys = results.indexKeys;
-      _this.foreignKeys = results.foreignKeys;
-      _this.isReady = true;
-      _this.emit('ready');
+      })
+        // update table properties + emit @ready
+        .then(function(results) {
+          _this.columns = results.columns;
+          _this.primaryKey = results.primaryKey;
+          _this.uniqueKeys = results.uniqueKeys;
+          _this.indexKeys = results.indexKeys;
+          _this.foreignKeys = results.foreignKeys;
+          _this.isReady = true;
+          _this.emit('ready');
+        });
     })
     .nodeify(callback);
 };
