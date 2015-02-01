@@ -1,7 +1,11 @@
 var _ = require('lodash');
 var type = require('type-of');
+var Table = require('./Table');
 
 function QueryBuilder(table) {
+  if (!Table.isTable(table)) {
+    throw new Error('Invalid table argument; expected a Table instance');
+  }
   this.table = table;
 }
 

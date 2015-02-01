@@ -18,6 +18,14 @@ describe('MySQL QueryBuilder', function () {
 
   var querybuilder = new QueryBuilder(table);
 
+  describe('constructor', function () {
+
+    it('throws error when table is not a Table instance', function () {
+      assert.throws(function () { new QueryBuilder({}); }, /invalid table argument/i);
+    });
+
+  });
+
   describe('$projection()', function () {
 
     it('accepts empty $projection', function () {

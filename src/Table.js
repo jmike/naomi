@@ -270,4 +270,13 @@ Table.prototype.add = function (attrs, options, callback) {
   return Promise.resolve().nodeify(callback);
 };
 
+/**
+ * Indicates whether the specified object is Table.
+ * @param {*} obj the object to test
+ * @returns {boolean}
+ */
+Table.isTable = function (obj) {
+  return obj instanceof Table;
+};
+
 module.exports = Table;

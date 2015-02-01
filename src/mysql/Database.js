@@ -40,6 +40,7 @@ function Database(props) {
 
 // @extends GenericDatabase
 util.inherits(Database, GenericDatabase);
+_.extend(Database, GenericDatabase);
 
 /**
  * @extends {GenericDatabase#connect}

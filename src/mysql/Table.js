@@ -14,6 +14,7 @@ function Table () {
 
 // @extends GenericTable
 util.inherits(Table, GenericTable);
+_.extend(Table, GenericTable);
 
 /**
  * Retrieves column metadata from database.

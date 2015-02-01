@@ -151,6 +151,15 @@ Database.prototype.extend = function (tableName, customProperties) {
   return table;
 };
 
+/**
+ * Indicates whether the specified object is Database.
+ * @param {*} obj the object to test
+ * @returns {boolean}
+ */
+Database.isDatabase = function (obj) {
+  return obj instanceof Database;
+};
+
 // // associate with Transaction class
 // Database.prototype.Transaction = Transaction;
 
