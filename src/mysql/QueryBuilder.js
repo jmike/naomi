@@ -471,32 +471,30 @@ QueryBuilder.prototype.delete = function ($query) {
   return {sql: sql.join(' ') + ';', params: params};
 };
 
-QueryBuilder.prototype.upsert = function ($attrs) {
+QueryBuilder.prototype.upsert = function ($query) {
   var sql = [];
   var params = [];
 
-  // make sure $attrs is array
-  if (!_.isArray($attrs)) $attrs = [$attrs];
-
-  // extract keys from attrs
-  var keys = Object.keys($attrs[0]);
+  // extract keys
+  var keys = Object.keys($query.$values[0]);
 
   sql.push('INSERT');
 
-  var $updateColumns = this.$updateColumns(_.difference(keys, this.primaryKey));
-  if ($updateColumns === null) sql.push('IGNORE');
+  var updateColumns = this.$updateColumns(_.difference(keys, this.primaryKey));
+  if (updateColumns === null) sql.push('IGNORE');
 
   var table = this.escape(this.table.name);
   sql.push('INTO', table);
 
-  var $projection = this.$projection(keys);
-  sql.push('(' + $projection + ')');
+  var projection = this.$projection({$include: keys});
+  sql.push('(' + projection + ')');
 
-  var $values = this.$values($attrs);
-  sql.push('VALUES', $values);
+  var values = this.$values($query.$values);
+  sql.push('VALUES', values.sql);
+  params = params.concat(values.params);
 
-  if ($updateColumns !== null) {
-    sql.push('ON DUPLICATE KEY UPDATE', $updateColumns);
+  if (updateColumns !== null) {
+    sql.push('ON DUPLICATE KEY UPDATE', updateColumns.sql);
   }
 
   return {sql: sql.join(' ') + ';', params: params};

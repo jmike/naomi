@@ -617,4 +617,19 @@ describe('MySQL QueryBuilder', function () {
 
   });
 
+  describe('#upsert()', function () {
+
+    it('returns a valid SQL with $values specified', function () {
+      var query = querybuilder.upsert({
+        $values: [
+          {name: 'James', age: 18, country: 'DE'},
+          {name: 'Liz', age: 19, country: 'UK'}
+        ]
+      });
+
+      assert.strictEqual(query.sql, 'INSERT INTO `employees` (`name`, `age`, `country`) VALUES (?, ?, ?), (?, ?, ?) ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `age` = VALUES(`age`), `country` = VALUES(`country`);');
+    });
+
+  });
+
 });

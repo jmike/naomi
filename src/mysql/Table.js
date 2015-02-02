@@ -210,6 +210,18 @@ Table.prototype.del = function (query, callback) {
 };
 
 /**
+ * @extends GenericTable#set()
+ */
+Table.prototype.set = function (attrs, callback) {
+  var $query = queryparser.parse({$values: attrs});
+  var obj = this.querybuilder.upsert($query);
+
+  return this.db.query(obj.sql, obj.params)
+    .return() // void
+    .nodeify(callback);
+};
+
+/**
  * Creates or updates (if already exists) the specified record(s) in this table.
  * @param {(object|Array.<object>)} attrs the attributes of the record(s) to create/update.
  * @returns {promise} resolving to the primary key of the created/updated record(s).
