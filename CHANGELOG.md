@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0-beta - 2015.02.02
+
+* Load table metadata on Database#extend, not on Database#connect.
+* Enable mongo-like query language.
+* Documentation and Postgres support missing.
+
 ## 0.8.7 - 2014-10-29
 
 * Fixed .npmignore to ignore .env, .jshintrc and asset files.
