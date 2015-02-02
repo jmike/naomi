@@ -215,7 +215,7 @@ Table.prototype.del = function (query, callback) {
   var $query = queryparser.parse(query);
 
   // build parameterized SQL statement
-  var stmt = this.querybuilder.count($query);
+  var stmt = this.querybuilder.delete($query);
 
   // run statement
   return this.db.query(stmt.sql, stmt.params)
@@ -261,7 +261,7 @@ Table.prototype.set = function (attrs, options, callback) {
       var hasAutoIncPrimaryKey = _this.hasAutoIncPrimaryKey();
       var insertedRows = 0;
 
-      return $query.$attrs.map(function (e) {
+      return $query.$values.map(function (e) {
         var obj = {};
 
         // check if element contains primary key
@@ -269,7 +269,7 @@ Table.prototype.set = function (attrs, options, callback) {
           return e.hasOwnProperty(k);
         });
 
-        if (containsPrimaryKey) return _.pick(obj, _this.primaryKey);
+        if (containsPrimaryKey) return _.pick(e, _this.primaryKey);
 
         if (hasAutoIncPrimaryKey) {
           obj[_this.primaryKey[0]] = result.insertId + insertedRows;
@@ -325,7 +325,7 @@ Table.prototype.add = function (attrs, options, callback) {
     .then(function (result) {
       var hasAutoIncPrimaryKey = _this.hasAutoIncPrimaryKey();
 
-      return $query.$attrs.map(function (e, i) {
+      return $query.$values.map(function (e, i) {
         var obj = {};
 
         if (hasAutoIncPrimaryKey) {
@@ -333,7 +333,7 @@ Table.prototype.add = function (attrs, options, callback) {
           return obj;
         }
 
-        return _.pick(obj, _this.primaryKey);
+        return _.pick(e, _this.primaryKey);
       });
     })
     .then(function (records) {

@@ -158,69 +158,82 @@ describe('MySQL Table', function () {
       //   });
 
       // });
+      //
 
-      // it('successfully completes a CRUD [+ Count] operation', function (done) {
-      //   employees.add({
-      //     firstname: 'Donnie',
-      //     lastname: 'Azoff',
-      //     age: 36
-      //   })
-      //     .then(function (key) {
-      //       assert.isObject(key);
-      //       assert.isNumber(key.id);
-      //       return key;
-      //     })
-      //     .then(function (key) { // select
-      //       return employees.get(key).then(function (records) {
-      //         assert.isArray(records);
-      //         assert.lengthOf(records, 1);
-      //         assert.strictEqual(records[0].id, key.id);
-      //         return key;
-      //       });
-      //     })
-      //     .then(function (key) { // update (using primary key)
-      //       return employees.set({
-      //         id: key.id,
-      //         firstname: 'Donnie',
-      //         lastname: 'Azoff',
-      //         age: 37
-      //       })
-      //         .then(function (k) {
-      //           assert.deepEqual(k, key);
-      //           return k;
-      //         });
-      //     })
-      //     .then(function (key) { // update (using unique key)
-      //       return employees.set({
-      //         firstname: 'Donnie',
-      //         lastname: 'Azoff',
-      //         age: 38
-      //       })
-      //         .then(function (k) {
-      //           assert.deepEqual(k, key);
-      //           return k;
-      //         });
-      //     })
-      //     .then(function (key) { // count
-      //       return employees.count().then(function (n) {
-      //         assert.operator(n, '>=', 1);
-      //         return key;
-      //       });
-      //     })
-      //     .then(function (k) {
-      //       return employees.del(k);
-      //     })
-      //     .catch(function (err) {
-      //       throw err;
-      //     })
-      //     .finally(function () {
-      //       done();
-      //     });
-      // });
+      it('successfully completes a CRUD [+ Count] operation', function (done) {
+        // create employee
+        employees.add({firstname: 'Donnie', lastname: 'Azoff', age: 36})
+          // validate key
+          .then(function (key) {
+            assert.isObject(key);
+            assert.isNumber(key.id);
+            return key;
+          })
+          // read employee using key
+          .then(function (key) {
+            return employees.get(key)
+              .then(function (records) {
+                assert.isArray(records);
+                assert.lengthOf(records, 1);
+                assert.strictEqual(records[0].id, key.id);
+              })
+              .return(key);
+          })
+          // update employee using primary key
+          .then(function (key) {
+            return employees.set({id: key.id, firstname: 'Donnie', lastname: 'Azoff', age: 37})
+              .then(function (newkey) {
+                assert.deepEqual(newkey, key);
+                return newkey;
+              });
+          })
+          // read employee to validate age
+          .then(function (key) {
+            return employees.get(key)
+              .then(function (records) {
+                assert.strictEqual(records[0].age, 37);
+              })
+              .return(key);
+          })
+          // update employee using unique key
+          .then(function (key) {
+            return employees.set({firstname: 'Donnie', lastname: 'Azoff', age: 38})
+              .then(function (newkey) {
+                assert.deepEqual(newkey, key);
+                return newkey;
+              });
+          })
+          // read employee to validate age
+          .then(function (key) {
+            return employees.get(key)
+              .then(function (records) {
+                assert.strictEqual(records[0].age, 38);
+              })
+              .return(key);
+          })
+          // count number of employees
+          .then(function (key) {
+            return employees.count()
+              .then(function (n) {
+                assert.operator(n, '>=', 1);
+              })
+              .return(key);
+          })
+          // delete employee
+          .then(function (k) {
+            return employees.del(k);
+          })
+          .catch(function (err) {
+            throw err;
+          })
+          .finally(function () {
+            done();
+          });
+      });
 
       // it('handles multiple records', function (done) {
       //   employees.add([
-      //     {firstname: 'John', lastname: 'Doobs', age: 18},
+      //     {firstname: 'Mr.', lastname: 'Doobs', age: 18},
       //     {firstname: 'George', lastname: 'Fudge', age: 19},
       //     {firstname: 'Jack', lastname: 'White', age: 20}
       //   ])

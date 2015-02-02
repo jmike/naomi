@@ -97,10 +97,10 @@ Table.prototype.loadMeta = function (callback) {
 
       // retrieve metadata
       return Promise.props({
-        columns: _this.getColumns(),
-        primaryKey: _this.getPrimaryKey(),
-        uniqueKeys: _this.getUniqueKeys(),
-        indexKeys: _this.getIndexKeys(),
+        columns: _this._getColumns(),
+        primaryKey: _this._getPrimaryKey(),
+        uniqueKeys: _this._getUniqueKeys(),
+        indexKeys: _this._getIndexKeys(),
         // foreignKeys: _this._getForeignKeys()
       })
         // update table properties + emit @ready
