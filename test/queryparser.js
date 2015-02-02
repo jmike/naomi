@@ -5,6 +5,7 @@ var projection = require('../src/query/projection');
 var limit = require('../src/query/limit');
 var offset = require('../src/query/offset');
 var orderby = require('../src/query/orderby');
+var filter = require('../src/query/filter');
 var values = require('../src/query/values');
 var parser = require('../src/query/parser');
 
@@ -264,6 +265,24 @@ describe('orderby', function () {
 
 });
 
+describe('filter', function () {
+
+  describe('#parse()', function () {
+
+    it('accepts empty object', function () {
+      var $filter = filter.parse();
+      assert.deepEqual($filter, {});
+    });
+
+    it('accepts object with multiple properties', function () {
+      var $filter = filter.parse({id: 1, name: 'Jim'});
+      assert.deepEqual($filter, {$and: [{id: 1}, {name: 'Jim'}]});
+    });
+
+  });
+
+});
+
 describe('values', function () {
 
   describe('#parse()', function () {
@@ -348,29 +367,35 @@ describe('parser', function () {
       assert.property($query, '$values');
     });
 
-    it('accepts $query as Number', function () {
+    it('accepts Number as $query', function () {
       var $query = parser.parse(123);
       assert.isObject($query);
       assert.deepEqual($query.$filter, {$primarykey: 123});
     });
 
-    it('accepts $query as String', function () {
+    it('accepts String as $query', function () {
       var $query = parser.parse('string');
       assert.isObject($query);
       assert.deepEqual($query.$filter, {$primarykey: 'string'});
     });
 
-    it('accepts $query as Boolean', function () {
+    it('accepts Boolean as $query', function () {
       var $query = parser.parse(true);
       assert.isObject($query);
       assert.deepEqual($query.$filter, {$primarykey: true});
     });
 
-    it('accepts $query as Date', function () {
+    it('accepts Date as $query', function () {
       var d = new Date();
       var $query = parser.parse(d);
       assert.isObject($query);
       assert.deepEqual($query.$filter, {$primarykey: d});
+    });
+
+    it('accepts Array as $query', function () {
+      var $query = parser.parse([{id: 1}, {id: 2}]);
+      assert.isObject($query);
+      assert.deepEqual($query.$filter, {$or: [{id: 1}, {id: 2}]});
     });
 
     it('successfully parses a valid $query', function () {
