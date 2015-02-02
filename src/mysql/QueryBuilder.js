@@ -500,4 +500,26 @@ QueryBuilder.prototype.upsert = function ($query) {
   return {sql: sql.join(' ') + ';', params: params};
 };
 
+QueryBuilder.prototype.insert = function ($query) {
+  var sql = [];
+  var params = [];
+
+  sql.push('INSERT');
+
+  if ($query.$ignore === true) sql.push('IGNORE');
+
+  var table = this.escape(this.table.name);
+  sql.push('INTO', table);
+
+  var columns = Object.keys($query.$values[0]);
+  var projection = this.$projection({$include: columns});
+  sql.push('(' + projection + ')');
+
+  var values = this.$values($query.$values);
+  sql.push('VALUES', values.sql);
+  params = params.concat(values.params);
+
+  return {sql: sql.join(' ') + ';', params: params};
+};
+
 module.exports = QueryBuilder;

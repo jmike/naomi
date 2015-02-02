@@ -632,4 +632,31 @@ describe('MySQL QueryBuilder', function () {
 
   });
 
+  describe('#insert()', function () {
+
+    it('returns a valid SQL with $values specified', function () {
+      var query = querybuilder.insert({
+        $values: [
+          {name: 'James', age: 18, country: 'DE'},
+          {name: 'Liz', age: 19, country: 'UK'}
+        ]
+      });
+
+      assert.strictEqual(query.sql, 'INSERT INTO `employees` (`name`, `age`, `country`) VALUES (?, ?, ?), (?, ?, ?);');
+    });
+
+    it('returns a valid SQL with $values, $ignore specified', function () {
+      var query = querybuilder.insert({
+        $values: [
+          {name: 'James', age: 18, country: 'DE'},
+          {name: 'Liz', age: 19, country: 'UK'}
+        ],
+        $ignore: true
+      });
+
+      assert.strictEqual(query.sql, 'INSERT IGNORE INTO `employees` (`name`, `age`, `country`) VALUES (?, ?, ?), (?, ?, ?);');
+    });
+
+  });
+
 });
