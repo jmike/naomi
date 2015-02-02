@@ -348,6 +348,31 @@ describe('parser', function () {
       assert.property($query, '$values');
     });
 
+    it('accepts $query as Number', function () {
+      var $query = parser.parse(123);
+      assert.isObject($query);
+      assert.deepEqual($query.$filter, {$primarykey: 123});
+    });
+
+    it('accepts $query as String', function () {
+      var $query = parser.parse('string');
+      assert.isObject($query);
+      assert.deepEqual($query.$filter, {$primarykey: 'string'});
+    });
+
+    it('accepts $query as Boolean', function () {
+      var $query = parser.parse(true);
+      assert.isObject($query);
+      assert.deepEqual($query.$filter, {$primarykey: true});
+    });
+
+    it('accepts $query as Date', function () {
+      var d = new Date();
+      var $query = parser.parse(d);
+      assert.isObject($query);
+      assert.deepEqual($query.$filter, {$primarykey: d});
+    });
+
     it('successfully parses a valid $query', function () {
       var $query = parser.parse({
         id: {lte: 10},

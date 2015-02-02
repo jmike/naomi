@@ -13,12 +13,19 @@ exports.parse = function ($query) {
     $query = {};
   }
 
+  // check if $query is plain value
+  if (_.isNumber($query) || _.isString($query) || _.isBoolean($query) || _.isDate($query) || Buffer.isBuffer($query)) {
+    $query = {$primarykey: $query};
+  }
+
+  // parse query
   projection.visit(results, $query.$projection);
   orderby.visit(results, $query.$orderby || $query.$sort);
   limit.visit(results, $query.$limit);
   offset.visit(results, $query.$offset || $query.$skip);
   values.visit(results, $query.$values);
 
+  // append filter to results
   results.$filter = _.omit($query, [
     '$projection',
     '$orderby',
