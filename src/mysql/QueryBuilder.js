@@ -396,19 +396,20 @@ QueryBuilder.prototype.select = function ($query) {
   var params = [];
 
   var projection = this.$projection($query.$projection);
-  sql.push('SELECT', projection);
-
   var table = this.escape(this.table.name);
-  sql.push('FROM', table);
-
   var filter = this.$expression($query.$filter);
+  var orderby = this.$orderby($query.$orderby);
+
+  sql.push('SELECT', projection, 'FROM', table);
+
   if (filter) {
     sql.push('WHERE', filter.sql);
     params = params.concat(filter.params);
   }
 
-  var orderby = this.$orderby($query.$orderby);
-  if (orderby) sql.push('ORDER BY', orderby);
+  if (orderby) {
+    sql.push('ORDER BY', orderby);
+  }
 
   if ($query.$limit) {
     sql.push('LIMIT', $query.$limit);
@@ -424,19 +425,20 @@ QueryBuilder.prototype.count = function ($query) {
   var sql = [];
   var params = [];
 
-  sql.push('SELECT COUNT(*) AS `count`');
-
   var table = this.escape(this.table.name);
-  sql.push('FROM', table);
-
   var filter = this.$expression($query.$filter);
+  var orderby = this.$orderby($query.$orderby);
+
+  sql.push('SELECT', 'COUNT(*) AS `count`', 'FROM', table);
+
   if (filter) {
     sql.push('WHERE', filter.sql);
     params = params.concat(filter.params);
   }
 
-  var orderby = this.$orderby($query.$orderby);
-  if (orderby) sql.push('ORDER BY', orderby);
+  if (orderby) {
+    sql.push('ORDER BY', orderby);
+  }
 
   if ($query.$limit) {
     sql.push('LIMIT', $query.$limit);
@@ -452,21 +454,24 @@ QueryBuilder.prototype.delete = function ($query) {
   var sql = [];
   var params = [];
 
-  sql.push('DELETE');
-
   var table = this.escape(this.table.name);
-  sql.push('FROM', table);
-
   var filter = this.$expression($query.$filter);
+  var orderby = this.$orderby($query.$orderby);
+
+  sql.push('DELETE', 'FROM', table);
+
   if (filter) {
     sql.push('WHERE', filter.sql);
     params = params.concat(filter.params);
   }
 
-  var orderby = this.$orderby($query.$orderby);
-  if (orderby) sql.push('ORDER BY', orderby);
+  if (orderby) {
+    sql.push('ORDER BY', orderby);
+  }
 
-  if ($query.$limit) sql.push('LIMIT', $query.$limit);
+  if ($query.$limit) {
+    sql.push('LIMIT', $query.$limit);
+  }
 
   return {sql: sql.join(' ') + ';', params: params};
 };
@@ -475,21 +480,20 @@ QueryBuilder.prototype.upsert = function ($query) {
   var sql = [];
   var params = [];
 
-  // extract keys
-  var keys = Object.keys($query.$values[0]);
+  var table = this.escape(this.table.name);
+  var columns = Object.keys($query.$values[0]);
+  var updateColumns = this.$updateColumns(_.difference(columns, this.primaryKey));
+  var projection = this.$projection({$include: columns});
+  var values = this.$values($query.$values);
 
   sql.push('INSERT');
 
-  var updateColumns = this.$updateColumns(_.difference(keys, this.primaryKey));
-  if (updateColumns === null) sql.push('IGNORE');
+  if (updateColumns === null) {
+    sql.push('IGNORE');
+  }
 
-  var table = this.escape(this.table.name);
-  sql.push('INTO', table);
+  sql.push('INTO', table, '(' + projection + ')');
 
-  var projection = this.$projection({$include: keys});
-  sql.push('(' + projection + ')');
-
-  var values = this.$values($query.$values);
   sql.push('VALUES', values.sql);
   params = params.concat(values.params);
 
@@ -504,18 +508,17 @@ QueryBuilder.prototype.insert = function ($query) {
   var sql = [];
   var params = [];
 
+  var table = this.escape(this.table.name);
+  var columns = Object.keys($query.$values[0]);
+  var projection = this.$projection({$include: columns});
+  var values = this.$values($query.$values);
+
   sql.push('INSERT');
 
   if ($query.$ignore === true) sql.push('IGNORE');
 
-  var table = this.escape(this.table.name);
-  sql.push('INTO', table);
+  sql.push('INTO', table, '(' + projection + ')');
 
-  var columns = Object.keys($query.$values[0]);
-  var projection = this.$projection({$include: columns});
-  sql.push('(' + projection + ')');
-
-  var values = this.$values($query.$values);
   sql.push('VALUES', values.sql);
   params = params.concat(values.params);
 
