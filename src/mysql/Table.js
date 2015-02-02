@@ -1,5 +1,6 @@
 var util = require('util');
 var _ = require('lodash');
+var type = require('type-of');
 var GenericTable = require('../Table');
 var queryparser = require('../query/parser');
 var QueryBuilder = require('./QueryBuilder');
@@ -176,10 +177,14 @@ Table.prototype._getForeignKeys = function (callback) {
  * @extends GenericTable#get()
  */
 Table.prototype.get = function (query, callback) {
+  // parse query
   var $query = queryparser.parse(query);
-  var obj = this.querybuilder.select($query);
 
-  return this.db.query(obj.sql, obj.params)
+  // build parameterized SQL statement
+  var stmt = this.querybuilder.select($query);
+
+  // run statement
+  return this.db.query(stmt.sql, stmt.params)
     .nodeify(callback);
 };
 
@@ -187,10 +192,15 @@ Table.prototype.get = function (query, callback) {
  * @extends GenericTable#count()
  */
 Table.prototype.count = function (query, callback) {
+  // parse query
   var $query = queryparser.parse(query);
-  var obj = this.querybuilder.count($query);
 
-  return this.db.query(obj.sql, obj.params)
+  // build parameterized SQL statement
+  var stmt = this.querybuilder.count($query);
+
+  // run statement
+  return this.db.query(stmt.sql, stmt.params)
+    // return just the number
     .then(function (records) {
       return records[0].count || 0;
     })
@@ -201,10 +211,14 @@ Table.prototype.count = function (query, callback) {
  * @extends GenericTable#del()
  */
 Table.prototype.del = function (query, callback) {
+  // parse query
   var $query = queryparser.parse(query);
-  var obj = this.querybuilder.count($query);
 
-  return this.db.query(obj.sql, obj.params)
+  // build parameterized SQL statement
+  var stmt = this.querybuilder.count($query);
+
+  // run statement
+  return this.db.query(stmt.sql, stmt.params)
     .return() // void
     .nodeify(callback);
 };
@@ -212,98 +226,121 @@ Table.prototype.del = function (query, callback) {
 /**
  * @extends GenericTable#set()
  */
-Table.prototype.set = function (attrs, callback) {
-  var $query = queryparser.parse({$values: attrs});
-  var obj = this.querybuilder.upsert($query);
+Table.prototype.set = function (attrs, options, callback) {
+  var _this = this;
+  var $query;
+  var stmt;
 
-  return this.db.query(obj.sql, obj.params)
-    .return() // void
+  // validate attrs argument
+  if (!_.isArray(attrs) && !_.isObject(attrs)) {
+    throw new Error('Invalid attrs argument; expected array or object, received ' + type(attrs));
+  }
+
+  // handle optional options argument
+  if (_.isFunction(options)) {
+    callback = options;
+    options = {};
+  } else if (_.isUndefined(options)) {
+    options = {};
+  }
+
+  // validate options argument
+  if (!_.isPlainObject(options)) {
+    throw new Error('Invalid options argument; expected object, received ' + type(options));
+  }
+
+  // parse query
+  $query = queryparser.parse({$values: attrs});
+
+  // build parameterized SQL statement
+  stmt = this.querybuilder.upsert($query);
+
+  // run statement
+  return this.db.query(stmt.sql, stmt.params)
+    .then(function (result) {
+      var hasAutoIncPrimaryKey = _this.hasAutoIncPrimaryKey();
+      var insertedRows = 0;
+
+      return $query.$attrs.map(function (e) {
+        var obj = {};
+
+        // check if element contains primary key
+        var containsPrimaryKey = _this.primaryKey.every(function (k) {
+          return e.hasOwnProperty(k);
+        });
+
+        if (containsPrimaryKey) return _.pick(obj, _this.primaryKey);
+
+        if (hasAutoIncPrimaryKey) {
+          obj[_this.primaryKey[0]] = result.insertId + insertedRows;
+          insertedRows++;
+          return obj;
+        }
+
+        return {};
+      });
+    })
+    .then(function (records) {
+      if (_.isPlainObject(attrs)) return records[0];
+      return records;
+    })
     .nodeify(callback);
 };
 
 /**
- * Creates or updates (if already exists) the specified record(s) in this table.
- * @param {(object|Array.<object>)} attrs the attributes of the record(s) to create/update.
- * @returns {promise} resolving to the primary key of the created/updated record(s).
+ * @extends GenericTable#add()
  */
-Table.prototype._set = function (attrs) {
-  var self = this,
-    columns, updateColumns, query;
+Table.prototype.add = function (attrs, options, callback) {
+  var _this = this;
+  var $query;
+  var stmt;
 
-  // extract columns from attrs
-  columns = _.isArray(attrs) ? Object.keys(attrs[0]) : Object.keys(attrs);
+  // validate attrs argument
+  if (!_.isArray(attrs) && !_.isObject(attrs)) {
+    throw new Error('Invalid attrs argument; expected array or object, received ' + type(attrs));
+  }
 
-  // calculate updateColumns
-  updateColumns = _.difference(columns, this.primaryKey);
+  // handle optional options argument
+  if (_.isFunction(options)) {
+    callback = options;
+    options = {};
+  } else if (_.isUndefined(options)) {
+    options = {};
+  }
 
-  // compile upsert query
-  query = querybuilder.upsert({
-    table: this.name,
-    columns: columns,
-    values: attrs,
-    updateColumns: updateColumns
-  });
+  // validate options argument
+  if (!_.isPlainObject(options)) {
+    throw new Error('Invalid options argument; expected object, received ' + type(options));
+  }
 
-  // run query
-  return this.db.query(query.sql, query.params)
+  // parse attrs + options
+  $query = queryparser.parse({$values: attrs});
+  $query = _.extend($query, options);
+
+  // build parameterized SQL statement
+  stmt = this.querybuilder.insert($query);
+
+  // run statement
+  return this.db.query(stmt.sql, stmt.params)
     .then(function (result) {
-      var primaryKey, isSimpleAutoInc, insertedRows, funct;
+      var hasAutoIncPrimaryKey = _this.hasAutoIncPrimaryKey();
 
-      primaryKey = self.primaryKey; // note: primaryKey is array
-      isSimpleAutoInc = primaryKey.length === 1 && self.isAutoInc(primaryKey[0]);
-      insertedRows = 0;
+      return $query.$attrs.map(function (e, i) {
+        var obj = {};
 
-      funct = function (obj) {
-        var hasPrimaryKey = primaryKey.every(function (k) {
-          return obj.hasOwnProperty(k);
-        });
+        if (hasAutoIncPrimaryKey) {
+          obj[_this.primaryKey[0]] = result.insertId + i;
+          return obj;
+        }
 
-        if (hasPrimaryKey) return _.pick(obj, primaryKey);
-        if (isSimpleAutoInc) return _.zipObject(primaryKey, [result.insertId + insertedRows++]);
-
-        return {}; // TODO: query db for identifiers
-      };
-
-      if (_.isArray(attrs)) return attrs.map(funct);
-      return funct(attrs);
-    });
-};
-
-/**
- * Creates the specified record(s) in this table.
- * @param {(object|Array.<object>)} attrs the attributes of the record(s) to create.
- * @returns {promise} resolving to the primary key of the created record(s).
- */
-Table.prototype._add = function (attrs) {
-  var self = this,
-    columns, query;
-
-  // extract columns from attrs
-  columns = _.isArray(attrs) ? Object.keys(attrs[0]) : Object.keys(attrs);
-
-  // compile query
-  query = querybuilder.insert({
-    table: this.name,
-    columns: columns,
-    values: attrs
-  });
-
-  // run query
-  return this.db.query(query.sql, query.params)
-    .then(function (result) {
-      var primaryKey, isSimpleAutoInc, funct;
-
-      primaryKey = self.primaryKey; // note: primaryKey is array
-      isSimpleAutoInc = primaryKey.length === 1 && self.isAutoInc(primaryKey[0]);
-
-      funct = function (obj, i) {
-        if (isSimpleAutoInc) return _.zipObject(primaryKey, [result.insertId + i]);
-        return _.pick(obj, primaryKey);
-      };
-
-      if (_.isArray(attrs)) return attrs.map(funct);
-      return funct(attrs, 0);
-    });
+        return _.pick(obj, _this.primaryKey);
+      });
+    })
+    .then(function (records) {
+      if (_.isPlainObject(attrs)) return records[0];
+      return records;
+    })
+    .nodeify(callback);
 };
 
 module.exports = Table;

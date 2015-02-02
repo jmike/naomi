@@ -197,6 +197,18 @@ Table.prototype.isAutoInc = function (columnName) {
 };
 
 /**
+ * Indicates whether the table has a simple automatically incremented primary key.
+ * This method will always return false until database is ready.
+ * @returns {boolean}
+ * @example
+ *
+ * table.hasAutoIncPrimaryKey();
+ */
+Table.protype.hasAutoIncPrimaryKey = function () {
+  return this.primaryKey.length === 1 && this.isAutoInc(this.primaryKey[0]);
+};
+
+/**
  * Enqueues the given resolver function until the Table is ready.
  * Executes the resolver immediately after connection.
  * @param {function} resolver
