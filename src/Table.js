@@ -204,7 +204,7 @@ Table.prototype.isAutoInc = function (columnName) {
  *
  * table.hasAutoIncPrimaryKey();
  */
-Table.protype.hasAutoIncPrimaryKey = function () {
+Table.prototype.hasAutoIncPrimaryKey = function () {
   return this.primaryKey.length === 1 && this.isAutoInc(this.primaryKey[0]);
 };
 
