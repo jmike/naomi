@@ -231,75 +231,103 @@ describe('MySQL Table', function () {
           });
       });
 
-      // it('handles multiple records', function (done) {
-      //   employees.add([
-      //     {firstname: 'Mr.', lastname: 'Doobs', age: 18},
-      //     {firstname: 'George', lastname: 'Fudge', age: 19},
-      //     {firstname: 'Jack', lastname: 'White', age: 20}
-      //   ])
-      //     .then(function (result) {
-      //       assert.isArray(result);
-      //       assert.lengthOf(result, 3);
-      //       assert.isObject(result[0]);
-      //       assert.property(result[0], 'id');
-      //       return result;
-      //     })
-      //     .then(function (result) { // update using primary key
-      //       var records = result.map(function (obj) {
-      //         obj.age = 40;
-      //         obj.firstname = 'a';
-      //         obj.lastname = 'b' + obj.id;
-      //         return obj;
-      //       });
+      it('handles multiple records', function (done) {
+        // create records
+        employees.add([
+          {firstname: 'Mr.', lastname: 'Doobs', age: 18},
+          {firstname: 'George', lastname: 'Fudge', age: 19},
+          {firstname: 'Jack', lastname: 'White', age: 20}
+        ])
+          // validate returned keys
+          .then(function (keys) {
+            assert.isArray(keys);
+            assert.lengthOf(keys, 3);
+            assert.isObject(keys[0]);
+            assert.property(keys[0], 'id');
+            return keys;
+          })
+          // update using primary key
+          .then(function (keys) {
+            var records = keys.map(function (obj) {
+              obj.firstname = 'firstname' + obj.id;
+              obj.lastname = 'lastname' + obj.id;
+              obj.age = 30;
+              return obj;
+            });
 
-      //       return employees.set(records)
-      //         .then(function (pk) {
-      //           assert.isArray(pk);
-      //           assert.lengthOf(pk, 3);
-      //           assert.isObject(pk[0]);
-      //           assert.strictEqual(pk[0].id, result[0].id);
-      //           assert.strictEqual(pk[1].id, result[1].id);
-      //           assert.strictEqual(pk[2].id, result[2].id);
-      //           return pk;
-      //         });
-      //     })
-      //     .then(function (pk) {
-      //       return employees.del(pk);
-      //     })
-      //     .catch(function (err) {
-      //       throw err;
-      //     })
-      //     .finally(function () {
-      //       done();
-      //     });
-      // });
+            return employees.set(records)
+              .then(function (newkeys) {
+                assert.isArray(newkeys);
+                assert.lengthOf(newkeys, 3);
+                assert.isObject(newkeys[0]);
+                assert.strictEqual(newkeys[0].id, keys[0].id);
+                assert.strictEqual(newkeys[1].id, keys[1].id);
+                assert.strictEqual(newkeys[2].id, keys[2].id);
+                return newkeys;
+              });
+          })
+          // read employees to validate age
+          .then(function (keys) {
+            var $in = keys.map(function (key) {
+              return key.id;
+            });
 
-      // it('sets existing and non-existing records at the same time', function (done) {
-      //   employees.add({firstname: 'Mister', lastname: 'White', age: 18})
-      //     .then(function (result) {
-      //       return employees.set([
-      //         {firstname: 'Monsieur', lastname: 'Levanter', age: 20},
-      //         {firstname: 'Miss', lastname: 'Goldie', age: 18},
-      //         {id: result.id, firstname: 'Mister', lastname: 'White', age: 38}
-      //       ])
-      //       .then(function (pk) { // update using primary key
-      //         assert.isArray(pk);
-      //         assert.lengthOf(pk, 3);
-      //         assert.isObject(pk[0]);
-      //         assert.strictEqual(pk[2].id, result.id);
-      //         return pk;
-      //       });
-      //     })
-      //     .then(function (pk) {
-      //       return employees.del(pk);
-      //     })
-      //     .catch(function (err) {
-      //       throw err;
-      //     })
-      //     .finally(function () {
-      //       done();
-      //     });
-      // });
+            return employees.get({id: {$in: $in}})
+              .then(function (records) {
+                assert.lengthOf(records, 3);
+                assert.strictEqual(records[0].age, 30);
+                assert.strictEqual(records[1].age, 30);
+                assert.strictEqual(records[2].age, 30);
+              })
+              .return(keys);
+          })
+          // delete employees
+          .then(function (keys) {
+            var $in = keys.map(function (key) {
+              return key.id;
+            });
+
+            return employees.del({id: {$in: $in}});
+          })
+          .catch(function (err) {
+            throw err;
+          })
+          .finally(function () {
+            done();
+          });
+      });
+
+      it('sets existing and non-existing records at the same time', function (done) {
+        employees.add({firstname: 'Mister', lastname: 'White', age: 18})
+          .then(function (result) {
+            return employees.set([
+              {firstname: 'Monsieur', lastname: 'Levanter', age: 20},
+              {firstname: 'Miss', lastname: 'Goldie', age: 18},
+              {id: result.id, firstname: 'Mister', lastname: 'White', age: 38}
+            ])
+            // update using primary key
+            .then(function (keys) {
+              assert.isArray(keys);
+              assert.lengthOf(keys, 3);
+              assert.isObject(keys[0]);
+              assert.strictEqual(keys[2].id, result.id);
+              return keys;
+            });
+          })
+          .then(function (keys) {
+            var $in = keys.map(function (key) {
+              return key.id;
+            });
+
+            return employees.del({id: {$in: $in}});
+          })
+          .catch(function (err) {
+            throw err;
+          })
+          .finally(function () {
+            done();
+          });
+      });
 
     });
 
