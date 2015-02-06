@@ -177,29 +177,40 @@ Table.prototype._getForeignKeys = function (callback) {
  * @extends GenericTable#get()
  */
 Table.prototype.get = function (query, callback) {
-  // parse query
-  var $query = queryparser.parse(query);
+  var _this = this;
+  var resolver;
 
-  // build parameterized SQL statement
-  var stmt = this.querybuilder.select($query);
+  resolver = function (resolve, reject) {
+    // parse query
+    var $query = queryparser.parse(query);
+    // build parameterized SQL statement
+    var stmt = _this.querybuilder.select($query);
+    // run statement
+    return _this.db.query(stmt.sql, stmt.params)
+      .then(resolve, reject);
+  };
 
-  // run statement
-  return this.db.query(stmt.sql, stmt.params)
-    .nodeify(callback);
+  return this._enqueue(resolver).nodeify(callback);
 };
 
 /**
  * @extends GenericTable#count()
  */
 Table.prototype.count = function (query, callback) {
-  // parse query
-  var $query = queryparser.parse(query);
+  var _this = this;
+  var resolver;
 
-  // build parameterized SQL statement
-  var stmt = this.querybuilder.count($query);
+  resolver = function (resolve, reject) {
+    // parse query
+    var $query = queryparser.parse(query);
+    // build parameterized SQL statement
+    var stmt = _this.querybuilder.count($query);
+    // run statement
+    return _this.db.query(stmt.sql, stmt.params)
+      .then(resolve, reject);
+  };
 
-  // run statement
-  return this.db.query(stmt.sql, stmt.params)
+  return this._enqueue(resolver)
     // return just the number
     .then(function (records) {
       return records[0].count || 0;
@@ -211,15 +222,24 @@ Table.prototype.count = function (query, callback) {
  * @extends GenericTable#del()
  */
 Table.prototype.del = function (query, callback) {
+  var _this = this;
+  var $query;
+  var resolver;
+
   // parse query
-  var $query = queryparser.parse(query);
+  $query = queryparser.parse(query);
 
-  // build parameterized SQL statement
-  var stmt = this.querybuilder.delete($query);
+  // define promise resolver
+  resolver = function (resolve, reject) {
+    // build parameterized SQL statement
+    var stmt = _this.querybuilder.delete($query);
+    // run statement
+    return _this.db.query(stmt.sql, stmt.params)
+      .then(resolve, reject);
+  };
 
-  // run statement
-  return this.db.query(stmt.sql, stmt.params)
-    .return() // void
+  return this._enqueue(resolver)
+    .return() // return void
     .nodeify(callback);
 };
 
@@ -229,7 +249,7 @@ Table.prototype.del = function (query, callback) {
 Table.prototype.set = function (attrs, options, callback) {
   var _this = this;
   var $query;
-  var stmt;
+  var resolver;
 
   // validate attrs argument
   if (!_.isArray(attrs) && !_.isObject(attrs)) {
@@ -249,14 +269,19 @@ Table.prototype.set = function (attrs, options, callback) {
     throw new Error('Invalid options argument; expected object, received ' + type(options));
   }
 
-  // parse query
+  // parse attrs + options
   $query = queryparser.parse({$values: attrs});
 
-  // build parameterized SQL statement
-  stmt = this.querybuilder.upsert($query);
+  // define promise resolver
+  resolver = function (resolve, reject) {
+    // build parameterized SQL statement
+    var stmt = _this.querybuilder.upsert($query);
+    // run statement
+    return _this.db.query(stmt.sql, stmt.params)
+      .then(resolve, reject);
+  };
 
-  // run statement
-  return this.db.query(stmt.sql, stmt.params)
+  return this._enqueue(resolver)
     .then(function (result) {
       var hasAutoIncPrimaryKey = _this.hasAutoIncPrimaryKey();
       var insertedRows = 0;
@@ -293,7 +318,7 @@ Table.prototype.set = function (attrs, options, callback) {
 Table.prototype.add = function (attrs, options, callback) {
   var _this = this;
   var $query;
-  var stmt;
+  var resolver;
 
   // validate attrs argument
   if (!_.isArray(attrs) && !_.isObject(attrs)) {
@@ -317,11 +342,17 @@ Table.prototype.add = function (attrs, options, callback) {
   $query = queryparser.parse({$values: attrs});
   $query = _.extend($query, options);
 
-  // build parameterized SQL statement
-  stmt = this.querybuilder.insert($query);
+  // define promise resolver
+  resolver = function (resolve, reject) {
+    // build parameterized SQL statement
+    var stmt = _this.querybuilder.upsert($query);
+    // run statement
+    return _this.db.query(stmt.sql, stmt.params)
+      .then(resolve, reject);
+  };
 
   // run statement
-  return this.db.query(stmt.sql, stmt.params)
+  return this._enqueue(resolver)
     .then(function (result) {
       var hasAutoIncPrimaryKey = _this.hasAutoIncPrimaryKey();
 
