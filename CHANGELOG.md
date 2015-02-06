@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0-beta.1 - 2015.02.06
+
+* Enqueue queries until table is ready.
+
 ## 0.9.0-beta - 2015.02.02
 
 * Load table metadata on Database#extend, not on Database#connect.
