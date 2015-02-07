@@ -9,7 +9,12 @@ var mocha = new Mocha({
 
 // load the test files
 mocha.addFile(path.resolve(__dirname, './naomi'));
-mocha.addFile(path.resolve(__dirname, './queryparser'));
+mocha.addFile(path.resolve(__dirname, './projection'));
+mocha.addFile(path.resolve(__dirname, './filter'));
+mocha.addFile(path.resolve(__dirname, './orderby'));
+mocha.addFile(path.resolve(__dirname, './limit'));
+mocha.addFile(path.resolve(__dirname, './offset'));
+mocha.addFile(path.resolve(__dirname, './values'));
 mocha.addFile(path.resolve(__dirname, './mysql-database'));
 // mocha.addFile(path.resolve(__dirname, './postgres-database'));
 mocha.addFile(path.resolve(__dirname, './mysql-querybuilder'));

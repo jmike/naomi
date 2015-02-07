@@ -3,7 +3,12 @@ var EventEmitter = require('events').EventEmitter;
 var _ = require('lodash');
 var type = require('type-of');
 var Promise = require('bluebird');
-var queryparser = require('../query/parser');
+var Projection = require('../query/Projection');
+var Filter = require('../query/Filter');
+var OrderBy = require('../query/OrderBy');
+var Limit = require('../query/Limit');
+var Offset = require('../query/Offset');
+var Values = require('../query/Values');
 var QueryBuilder = require('./QueryBuilder');
 
 /**
@@ -365,10 +370,14 @@ Table.prototype.get = function (query, callback) {
   var resolver;
 
   resolver = function (resolve, reject) {
-    // parse query
-    var $query = queryparser.parse(query);
     // build parameterized SQL statement
-    var stmt = _this.querybuilder.select($query);
+    var stmt = _this.querybuilder.select({
+      $projection: Projection.fromQuery(query),
+      $filter: Filter.fromQuery(query),
+      $orderby: OrderBy.fromQuery(query),
+      $limit: Limit.fromQuery(query),
+      $offset: Offset.fromQuery(query)
+    });
     // run statement
     return _this.db.query(stmt.sql, stmt.params)
       .then(resolve, reject);
@@ -388,10 +397,13 @@ Table.prototype.count = function (query, callback) {
   var resolver;
 
   resolver = function (resolve, reject) {
-    // parse query
-    var $query = queryparser.parse(query);
     // build parameterized SQL statement
-    var stmt = _this.querybuilder.count($query);
+    var stmt = _this.querybuilder.count({
+      $filter: Filter.fromQuery(query),
+      $orderby: OrderBy.fromQuery(query),
+      $limit: Limit.fromQuery(query),
+      $offset: Offset.fromQuery(query)
+    });
     // run statement
     return _this.db.query(stmt.sql, stmt.params)
       .then(resolve, reject);
@@ -413,16 +425,16 @@ Table.prototype.count = function (query, callback) {
  */
 Table.prototype.del = function (query, callback) {
   var _this = this;
-  var $query;
   var resolver;
-
-  // parse query
-  $query = queryparser.parse(query);
 
   // define promise resolver
   resolver = function (resolve, reject) {
     // build parameterized SQL statement
-    var stmt = _this.querybuilder.delete($query);
+    var stmt = _this.querybuilder.delete({
+      $filter: Filter.fromQuery(query),
+      $orderby: OrderBy.fromQuery(query),
+      $limit: Limit.fromQuery(query)
+    });
     // run statement
     return _this.db.query(stmt.sql, stmt.params)
       .then(resolve, reject);
@@ -445,11 +457,6 @@ Table.prototype.set = function (attrs, options, callback) {
   var $query;
   var resolver;
 
-  // validate attrs argument
-  if (!_.isArray(attrs) && !_.isObject(attrs)) {
-    throw new Error('Invalid attrs argument; expected array or object, received ' + type(attrs));
-  }
-
   // handle optional options argument
   if (_.isFunction(options)) {
     callback = options;
@@ -464,7 +471,10 @@ Table.prototype.set = function (attrs, options, callback) {
   }
 
   // parse attrs + options
-  $query = queryparser.parse({$values: attrs});
+  $query = {
+    $values: Projection.fromQuery(attrs),
+    $ignore: options.ignore
+  };
 
   // define promise resolver
   resolver = function (resolve, reject) {
@@ -518,11 +528,6 @@ Table.prototype.add = function (attrs, options, callback) {
   var $query;
   var resolver;
 
-  // validate attrs argument
-  if (!_.isArray(attrs) && !_.isObject(attrs)) {
-    throw new Error('Invalid attrs argument; expected array or object, received ' + type(attrs));
-  }
-
   // handle optional options argument
   if (_.isFunction(options)) {
     callback = options;
@@ -537,8 +542,10 @@ Table.prototype.add = function (attrs, options, callback) {
   }
 
   // parse attrs + options
-  $query = queryparser.parse({$values: attrs});
-  $query = _.extend($query, options);
+  $query = {
+    $values: Projection.fromQuery(attrs),
+    $ignore: options.ignore
+  };
 
   // define promise resolver
   resolver = function (resolve, reject) {
