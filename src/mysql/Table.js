@@ -472,7 +472,7 @@ Table.prototype.set = function (attrs, options, callback) {
 
   // parse attrs + options
   $query = {
-    $values: Projection.fromQuery(attrs),
+    $values: Values.fromValues(attrs),
     $ignore: options.ignore
   };
 
@@ -543,7 +543,7 @@ Table.prototype.add = function (attrs, options, callback) {
 
   // parse attrs + options
   $query = {
-    $values: Projection.fromQuery(attrs),
+    $values: Values.fromValues(attrs),
     $ignore: options.ignore
   };
 

@@ -5,7 +5,7 @@ function Values(value) {
   this.value = (value !== undefined) ? value : null;
 }
 
-exports.fromQuery = function ($values) {
+exports.fromValues = function ($values) {
   // check if $values is undefined
   if (_.isUndefined($values)) return new Values();
 
