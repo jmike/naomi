@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Offset = require('../src/query/Offset');
+var Offset = require('../src/mysql/query/Offset');
 
 describe('Offset', function () {
 

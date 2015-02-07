@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Filter = require('../src/query/Filter');
+var Filter = require('../src/mysql/query/Filter');
 
 describe('Filter', function () {
 

@@ -3,12 +3,12 @@ var EventEmitter = require('events').EventEmitter;
 var _ = require('lodash');
 var type = require('type-of');
 var Promise = require('bluebird');
-var Projection = require('../query/Projection');
-var Filter = require('../query/Filter');
-var OrderBy = require('../query/OrderBy');
-var Limit = require('../query/Limit');
-var Offset = require('../query/Offset');
-var Values = require('../query/Values');
+var Projection = require('./query/Projection');
+var Filter = require('./query/Filter');
+var OrderBy = require('./query/OrderBy');
+var Limit = require('./query/Limit');
+var Offset = require('./query/Offset');
+var Values = require('./query/Values');
 var QueryBuilder = require('./QueryBuilder');
 
 /**

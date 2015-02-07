@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Limit = require('../src/query/Limit');
+var Limit = require('../src/mysql/query/Limit');
 
 describe('Limit', function () {
 

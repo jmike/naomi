@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var Values = require('../src/query/Values');
+var Values = require('../src/mysql/query/Values');
 
 describe('Values', function () {
 
