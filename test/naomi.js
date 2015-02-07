@@ -22,13 +22,11 @@ describe('naomi', function () {
 
     it('returns new Database when type is mysql', function () {
       var db = naomi.create('mysql');
-      assert.instanceOf(db, Database);
       assert.instanceOf(db, MySQLDatabase);
     });
 
     it('returns new Database when type is postgres', function () {
       var db = naomi.create('postgres');
-      assert.instanceOf(db, Database);
       assert.instanceOf(db, PostgresDatabase);
     });
 

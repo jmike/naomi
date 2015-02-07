@@ -1,14 +1,14 @@
 var util = require('util');
-var mysql = require('mysql');
+var EventEmitter = require('events').EventEmitter;
 var _ = require('lodash');
 var type = require('type-of');
 var Promise = require('bluebird');
-var GenericDatabase = require('../Database');
+var mysql = require('mysql');
 var Table = require('./Table');
 var Transaction = require('./Transaction');
 
 /**
- * Constructs a new MySQL Database client of the designated properties.
+ * Creates a new MySQL Database client with the designated properties.
  * @param {object} props connection properties
  * @param {string} props.database the name of the database
  * @param {string} [props.host=localhost] optional hostname; defaults to "localhost"
@@ -33,60 +33,96 @@ function Database(props) {
     connectionLimit: 10
   });
 
-  // init GenericDatabase
-  GenericDatabase.call(this, props);
+  // set class properties
+  this.connectionProperties = props;
+  this.name = props.database;
+  this.isConnected = false;
   this._pool = null;
+
+  // init the EventEmitter
+  EventEmitter.call(this);
+  this.setMaxListeners(999);
 }
 
-// @extends GenericDatabase
-util.inherits(Database, GenericDatabase);
-_.extend(Database, GenericDatabase);
+// @extends EventEmitter
+util.inherits(Database, EventEmitter);
 
 /**
- * @extends {GenericDatabase#connect}
+ * Enqueues the given resolver function until the database client is connected.
+ * Executes the resolver immediately after connection.
+ * @param {Function} resolver
+ * @return {Promise}
+ * @private
+ */
+Database.prototype._enqueue = function (resolver) {
+  var _this = this;
+
+  return new Promise(function(resolve, reject) {
+    if (_this.isConnected) {
+      resolver(resolve, reject);
+    } else {
+      // wait for db connection
+      _this.once('connect', function () {
+        resolver(resolve, reject);
+      });
+    }
+  });
+};
+
+/**
+ * Connects to server using the connection properties supplied at construction time.
+ * @param {Function} [callback] an optional callback function with (err) arguments.
+ * @returns {Promise}
+ * @emits Database#connect
  */
 Database.prototype.connect = function (callback) {
   var _this = this;
 
   // check if already connected
-  if (this.isConnected) Promise.resolve().nodeify(callback);
+  if (this.isConnected) Promise.resolve().nodeify(callback); // exit gracefully
 
   // connect
   return Promise.try(function () {
     _this._pool = mysql.createPool(_this.connectionProperties);
   })
     .then(function () {
-      return GenericDatabase.prototype.connect.call(_this, callback);
-    });
+      _this.isConnected = true;
+      _this.emit('connect');
+    })
+    .nodeify(callback);
 };
 
 /**
- * @extends {GenericDatabase#disconnect}
+ * Gracefully closes open connection(s) to the server.
+ * Please note: the database client will become practically useless after calling this method.
+ * @param {Function} [callback] an optional callback function with (err) arguments.
+ * @returns {Promise}
+ * @emits Database#disconnect
  */
 Database.prototype.disconnect = function (callback) {
   var _this = this;
   var resolver;
 
   // check if already disconnected
-  if (!this.isConnected) return Promise.resolve().nodeify(callback);
+  if (!this.isConnected) return Promise.resolve().nodeify(callback); // exit gracefully
 
-  // disconnect
+  // define promise resolver
   resolver = function (resolve, reject) {
     _this._pool.end(function (err) {
       if (err) return reject(err);
+      _this.isConnected = false;
+      _this.isReady = false;
+      _this.emit('disconnect');
       resolve();
     });
   };
 
-  return new Promise(resolver)
-    .then(function () {
-      return GenericDatabase.prototype.disconnect.call(_this, callback);
-    });
+  return new Promise(resolver).nodeify(callback);
 };
 
 /**
- * Acquires the first available client from pool.
- * @param {function} [callback] an optional callback function with (err, client) arguments.
+ * Acquires the first available client from the internal connection pool.
+ * @param {Function} [callback] an optional callback function with (err, client) arguments.
  * @return {Promise} resolving to client.
  */
 Database.prototype.acquireClient = function (callback) {
@@ -104,7 +140,7 @@ Database.prototype.acquireClient = function (callback) {
 };
 
 /**
- * Releases the designated client to pool.
+ * Releases the designated client and restores it in the internal connection pool.
  * @param {Client} client
  */
 Database.prototype.releaseClient = function (client) {
@@ -120,7 +156,7 @@ Database.prototype.releaseClient = function (client) {
  * @private
  * @static
  */
-function _query(client, sql, params) {
+function queryClient(client, sql, params) {
   var resolver;
 
   resolver = function (resolve, reject) {
@@ -144,7 +180,12 @@ function _query(client, sql, params) {
 }
 
 /**
- * @extends {GenericDatabase#query}
+ * Runs the given parameterized SQL statement.
+ * @param {string} sql the SQL statement.
+ * @param {Array} [params] an array of parameter values.
+ * @param {object} [options] query options.
+ * @param {Function} [callback] a callback function with (err, records) arguments.
+ * @returns {Promise} resolving to the query results.
  */
 Database.prototype.query = function (sql, params, options, callback) {
   var _this = this;
@@ -194,13 +235,14 @@ Database.prototype.query = function (sql, params, options, callback) {
     // acquire client
     return _this.acquireClient()
       .then(function (client) {
-        // merge sql with options, if the latter is specified
-        if (!_.isEmpty(options)) sql = _.assign({sql: sql}, options);
+        // check if options is specified
+        if (!_.isEmpty(options)) {
+          sql = _.assign({sql: sql}, options); // merge with sql
+        }
         // execute query
-        return _query(client, sql, params)
+        return queryClient(client, sql, params)
           .finally(function () {
-            // always release previously acquired client
-            return _this.releaseClient(client);
+            return _this.releaseClient(client); // always release previously acquired client
           });
       })
       .then(resolve, reject);
@@ -210,7 +252,10 @@ Database.prototype.query = function (sql, params, options, callback) {
 };
 
 /**
- * @extends {GenericDatabase#hasTable}
+ * Indicates whether the designated table exists in database.
+ * @param {string} table the name of the table.
+ * @param {Function} [callback] a callback function with (err, bool) arguments.
+ * @returns {Promise}
  */
 Database.prototype.hasTable = function (table, callback) {
   var sql;
@@ -239,7 +284,9 @@ Database.prototype.hasTable = function (table, callback) {
 };
 
 /**
- * @extends {GenericDatabase#getTables}
+ * Retrieves table names from the database.
+ * @param {Function} [callback] a callback function with (err, tableNames) arguments.
+ * @returns {Promise}
  */
 Database.prototype.getTables = function (callback) {
   var _this = this;
@@ -257,8 +304,42 @@ Database.prototype.getTables = function (callback) {
     .nodeify(callback);
 };
 
-// associate with MySQL Table class
+// associate with Table class
 Database.prototype.Table = Table;
+
+/**
+ * Returns a new Table, augmented with the given properties and methods.
+ * Please note: this method will not create a new table on database - it will merely reference an existing one.
+ * @param {string} tableName the name of the table in database.
+ * @param {object} [customProperties] the table's custom properties and methods.
+ * @returns {Table}
+ */
+Database.prototype.extend = function (tableName, customProperties) {
+  var table;
+
+  // validate tableName argument
+  if (!_.isString(tableName)) {
+    throw new Error('Invalid tableName argument: expected string, received ' + type(tableName));
+  }
+
+  // create table
+  table = new this.Table(this, tableName);
+
+  // extend with custom properties
+  if (_.isPlainObject(customProperties)) {
+    table = _.extend(table, customProperties);
+  }
+
+  // load table metadata
+  if (this.isConnected) {
+    table.loadMeta();
+  } else {
+    // wait for db connection
+    this.once('connect', table.loadMeta.bind(table));
+  }
+
+  return table;
+};
 
 // associate with MySQL Transaction class
 Database.prototype.Transaction = Transaction;
