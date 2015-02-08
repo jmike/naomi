@@ -16,7 +16,7 @@ var Operators = {
 };
 
 function Expression($expression) {
-  var obj, keys;
+  var keys;
 
   if (_.isUndefined($expression)) {
     this._v = null;
@@ -34,20 +34,18 @@ function Expression($expression) {
     this._v = {$primarykey: $expression};
 
   } else if (_.isPlainObject($expression)) {
-    obj = _.omit($expression, ['$projection', '$orderby', '$limit', '$offset', '$values', '$skip', '$sort']);
-
-    keys = Object.keys(obj);
+    keys = Object.keys($expression);
 
     if (keys.length === 0) {
       this._v = null;
 
     } else if (keys.length > 1) {
       this._v = {$and: keys.map(function (k) {
-        return _.pick(obj, k);
+        return _.pick($expression, k);
       })};
 
     } else {
-      this._v = obj;
+      this._v = $expression;
     }
 
   } else {
