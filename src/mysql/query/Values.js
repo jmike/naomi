@@ -1,22 +1,15 @@
 var _ = require('lodash');
 var type = require('type-of');
 
-function Values(value) {
-  this.value = (value !== undefined) ? value : null;
-}
+function Values($values) {
+  if (_.isUndefined($values)) {
+    this.arr = null;
 
-exports.fromValues = function ($values) {
-  // check if $values is undefined
-  if (_.isUndefined($values)) return new Values();
-
-  // check if $values is Object
-  if (_.isPlainObject($values)) {
+  } else if (_.isPlainObject($values)) {
     if (_.isEmpty($values)) throw new Error('Invalid $values argument; object cannot be empty');
-    return new Values([$values]);
-  }
+    this.arr = [$values];
 
-  // check if $values is Array
-  if (_.isArray($values)) {
+  } else if (_.isArray($values)) {
     if (_.isEmpty($values)) throw new Error('Invalid $values argument; array cannot be empty');
 
     // validate array elements
@@ -32,11 +25,46 @@ exports.fromValues = function ($values) {
       return e;
     });
 
-    return new Values($values);
-  }
+    this.arr = $values;
 
-  // everything else is unacceptable
-  throw new Error('Invalid $values argument; expected object or Array, received ' + type($values));
+  } else { // everything else is unacceptable
+    throw new Error('Invalid $values argument; expected object or Array, received ' + type($values));
+  }
+}
+
+Values.prototype.toParamSQL = function (table) {
+  var sql = [];
+  var params = [];
+  var columns;
+
+  // check if internal array is null
+  if (this.arr === null) return null;
+
+  // extract column names
+  columns = Object.keys(this.arr[0]);
+
+  // make sure columns actually exist
+  columns.forEach(function (column) {
+    if (!table.hasColumn(column))  {
+      throw new Error('Unknown column "' + column + '"; not found in table "' + table.name + '"');
+    }
+  });
+
+  // generate SQL + params
+  sql = this.arr
+    .map(function (e) {
+      var group = columns
+        .map(function (k) {
+          params.push(e[k]);
+          return '?';
+        })
+        .join(', ');
+
+      return '(' + group + ')';
+    })
+    .join(', ');
+
+  return {sql: sql, params: params};
 };
 
-module.export = Values;
+module.exports = Values;

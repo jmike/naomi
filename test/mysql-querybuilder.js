@@ -26,65 +26,27 @@ describe('MySQL QueryBuilder', function () {
 
   // });
 
-  describe('$projection()', function () {
-
-    it('accepts empty $projection', function () {
-      var query = querybuilder.$projection({$include: [], $exclude: []});
-      assert.strictEqual(query, '`id`, `name`, `age`, `country`');
-    });
-
-    it('accepts $projection with inclusive columns', function () {
-      var query = querybuilder.$projection({$include: ['name', 'age'], $exclude: []});
-      assert.strictEqual(query, '`name`, `age`');
-    });
-
-    it('accepts $projection with exclusive columns', function () {
-      var query = querybuilder.$projection({$include: [], $exclude: ['id']});
-      assert.strictEqual(query, '`name`, `age`, `country`');
-    });
-
-    it('accepts a mixture of exclusive and inclusive columns, but ignores the exclusive columns', function () {
-      var query = querybuilder.$projection({$include: ['name', 'age'], $exclude: ['id']});
-      assert.strictEqual(query, '`name`, `age`');
-    });
-
-  });
-
-  describe('$orderby()', function () {
-
-    it('accepts empty $orderby', function () {
-      var query = querybuilder.$orderby([]);
-      assert.strictEqual(query, null);
-    });
-
-    it('successfully returns an ORDER BY statement given a valid $orderby', function () {
-      var query = querybuilder.$orderby([{name: 1}, {id: -1}]);
-      assert.strictEqual(query, '`name` ASC, `id` DESC');
-    });
-
-  });
-
   describe('$and', function () {
 
     it('throws error when $and is Object', function () {
-      assert.throws(function () { querybuilder.$and({}); }, /invalid value for \$and expression/i);
+      assert.throws(function () { querybuilder.$and({}); }, /invalid $and argument/i);
     });
 
     it('throws error when $and is Boolean', function () {
-      assert.throws(function () { querybuilder.$and(true); }, /invalid value for \$and expression/i);
-      assert.throws(function () { querybuilder.$and(false); }, /invalid value for \$and expression/i);
+      assert.throws(function () { querybuilder.$and(true); }, /invalid $and argument/i);
+      assert.throws(function () { querybuilder.$and(false); }, /invalid $and argument/i);
     });
 
     it('throws error when $and is String', function () {
-      assert.throws(function () { querybuilder.$and(''); }, /invalid value for \$and expression/i);
+      assert.throws(function () { querybuilder.$and(''); }, /invalid $and argument/i);
     });
 
     it('throws error when $and is null', function () {
-      assert.throws(function () { querybuilder.$and(null); }, /invalid value for \$and expression/i);
+      assert.throws(function () { querybuilder.$and(null); }, /invalid $and argument/i);
     });
 
     it('throws error when $and is number', function () {
-      assert.throws(function () { querybuilder.$and(123); }, /invalid value for \$and expression/i);
+      assert.throws(function () { querybuilder.$and(123); }, /invalid $and argument/i);
     });
 
     it('accepts empty array', function () {
@@ -430,23 +392,6 @@ describe('MySQL QueryBuilder', function () {
 
   });
 
-  describe('$values', function () {
-
-    it('successfully returns parameterized SQL on valid $values', function () {
-      var query = querybuilder.$values([
-        {
-          name: 'James Bond',
-          country: 'UK',
-          age: 42
-        }
-      ]);
-      assert.strictEqual(query.sql, '(?, ?, ?)');
-      assert.strictEqual(query.params[0], 'James Bond');
-      assert.strictEqual(query.params[1], 'UK');
-      assert.strictEqual(query.params[2], 42);
-    });
-
-  });
 
   describe('#select()', function () {
 

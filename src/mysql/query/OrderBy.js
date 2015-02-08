@@ -1,24 +1,12 @@
 var _ = require('lodash');
 var type = require('type-of');
+var escape = require('./escape');
 
-function OrderBy(value) {
-  this.value = (value !== undefined) ? value : [];
-}
+function OrderBy($orderby) {
+  if (_.isUndefined($orderby)) {
+    this.value = [];
 
-OrderBy.fromQuery = function (query) {
-  var $orderby;
-
-  // make sure query is Object
-  if (!_.isPlainObject(query)) return new OrderBy();
-
-  // unpack $orderby
-  $orderby = query.$orderby;
-
-  // check if $orderby is undefined
-  if (_.isUndefined($orderby)) $orderby = [];
-
-  // check if $orderby is array
-  if (_.isArray($orderby)) {
+  } else if (_.isArray($orderby)) {
     // validate array elements
     $orderby = $orderby.map(function (e, i) {
       var obj, keys, value;
@@ -55,11 +43,40 @@ OrderBy.fromQuery = function (query) {
       throw new Error('Invalid $orderby element at position ' + i + '; expected object or string, received ' + type(e));
     });
 
-    return new OrderBy($orderby);
-  }
+    this.value = $orderby;
 
-  // everything else is unacceptable
-  throw new Error('Invalid $orderby argument; expected array, received ' + type($orderby));
+  } else { // everything else is unacceptable
+    throw new Error('Invalid $orderby argument; expected array, received ' + type($orderby));
+  }
+}
+
+OrderBy.prototype.toParamSQL = function (table) {
+  var sql;
+
+  // check if value array is empty
+  if (_.isEmpty(this.value)) return null;
+
+  // build SQL
+  sql = this.value
+    .map(function (e) {
+      var k = Object.keys(e)[0];
+      var v = e[k];
+
+      // make sure column exists in table
+      if (!table.hasColumn(k))  {
+        throw new Error('Unknown column "' + k + '"; not found in table "' + table.name + '"');
+      }
+
+      return escape(k) + ' ' + (v === 1 ? 'ASC' : 'DESC');
+    })
+    .join(', ');
+
+  return {sql: sql, params: []};
+};
+
+OrderBy.fromQuery = function (query) {
+  if (!_.isPlainObject(query)) return new OrderBy();
+  return new OrderBy(query.$orderby);
 };
 
 module.exports = OrderBy;
