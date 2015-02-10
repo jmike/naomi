@@ -52,13 +52,13 @@ describe('MySQL Limit', function () {
     });
 
     it('accepts undefined $limit', function () {
-      var limit = Limit.fromQuery({});
-      assert.strictEqual(limit.value, null);
+      var limit = Limit.fromObject({});
+      assert.strictEqual(limit._v, null);
     });
 
     it('accepts positive integer as $limit', function () {
       var limit = new Limit(10);
-      assert.strictEqual(limit.value, 10);
+      assert.strictEqual(limit._v, 10);
     });
 
   });
@@ -67,14 +67,14 @@ describe('MySQL Limit', function () {
 
     it('returns null when $limit is undefined', function () {
       var limit = new Limit();
-      var stmt = limit.toParamSQL(table);
-      assert.strictEqual(stmt, null);
+      var query = limit.toParamSQL(table);
+      assert.strictEqual(query, null);
     });
 
     it('successfully returns SQL given a valid $limit', function () {
       var limit = new Limit(99);
-      var stmt = limit.toParamSQL(table);
-      assert.strictEqual(stmt.sql, '99');
+      var query = limit.toParamSQL(table);
+      assert.strictEqual(query.sql, '99');
     });
 
   });

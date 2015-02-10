@@ -2,13 +2,13 @@ var _ = require('lodash');
 var type = require('type-of');
 var escape = require('./escape');
 
-var Operators = {
+var λ = {
   $eq: require('./Equal'),
   $ne: require('./NotEqual'),
   $lt: require('./LessThan'),
   $lte: require('./LessThanOrEqual'),
   $gt: require('./GreaterThan'),
-  $gte: require('./EqualOrEqual'),
+  $gte: require('./GreaterThanOrEqual'),
   $in: require('./In'),
   $nin: require('./NotIn'),
   $like: require('./Like'),
@@ -74,8 +74,8 @@ Expression.prototype.toParamSQL = function (table) {
   } else if (key === '$or') {
     expression = new Expression.Or(value);
 
-  } else if (Operators[key]) {
-    expression = new Operators[key](value);
+  } else if (λ[key]) {
+    expression = new λ[key](value);
 
   } else {
     // make sure key is a valid column
@@ -89,7 +89,7 @@ Expression.prototype.toParamSQL = function (table) {
       expression = new Expression(value);
 
     } else {
-      query = new Operators.$eq(value);
+      query = new λ.$eq(value);
     }
   }
 
@@ -154,7 +154,7 @@ Expression.Or.prototype.toParamSQL = function (table) {
   return {sql: sql, params: params};
 };
 
-Expression.fromQuery = function ($query) {
+Expression.fromObject = function ($query) {
   return new Expression($query);
 };
 

@@ -4,7 +4,7 @@ var escape = require('./escape');
 
 function OrderBy($orderby) {
   if (_.isUndefined($orderby)) {
-    this.value = [];
+    this._arr = [];
 
   } else if (_.isArray($orderby)) {
     // validate array elements
@@ -43,7 +43,7 @@ function OrderBy($orderby) {
       throw new Error('Invalid $orderby element at position ' + i + '; expected object or string, received ' + type(e));
     });
 
-    this.value = $orderby;
+    this._arr = $orderby;
 
   } else { // everything else is unacceptable
     throw new Error('Invalid $orderby argument; expected array, received ' + type($orderby));
@@ -54,10 +54,10 @@ OrderBy.prototype.toParamSQL = function (table) {
   var sql;
 
   // check if value array is empty
-  if (_.isEmpty(this.value)) return null;
+  if (_.isEmpty(this._arr)) return null;
 
   // build SQL
-  sql = this.value
+  sql = this._arr
     .map(function (e) {
       var k = Object.keys(e)[0];
       var v = e[k];
@@ -74,7 +74,7 @@ OrderBy.prototype.toParamSQL = function (table) {
   return {sql: sql, params: []};
 };
 
-OrderBy.fromQuery = function (query) {
+OrderBy.fromObject = function (query) {
   if (!_.isPlainObject(query)) return new OrderBy();
   return new OrderBy(query.$orderby);
 };

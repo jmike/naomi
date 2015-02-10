@@ -18,16 +18,16 @@ describe('MySQL OrderBy', function () {
 
   describe('contructor', function () {
 
-    it('throws error when $orderby is Object', function () {
+    it('throws error when $orderby is object', function () {
       assert.throws(function () { new OrderBy({}); }, /invalid \$orderby argument/i);
     });
 
-    it('throws error when $orderby is Boolean', function () {
+    it('throws error when $orderby is boolean', function () {
       assert.throws(function () { new OrderBy(true); }, /invalid \$orderby argument/i);
       assert.throws(function () { new OrderBy(false); }, /invalid \$orderby argument/i);
     });
 
-    it('throws error when $orderby is String', function () {
+    it('throws error when $orderby is string', function () {
       assert.throws(function () { new OrderBy(''); }, /invalid \$orderby argument/i);
     });
 
@@ -63,37 +63,37 @@ describe('MySQL OrderBy', function () {
     });
 
     it('accepts undefined $orderby', function () {
-      var orderby = OrderBy.fromQuery({});
-      assert.isArray(orderby.value);
-      assert.lengthOf(orderby.value, 0);
+      var orderby = OrderBy.fromObject({});
+      assert.isArray(orderby._arr);
+      assert.lengthOf(orderby._arr, 0);
     });
 
     it('accepts empty $orderby', function () {
       var orderby = new OrderBy([]);
-      assert.isArray(orderby.value);
-      assert.lengthOf(orderby.value, 0);
+      assert.isArray(orderby._arr);
+      assert.lengthOf(orderby._arr, 0);
     });
 
     it('accepts string $orderby element', function () {
       var orderby = new OrderBy(['id']);
-      assert.isArray(orderby.value);
-      assert.lengthOf(orderby.value, 1);
-      assert.deepEqual(orderby.value[0], {id: 1});
+      assert.isArray(orderby._arr);
+      assert.lengthOf(orderby._arr, 1);
+      assert.deepEqual(orderby._arr[0], {id: 1});
     });
 
     it('accepts object $orderby element', function () {
       var orderby = new OrderBy([{name: -1}]);
-      assert.isArray(orderby.value);
-      assert.lengthOf(orderby.value, 1);
-      assert.deepEqual(orderby.value[0], {name: -1});
+      assert.isArray(orderby._arr);
+      assert.lengthOf(orderby._arr, 1);
+      assert.deepEqual(orderby._arr[0], {name: -1});
     });
 
     it('accepts mixture of string and object $orderby elements', function () {
       var orderby = new OrderBy(['id', {name: -1}]);
-      assert.isArray(orderby.value);
-      assert.lengthOf(orderby.value, 2);
-      assert.deepEqual(orderby.value[0], {id: 1});
-      assert.deepEqual(orderby.value[1], {name: -1});
+      assert.isArray(orderby._arr);
+      assert.lengthOf(orderby._arr, 2);
+      assert.deepEqual(orderby._arr[0], {id: 1});
+      assert.deepEqual(orderby._arr[1], {name: -1});
     });
 
   });

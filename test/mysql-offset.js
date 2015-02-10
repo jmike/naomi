@@ -48,18 +48,18 @@ describe('MySQL Offset', function () {
     });
 
     it('accepts undefined $offset', function () {
-      var offset = Offset.fromQuery({});
-      assert.strictEqual(offset.value, null);
+      var offset = Offset.fromObject({});
+      assert.strictEqual(offset._v, null);
     });
 
     it('accepts positive integer as $offset', function () {
       var offset = new Offset(10);
-      assert.strictEqual(offset.value, 10);
+      assert.strictEqual(offset._v, 10);
     });
 
     it('accepts zero (0) as $offset', function () {
       var offset = new Offset(0);
-      assert.strictEqual(offset.value, 0);
+      assert.strictEqual(offset._v, 0);
     });
 
   });
@@ -68,14 +68,14 @@ describe('MySQL Offset', function () {
 
     it('returns null when $offset is undefined', function () {
       var offset = new Offset();
-      var stmt = offset.toParamSQL(table);
-      assert.strictEqual(stmt, null);
+      var query = offset.toParamSQL(table);
+      assert.strictEqual(query, null);
     });
 
     it('successfully returns SQL given a valid $offset', function () {
       var offset = new Offset(9);
-      var stmt = offset.toParamSQL(table);
-      assert.strictEqual(stmt.sql, '9');
+      var query = offset.toParamSQL(table);
+      assert.strictEqual(query.sql, '9');
     });
 
   });

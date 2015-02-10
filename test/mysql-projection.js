@@ -20,22 +20,22 @@ describe('MySQL Projection', function () {
 
   describe('constructor', function () {
 
-    it('throws error when $projection is Number', function () {
+    it('throws error when $projection is number', function () {
       assert.throws(function () { new Projection(-1); }, /invalid \$projection argument/i);
       assert.throws(function () { new Projection(0); }, /invalid \$projection argument/i);
       assert.throws(function () { new Projection(1); }, /invalid \$projection argument/i);
     });
 
-    it('throws error when $projection is Boolean', function () {
+    it('throws error when $projection is boolean', function () {
       assert.throws(function () { new Projection(true); }, /invalid \$projection argument/i);
       assert.throws(function () { new Projection(false); }, /invalid \$projection argument/i);
     });
 
-    it('throws error when $projection is String', function () {
+    it('throws error when $projection is string', function () {
       assert.throws(function () { new Projection(''); }, /invalid \$projection argument/i);
     });
 
-    it('throws error when $projection is Array', function () {
+    it('throws error when $projection is array', function () {
       assert.throws(function () { new Projection([]); }, /invalid \$projection argument/i);
     });
 
@@ -43,7 +43,7 @@ describe('MySQL Projection', function () {
       assert.throws(function () { new Projection(null); }, /invalid \$projection argument/i);
     });
 
-    it('accepts empty $projection', function () {
+    it('accepts undefined $projection', function () {
       var projection = new Projection();
       assert.isObject(projection);
       assert.isArray(projection.$include);
@@ -70,7 +70,7 @@ describe('MySQL Projection', function () {
       assert.sameMembers(projection.$exclude, ['id']);
     });
 
-    it('accepts a mixture of exclusive and inclusive columns', function () {
+    it('accepts a mixture of exclusive + inclusive columns', function () {
       var projection = new Projection({id: 0, name: 1, age: 1});
       assert.isArray(projection.$include);
       assert.sameMembers(projection.$include, ['name', 'age']);
@@ -82,21 +82,21 @@ describe('MySQL Projection', function () {
 
   describe('#toParamSQL()', function () {
 
-    it('returns all table columns when $include and $exclude is empty', function () {
+    it('returns all table columns when $projection is undefined', function () {
       var projection = new Projection();
       var stmt = projection.toParamSQL(table);
       assert.strictEqual(stmt.sql, '`id`, `name`, `age`, `country`');
       assert.lengthOf(stmt.params, 0);
     });
 
-    it('returns only the $include columns when $include is specified', function () {
+    it('returns $include columns when $include is specified', function () {
       var projection = new Projection({name: 1, age: 1});
       var stmt = projection.toParamSQL(table);
       assert.strictEqual(stmt.sql, '`name`, `age`');
       assert.lengthOf(stmt.params, 0);
     });
 
-    it('returns all columns minus the $exclude columns when $exclude is specified', function () {
+    it('returns all columns excluding the $exclude columns when $exclude is specified', function () {
       var projection = new Projection({id: -1});
       var stmt = projection.toParamSQL(table);
       assert.strictEqual(stmt.sql, '`name`, `age`, `country`');
@@ -112,6 +112,11 @@ describe('MySQL Projection', function () {
 
     it('throws error when $include contains unknown columns', function () {
       var projection = new Projection({unknown: 1});
+      assert.throws(function () { projection.toParamSQL(table); }, /unknown column/i);
+    });
+
+    it('throws error when $exlude contains unknown columns', function () {
+      var projection = new Projection({unknown: -1});
       assert.throws(function () { projection.toParamSQL(table); }, /unknown column/i);
     });
 

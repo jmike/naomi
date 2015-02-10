@@ -80,7 +80,7 @@ Projection.prototype.toParamSQL = function (table) {
   return {sql: sql, params: []};
 };
 
-Projection.fromQuery = function (query) {
+Projection.fromObject = function (query) {
   if (!_.isPlainObject(query)) return new Projection();
   return new Projection(query.$projection);
 };

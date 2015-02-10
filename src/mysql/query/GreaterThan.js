@@ -22,7 +22,7 @@ GreaterThan.prototype.toParamSQL = function () {
   var sql = [];
   var params = [];
 
-  sql.push('<', '?');
+  sql.push('>', '?');
   params.push(this._v);
 
   return {sql: sql.join(' '), params: params};
