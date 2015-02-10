@@ -130,9 +130,7 @@ describe('MySQL Expression', function () {
           {age: 25}
         ]
       });
-      console.log('a',expression)
       var query = expression.toParamSQL(table);
-      console.log(query)
       assert.strictEqual(query.sql, '(`id` = ? AND `name` = ? AND `age` = ?)');
       assert.strictEqual(query.params[0], 1);
       assert.strictEqual(query.params[1], 'joe');
@@ -141,7 +139,7 @@ describe('MySQL Expression', function () {
 
     it('returns valid SQL on valid $or', function () {
       var query = new Expression({
-        $and: [
+        $or: [
           {id: 1},
           {name: 'joe'},
           {age: 25}

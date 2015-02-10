@@ -1,18 +1,28 @@
 var _ = require('lodash');
 var type = require('type-of');
 var escape = require('./escape');
+var Equal = require('./Equal');
+var NotEqual = require('./NotEqual');
+var LessThan = require('./LessThan');
+var LessThanOrEqual = require('./LessThanOrEqual');
+var GreaterThan = require('./GreaterThan');
+var GreaterThanOrEqual = require('./GreaterThanOrEqual');
+var In = require('./In');
+var NotIn = require('./NotIn');
+var Like = require('./Like');
+var NotLike = require('./NotLike');
 
 var λ = {
-  $eq: require('./Equal'),
-  $ne: require('./NotEqual'),
-  $lt: require('./LessThan'),
-  $lte: require('./LessThanOrEqual'),
-  $gt: require('./GreaterThan'),
-  $gte: require('./GreaterThanOrEqual'),
-  $in: require('./In'),
-  $nin: require('./NotIn'),
-  $like: require('./Like'),
-  $nlike: require('./NotLike')
+  $eq: function (e) { return new Equal(e); },
+  $ne: function (e) { return new NotEqual(e); },
+  $lt: function (e) { return new LessThan(e); },
+  $lte: function (e) { return new LessThanOrEqual(e); },
+  $gt: function (e) { return new GreaterThan(e); },
+  $gte: function (e) { return new GreaterThanOrEqual(e); },
+  $in: function (e) { return new In(e); },
+  $nin: function (e) { return new NotIn(e); },
+  $like: function (e) { return new Like(e); },
+  $nlike: function (e) { return new NotLike(e); },
 };
 
 function Expression($expression) {
@@ -75,7 +85,7 @@ Expression.prototype.toParamSQL = function (table) {
     expression = new Expression.Or(value);
 
   } else if (λ[key]) {
-    expression = new λ[key](value);
+    expression = λ[key](value);
 
   } else {
     // make sure key is a valid column
@@ -89,7 +99,7 @@ Expression.prototype.toParamSQL = function (table) {
       expression = new Expression(value);
 
     } else {
-      query = new λ.$eq(value);
+      expression = new λ.$eq(value);
     }
   }
 
