@@ -10,11 +10,6 @@ var mocha = new Mocha({
 // load the test files
 mocha.addFile(path.resolve(__dirname, './naomi'));
 mocha.addFile(path.resolve(__dirname, './mysql-database'));
-mocha.addFile(path.resolve(__dirname, './mysql-projection'));
-mocha.addFile(path.resolve(__dirname, './mysql-orderby'));
-mocha.addFile(path.resolve(__dirname, './mysql-limit'));
-mocha.addFile(path.resolve(__dirname, './mysql-offset'));
-mocha.addFile(path.resolve(__dirname, './mysql-values'));
 mocha.addFile(path.resolve(__dirname, './mysql-equal'));
 mocha.addFile(path.resolve(__dirname, './mysql-not-equal'));
 mocha.addFile(path.resolve(__dirname, './mysql-greater-than'));
@@ -26,6 +21,12 @@ mocha.addFile(path.resolve(__dirname, './mysql-not-like'));
 mocha.addFile(path.resolve(__dirname, './mysql-in'));
 mocha.addFile(path.resolve(__dirname, './mysql-not-in'));
 mocha.addFile(path.resolve(__dirname, './mysql-expression'));
+mocha.addFile(path.resolve(__dirname, './mysql-projection'));
+mocha.addFile(path.resolve(__dirname, './mysql-orderby'));
+mocha.addFile(path.resolve(__dirname, './mysql-limit'));
+mocha.addFile(path.resolve(__dirname, './mysql-offset'));
+mocha.addFile(path.resolve(__dirname, './mysql-filter'));
+mocha.addFile(path.resolve(__dirname, './mysql-values'));
 // mocha.addFile(path.resolve(__dirname, './postgres-database'));
 // mocha.addFile(path.resolve(__dirname, './mysql-querybuilder'));
 // mocha.addFile(path.resolve(__dirname, './mysql-table'));
