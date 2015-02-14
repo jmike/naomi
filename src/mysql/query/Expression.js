@@ -1,18 +1,25 @@
 var _ = require('lodash');
 var type = require('type-of');
+
+var Expression;
+var And = require('./Expression.And')(Expression);
+var Or = require('./Expression.Or')(Expression);
+var Equal = require('./Expression.Equal')(Expression);
+var NotEqual = require('./Expression.NotEqual')(Expression);
+var LessThan = require('./Expression.LessThan')(Expression);
+var LessThanOrEqual = require('./Expression.LessThanOrEqual')(Expression);
+var GreaterThan = require('./Expression.GreaterThan')(Expression);
+var GreaterThanOrEqual = require('./Expression.GreaterThanOrEqual')(Expression);
+var In = require('./Expression.In')(Expression);
+var NotIn = require('./Expression.NotIn')(Expression);
+var Like = require('./Expression.Like')(Expression);
+var NotLike = require('./Expression.NotLike')(Expression);
+var Id = require('./Expression.Id')(Expression);
 var escape = require('./escape');
-var Equal = require('./Equal');
-var NotEqual = require('./NotEqual');
-var LessThan = require('./LessThan');
-var LessThanOrEqual = require('./LessThanOrEqual');
-var GreaterThan = require('./GreaterThan');
-var GreaterThanOrEqual = require('./GreaterThanOrEqual');
-var In = require('./In');
-var NotIn = require('./NotIn');
-var Like = require('./Like');
-var NotLike = require('./NotLike');
 
 var λ = {
+  $and: function (e) { return new And(e); },
+  $or: function (e) { return new Or(e); },
   $eq: function (e) { return new Equal(e); },
   $ne: function (e) { return new NotEqual(e); },
   $lt: function (e) { return new LessThan(e); },
@@ -23,48 +30,53 @@ var λ = {
   $nin: function (e) { return new NotIn(e); },
   $like: function (e) { return new Like(e); },
   $nlike: function (e) { return new NotLike(e); },
+  $id: function (e) { return new Id(e); }
 };
 
-function Expression($expression) {
+Expression = function ($expression) {
+  var tp = type($expression);
   var keys;
 
-  if (_.isUndefined($expression)) {
-    this._v = null;
+  if (Buffer.isBuffer($expression)) tp = 'buffer';
 
-  } else if (_.isArray($expression)) {
-    this._v = {$or: $expression};
-
-  } else if (
-    _.isNumber($expression) ||
-    _.isString($expression) ||
-    _.isBoolean($expression) ||
-    _.isDate($expression) ||
-    Buffer.isBuffer($expression)
-  ) {
-    this._v = {$primarykey: $expression};
-
-  } else if (_.isPlainObject($expression)) {
-    keys = Object.keys($expression);
-
-    if (keys.length === 0) {
+  switch (tp) {
+    case 'undefined':
       this._v = null;
+      break;
 
-    } else if (keys.length > 1) {
-      this._v = {$and: keys.map(function (k) {
-        return _.pick($expression, k);
-      })};
+    case 'array':
+      this._v = {$or: $expression};
+      break;
 
-    } else {
-      this._v = $expression;
-    }
+    case 'number':
+    case 'string':
+    case 'boolean':
+    case 'date':
+    case 'buffer':
+      this._v = {$id: $expression};
+      break;
 
-  } else {
-    throw new Error(
-      'Invalid $expression argument; ' +
-      'expected plain value or array or object, received ' + type($expression)
-    );
+    case 'object':
+      keys = Object.keys($expression);
+
+      if (keys.length === 0) {
+        this._v = null;
+
+      } else if (keys.length > 1) {
+        this._v = {$and: keys.map(function (k) {
+          return _.pick($expression, k);
+        })};
+
+      } else {
+        this._v = $expression;
+      }
+
+      break;
+
+    default:
+      throw new Error('Invalid $expression argument; expected plain value or array or object, received ' + type($expression));
   }
-}
+};
 
 Expression.prototype.toParamSQL = function (table) {
   var sql = [];
@@ -78,13 +90,7 @@ Expression.prototype.toParamSQL = function (table) {
   key = Object.keys(this._v)[0];
   value = this._v[key];
 
-  if (key === '$and') {
-    expression = new Expression.And(value);
-
-  } else if (key === '$or') {
-    expression = new Expression.Or(value);
-
-  } else if (λ[key]) {
+  if (λ[key]) {
     expression = λ[key](value);
 
   } else {
@@ -108,60 +114,6 @@ Expression.prototype.toParamSQL = function (table) {
   params = params.concat(query.params);
 
   return {sql: sql.join(' '), params: params};
-};
-
-Expression.And = function ($and) {
-  if (_.isArray($and)) {
-    if (_.isEmpty($and)) throw new Error('Invalid $and argument; array cannot be empty');
-    this._arr = $and;
-  } else {
-    throw new Error('Invalid $and argument; expected array, received ' + type($and));
-  }
-};
-
-Expression.And.prototype.toParamSQL = function (table) {
-  var params = [];
-  var sql;
-
-  sql = this._arr
-    .map(function (e) {
-      var expression = new Expression(e);
-      var query = expression.toParamSQL(table);
-      params = params.concat(query.params);
-      return query.sql;
-    })
-    .join(' AND ');
-
-  sql = '(' + sql + ')';
-
-  return {sql: sql, params: params};
-};
-
-Expression.Or = function ($or) {
-  if (_.isArray($or)) {
-    if (_.isEmpty($or)) throw new Error('Invalid $or argument; array cannot be empty');
-    this._arr = $or;
-  } else {
-    throw new Error('Invalid $or argument; expected array, received ' + type($or));
-  }
-};
-
-Expression.Or.prototype.toParamSQL = function (table) {
-  var params = [];
-  var sql;
-
-  sql = this._arr
-    .map(function (e) {
-      var expression = new Expression(e);
-      var query = expression.toParamSQL(table);
-      params = params.concat(query.params);
-      return query.sql;
-    })
-    .join(' OR ');
-
-  sql = '(' + sql + ')';
-
-  return {sql: sql, params: params};
 };
 
 Expression.fromObject = function ($query) {
