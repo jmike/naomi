@@ -33,47 +33,30 @@ var λ = {
 };
 
 function Expression($expression) {
-  var tp = type($expression);
-  var keys;
+  if (_.isUndefined($expression)) {
+    this._v = null;
 
-  if (Buffer.isBuffer($expression)) tp = 'buffer';
-
-  switch (tp) {
-    case 'undefined':
+  } else if (_.isPlainObject($expression)) {
+    if (_.isEmpty($expression)) {
       this._v = null;
-      break;
+    } else {
+      this._v = $expression;
+    }
 
-    case 'array':
-      this._v = {$or: $expression};
-      break;
+  } else if (
+    _.isNumber($expression) ||
+    _.isString($expression) ||
+    _.isBoolean($expression) ||
+    _.isDate($expression) ||
+    Buffer.isBuffer($expression)
+  ) {
+    this._v = {$id: $expression};
 
-    case 'number':
-    case 'string':
-    case 'boolean':
-    case 'date':
-    case 'buffer':
-      this._v = {$id: $expression};
-      break;
-
-    case 'object':
-      keys = Object.keys($expression);
-
-      if (keys.length === 0) {
-        this._v = null;
-
-      } else if (keys.length > 1) {
-        this._v = {$and: keys.map(function (k) {
-          return _.pick($expression, k);
-        })};
-
-      } else {
-        this._v = $expression;
-      }
-
-      break;
-
-    default:
-      throw new Error('Invalid $expression argument; expected plain value or array or object, received ' + type($expression));
+  } else {
+    throw new Error(
+      'Invalid $expression argument; ' +
+      'expected object, number, string, boolean, date, buffer or undefined, received ' + type($expression)
+    );
   }
 }
 
@@ -100,7 +83,7 @@ Expression.prototype.toParamSQL = function (table) {
 
     sql.push(escape(key));
 
-    if (_.isObject(value)) {
+    if (_.isPlainObject(value)) {
       expr = new Expression(value);
 
     } else {
