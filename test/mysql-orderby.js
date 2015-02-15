@@ -1,5 +1,5 @@
 var assert = require('chai').assert;
-var OrderBy = require('../src/mysql/query/Orderby');
+var OrderBy = require('../src/mysql/query/OrderBy');
 var Database = require('../src/mysql/Database');
 var Table = require('../src/mysql/Table');
 
