@@ -30,6 +30,7 @@ mocha.addFile(path.resolve(__dirname, './mysql-orderby'));
 mocha.addFile(path.resolve(__dirname, './mysql-limit'));
 mocha.addFile(path.resolve(__dirname, './mysql-offset'));
 mocha.addFile(path.resolve(__dirname, './mysql-values'));
+mocha.addFile(path.resolve(__dirname, './mysql-select'));
 
 // mocha.addFile(path.resolve(__dirname, './postgres-database'));
 // mocha.addFile(path.resolve(__dirname, './mysql-querybuilder'));

@@ -16,7 +16,7 @@ describe('MySQL Limit', function () {
   ];
   table.primaryKey = ['id'];
 
-  describe('#fromQuery()', function () {
+  describe('constructor', function () {
 
     it('throws error when $limit is Object', function () {
       assert.throws(function () { new Limit({}); }, /invalid \$limit argument/i);

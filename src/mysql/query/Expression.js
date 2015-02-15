@@ -1,6 +1,34 @@
 var _ = require('lodash');
 var type = require('type-of');
 
+function Expression($expression) {
+  if (_.isUndefined($expression)) {
+    this._v = null;
+
+  } else if (_.isPlainObject($expression)) {
+    if (_.isEmpty($expression)) {
+      this._v = null;
+    } else {
+      this._v = $expression;
+    }
+
+  } else if (
+    _.isNumber($expression) ||
+    _.isString($expression) ||
+    _.isBoolean($expression) ||
+    _.isDate($expression) ||
+    Buffer.isBuffer($expression)
+  ) {
+    this._v = {$id: $expression};
+
+  } else {
+    throw new Error(
+      'Invalid $expression argument; ' +
+      'expected object, number, string, boolean, date, buffer or undefined, received ' + type($expression)
+    );
+  }
+}
+
 var And = require('./Expression.And')(Expression);
 var Or = require('./Expression.Or')(Expression);
 var Equal = require('./Expression.Equal')(Expression);
@@ -31,34 +59,6 @@ var λ = {
   $nlike: function (e) { return new NotLike(e); },
   $id: function (e) { return new Id(e); }
 };
-
-function Expression($expression) {
-  if (_.isUndefined($expression)) {
-    this._v = null;
-
-  } else if (_.isPlainObject($expression)) {
-    if (_.isEmpty($expression)) {
-      this._v = null;
-    } else {
-      this._v = $expression;
-    }
-
-  } else if (
-    _.isNumber($expression) ||
-    _.isString($expression) ||
-    _.isBoolean($expression) ||
-    _.isDate($expression) ||
-    Buffer.isBuffer($expression)
-  ) {
-    this._v = {$id: $expression};
-
-  } else {
-    throw new Error(
-      'Invalid $expression argument; ' +
-      'expected object, number, string, boolean, date, buffer or undefined, received ' + type($expression)
-    );
-  }
-}
 
 Expression.prototype.toParamSQL = function (table) {
   var sql = [];
