@@ -58,13 +58,13 @@ describe('MySQL Values', function () {
 
     it('accepts undefined $values', function () {
       var values = new Values();
-      assert.strictEqual(values.arr, null);
+      assert.strictEqual(values._arr, null);
     });
 
     it('accepts object as $values', function () {
       var values = new Values({id: 1, name: 'John', age: 20});
-      assert.lengthOf(values.arr, 1);
-      assert.deepEqual(values.arr[0], {id: 1, name: 'John', age: 20});
+      assert.lengthOf(values._arr, 1);
+      assert.deepEqual(values._arr[0], {id: 1, name: 'John', age: 20});
     });
 
     it('accepts array as $values', function () {
@@ -72,9 +72,9 @@ describe('MySQL Values', function () {
         {id: 1, name: 'John', age: 20},
         {id: 2, name: 'Maria', age: 30}
       ]);
-      assert.lengthOf(values.arr, 2);
-      assert.deepEqual(values.arr[0], {id: 1, name: 'John', age: 20});
-      assert.deepEqual(values.arr[1], {id: 2, name: 'Maria', age: 30});
+      assert.lengthOf(values._arr, 2);
+      assert.deepEqual(values._arr[0], {id: 1, name: 'John', age: 20});
+      assert.deepEqual(values._arr[1], {id: 2, name: 'Maria', age: 30});
     });
 
   });

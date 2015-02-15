@@ -3,11 +3,11 @@ var type = require('type-of');
 
 function Values($values) {
   if (_.isUndefined($values)) {
-    this.arr = null;
+    this._arr = null;
 
   } else if (_.isPlainObject($values)) {
     if (_.isEmpty($values)) throw new Error('Invalid $values argument; object cannot be empty');
-    this.arr = [$values];
+    this._arr = [$values];
 
   } else if (_.isArray($values)) {
     if (_.isEmpty($values)) throw new Error('Invalid $values argument; array cannot be empty');
@@ -25,7 +25,7 @@ function Values($values) {
       return e;
     });
 
-    this.arr = $values;
+    this._arr = $values;
 
   } else { // everything else is unacceptable
     throw new Error('Invalid $values argument; expected object or Array, received ' + type($values));
@@ -38,10 +38,10 @@ Values.prototype.toParamSQL = function (table) {
   var columns;
 
   // check if internal array is null
-  if (this.arr === null) return null;
+  if (this._arr === null) return null;
 
   // extract column names
-  columns = Object.keys(this.arr[0]);
+  columns = Object.keys(this._arr[0]);
 
   // make sure columns actually exist
   columns.forEach(function (column) {
@@ -51,7 +51,7 @@ Values.prototype.toParamSQL = function (table) {
   });
 
   // generate SQL + params
-  sql = this.arr
+  sql = this._arr
     .map(function (e) {
       var group = columns
         .map(function (k) {
