@@ -25,11 +25,11 @@ mocha.addFile(path.resolve(__dirname, './mysql-and'));
 mocha.addFile(path.resolve(__dirname, './mysql-or'));
 mocha.addFile(path.resolve(__dirname, './mysql-expression'));
 mocha.addFile(path.resolve(__dirname, './mysql-filter'));
-// mocha.addFile(path.resolve(__dirname, './mysql-projection'));
-// mocha.addFile(path.resolve(__dirname, './mysql-orderby'));
-// mocha.addFile(path.resolve(__dirname, './mysql-limit'));
-// mocha.addFile(path.resolve(__dirname, './mysql-offset'));
-// mocha.addFile(path.resolve(__dirname, './mysql-values'));
+mocha.addFile(path.resolve(__dirname, './mysql-projection'));
+mocha.addFile(path.resolve(__dirname, './mysql-orderby'));
+mocha.addFile(path.resolve(__dirname, './mysql-limit'));
+mocha.addFile(path.resolve(__dirname, './mysql-offset'));
+mocha.addFile(path.resolve(__dirname, './mysql-values'));
 
 // mocha.addFile(path.resolve(__dirname, './postgres-database'));
 // mocha.addFile(path.resolve(__dirname, './mysql-querybuilder'));
