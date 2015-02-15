@@ -32,6 +32,7 @@ mocha.addFile(path.resolve(__dirname, './mysql-offset'));
 mocha.addFile(path.resolve(__dirname, './mysql-values'));
 mocha.addFile(path.resolve(__dirname, './mysql-select'));
 mocha.addFile(path.resolve(__dirname, './mysql-count'));
+mocha.addFile(path.resolve(__dirname, './mysql-delete'));
 
 // mocha.addFile(path.resolve(__dirname, './postgres-database'));
 // mocha.addFile(path.resolve(__dirname, './mysql-querybuilder'));
