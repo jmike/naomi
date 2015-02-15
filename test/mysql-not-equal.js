@@ -1,16 +1,13 @@
 var assert = require('chai').assert;
-var NotEqual = require('../src/mysql/query/NotEqual');
+var Expression = require('../src/mysql/query/Expression');
+var NotEqual = require('../src/mysql/query/Expression.NotEqual')(Expression);
 
-describe('MySQL NotEqual', function () {
+describe('MySQL NotEqual Expression', function () {
 
   describe('constructor', function () {
 
-    it('throws error when $ne is Object', function () {
-      assert.throws(function () { new NotEqual({}); }, /invalid \$ne argument/i);
-    });
-
     it('throws error when $ne is Array', function () {
-      assert.throws(function () { new NotEqual([]); }, /invalid \$ne argument/i);
+      assert.throws(function () { new NotEqual([]); }, /invalid \$ne expression/i);
     });
 
     it('accepts null values', function () {
@@ -45,14 +42,14 @@ describe('MySQL NotEqual', function () {
       assert.strictEqual(query.params[0], false);
     });
 
-    it('returns valid SQL when $ne is boolean', function () {
+    it('returns valid SQL when $ne is date', function () {
       var d = new Date();
       var query = new NotEqual(d).toParamSQL();
       assert.strictEqual(query.sql, '!= ?');
       assert.strictEqual(query.params[0], d);
     });
 
-    it('returns valid SQL when $ne is boolean', function () {
+    it('returns valid SQL when $ne is buffer', function () {
       var buf = new Buffer('abcde');
       var query = new NotEqual(buf).toParamSQL();
       assert.strictEqual(query.sql, '!= ?');

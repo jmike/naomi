@@ -4,14 +4,12 @@ var type = require('type-of');
 module.exports = function (Expression) {
 
   function LessThanOrEqual($lte) {
-    var tp = type($lte);
-
     if (
-      tp === 'object' ||
-      tp === 'number' ||
-      tp === 'string' ||
-      tp === 'boolean' ||
-      tp === 'date' ||
+      _.isPlainObject($lte) ||
+      _.isNumber($lte) ||
+      _.isString($lte) ||
+      _.isBoolean($lte) ||
+      _.isDate($lte) ||
       Buffer.isBuffer($lte)
     ) {
       this._v = $lte;
@@ -19,7 +17,7 @@ module.exports = function (Expression) {
     } else {
       throw new Error(
         'Invalid $lte expression; ' +
-        'expected number, string, boolean, date, buffer or object, received ' + tp
+        'expected number, string, boolean, date, buffer or object, received ' + type($lte)
       );
     }
   }
@@ -27,7 +25,7 @@ module.exports = function (Expression) {
   LessThanOrEqual.prototype.toParamSQL = function (table) {
     var expr, query;
 
-    if (_.isObject(this._v)) {
+    if (_.isPlainObject(this._v)) {
       expr = new Expression(this._v);
       query = expr.toParamSQL(table);
 

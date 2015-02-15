@@ -1,37 +1,34 @@
 var assert = require('chai').assert;
-var NotIn = require('../src/mysql/query/NotIn');
+var Expression = require('../src/mysql/query/Expression');
+var NotIn = require('../src/mysql/query/Expression.NotIn')(Expression);
 
-describe('MySQL NotIn', function () {
+describe('MySQL NotIn Expression', function () {
 
   describe('contructor', function () {
 
     it('throws error when $nin is undefined', function () {
-      assert.throws(function () { new NotIn(); }, /Invalid \$nin argument/i);
-    });
-
-    it('throws error when $nin is object', function () {
-      assert.throws(function () { new NotIn({}); }, /Invalid \$nin argument/i);
+      assert.throws(function () { new NotIn(); }, /Invalid \$nin expression/i);
     });
 
     it('throws error when $nin is boolean', function () {
-      assert.throws(function () { new NotIn(true); }, /Invalid \$nin argument/i);
-      assert.throws(function () { new NotIn(false); }, /Invalid \$nin argument/i);
+      assert.throws(function () { new NotIn(true); }, /Invalid \$nin expression/i);
+      assert.throws(function () { new NotIn(false); }, /Invalid \$nin expression/i);
     });
 
     it('throws error when $nin is number', function () {
-      assert.throws(function () { new NotIn(1); }, /Invalid \$nin argument/i);
+      assert.throws(function () { new NotIn(1); }, /Invalid \$nin expression/i);
     });
 
     it('throws error when $nin is strNotIng', function () {
-      assert.throws(function () { new NotIn('strNotIng'); }, /Invalid \$nin argument/i);
+      assert.throws(function () { new NotIn('strNotIng'); }, /Invalid \$nin expression/i);
     });
 
     it('throws error when $nin is null', function () {
-      assert.throws(function () { new NotIn(null); }, /Invalid \$nin argument/i);
+      assert.throws(function () { new NotIn(null); }, /Invalid \$nin expression/i);
     });
 
     it('throws error when $nin is empty array', function () {
-      assert.throws(function () { new NotIn([]); }, /Invalid \$nin argument/i);
+      assert.throws(function () { new NotIn([]); }, /Invalid \$nin expression/i);
     });
 
   });

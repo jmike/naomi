@@ -4,15 +4,13 @@ var type = require('type-of');
 module.exports = function (Expression) {
 
   function NotEqual($ne) {
-    var tp = type($ne);
-
     if (
-      tp === 'null' ||
-      tp === 'object' ||
-      tp === 'number' ||
-      tp === 'string' ||
-      tp === 'boolean' ||
-      tp === 'date' ||
+      _.isNull($ne) ||
+      _.isPlainObject($ne) ||
+      _.isNumber($ne) ||
+      _.isString($ne) ||
+      _.isBoolean($ne) ||
+      _.isDate($ne) ||
       Buffer.isBuffer($ne)
     ) {
       this._v = $ne;
@@ -20,7 +18,7 @@ module.exports = function (Expression) {
     } else {
       throw new Error(
         'Invalid $ne expression; ' +
-        'expected number, string, boolean, date, buffer, object or null, received ' + tp
+        'expected number, string, boolean, date, buffer, object or null, received ' + type($ne)
       );
     }
   }
@@ -35,7 +33,7 @@ module.exports = function (Expression) {
       };
     }
 
-    if (_.isObject(this._v)) {
+    if (_.isPlainObject(this._v)) {
       expr = new Expression(this._v);
       query = expr.toParamSQL(table);
 

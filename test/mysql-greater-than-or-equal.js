@@ -1,20 +1,17 @@
 var assert = require('chai').assert;
-var GreaterThanOrEqual = require('../src/mysql/query/GreaterThanOrEqual');
+var Expression = require('../src/mysql/query/Expression');
+var GreaterThanOrEqual = require('../src/mysql/query/Expression.GreaterThanOrEqual')(Expression);
 
-describe('MySQL GreaterThanOrEqual', function () {
+describe('MySQL GreaterThanOrEqual Expression', function () {
 
   describe('constructor', function () {
 
-    it('throws error when $gte is Object', function () {
-      assert.throws(function () { new GreaterThanOrEqual({}); }, /invalid \$gte argument/i);
-    });
-
     it('throws error when $gte is Array', function () {
-      assert.throws(function () { new GreaterThanOrEqual([]); }, /invalid \$gte argument/i);
+      assert.throws(function () { new GreaterThanOrEqual([]); }, /invalid \$gte expression/i);
     });
 
     it('throws error when $gte is null', function () {
-      assert.throws(function () { new GreaterThanOrEqual(null); }, /invalid \$gte argument/i);
+      assert.throws(function () { new GreaterThanOrEqual(null); }, /invalid \$gte expression/i);
     });
 
   });
@@ -39,14 +36,14 @@ describe('MySQL GreaterThanOrEqual', function () {
       assert.strictEqual(query.params[0], false);
     });
 
-    it('returns valid SQL when $gte is boolean', function () {
+    it('returns valid SQL when $gte is date', function () {
       var d = new Date();
       var query = new GreaterThanOrEqual(d).toParamSQL();
       assert.strictEqual(query.sql, '>= ?');
       assert.strictEqual(query.params[0], d);
     });
 
-    it('returns valid SQL when $gte is boolean', function () {
+    it('returns valid SQL when $gte is buffer', function () {
       var buf = new Buffer('abcde');
       var query = new GreaterThanOrEqual(buf).toParamSQL();
       assert.strictEqual(query.sql, '>= ?');

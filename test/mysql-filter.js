@@ -35,29 +35,29 @@ describe('MySQL Filter', function () {
 
     it('accepts number $expression', function () {
       var filter = new Filter(123);
-      assert.deepEqual(filter._v, {$primarykey: 123});
+      assert.deepEqual(filter._v, {$id: 123});
     });
 
     it('accepts string $expression', function () {
       var filter = new Filter('string');
-      assert.deepEqual(filter._v, {$primarykey: 'string'});
+      assert.deepEqual(filter._v, {$id: 'string'});
     });
 
     it('accepts boolean $expression', function () {
       var filter = new Filter(true);
-      assert.deepEqual(filter._v, {$primarykey: true});
+      assert.deepEqual(filter._v, {$id: true});
     });
 
     it('accepts date $expression', function () {
       var d = new Date();
       var filter = new Filter(d);
-      assert.deepEqual(filter._v, {$primarykey: d});
+      assert.deepEqual(filter._v, {$id: d});
     });
 
     it('accepts buffer $expression', function () {
       var buf = new Buffer('abcde');
       var filter = new Filter(buf);
-      assert.deepEqual(filter._v, {$primarykey: buf});
+      assert.deepEqual(filter._v, {$id: buf});
     });
 
     it('ignores $projection, $orderby, $limit, $offset and $values properties in $expression', function () {

@@ -1,7 +1,6 @@
 var _ = require('lodash');
 var type = require('type-of');
 
-var Expression;
 var And = require('./Expression.And')(Expression);
 var Or = require('./Expression.Or')(Expression);
 var Equal = require('./Expression.Equal')(Expression);
@@ -33,7 +32,7 @@ var λ = {
   $id: function (e) { return new Id(e); }
 };
 
-Expression = function ($expression) {
+function Expression($expression) {
   var tp = type($expression);
   var keys;
 
@@ -76,12 +75,12 @@ Expression = function ($expression) {
     default:
       throw new Error('Invalid $expression argument; expected plain value or array or object, received ' + type($expression));
   }
-};
+}
 
 Expression.prototype.toParamSQL = function (table) {
   var sql = [];
   var params = [];
-  var key, value, expression, query;
+  var key, value, expr, query;
 
   // check if $expression is null
   if (_.isNull(this._v)) return null;
@@ -91,7 +90,7 @@ Expression.prototype.toParamSQL = function (table) {
   value = this._v[key];
 
   if (λ[key]) {
-    expression = λ[key](value);
+    expr = λ[key](value);
 
   } else {
     // make sure key is a valid column
@@ -101,15 +100,15 @@ Expression.prototype.toParamSQL = function (table) {
 
     sql.push(escape(key));
 
-    if (_.isPlainObject(value)) {
-      expression = new Expression(value);
+    if (_.isObject(value)) {
+      expr = new Expression(value);
 
     } else {
-      expression = new λ.$eq(value);
+      expr = new λ.$eq(value);
     }
   }
 
-  query = expression.toParamSQL(table);
+  query = expr.toParamSQL(table);
   sql.push(query.sql);
   params = params.concat(query.params);
 

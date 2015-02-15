@@ -4,14 +4,12 @@ var type = require('type-of');
 module.exports = function (Expression) {
 
   function LessThan($lt) {
-    var tp = type($lt);
-
     if (
-      tp === 'object' ||
-      tp === 'number' ||
-      tp === 'string' ||
-      tp === 'boolean' ||
-      tp === 'date' ||
+      _.isPlainObject($lt) ||
+      _.isNumber($lt) ||
+      _.isString($lt) ||
+      _.isBoolean($lt) ||
+      _.isDate($lt) ||
       Buffer.isBuffer($lt)
     ) {
       this._v = $lt;
@@ -19,7 +17,7 @@ module.exports = function (Expression) {
     } else {
       throw new Error(
         'Invalid $lt expression; ' +
-        'expected number, string, boolean, date, buffer or object, received ' + tp
+        'expected number, string, boolean, date, buffer or object, received ' + type($lt)
       );
     }
   }
@@ -27,7 +25,7 @@ module.exports = function (Expression) {
   LessThan.prototype.toParamSQL = function (table) {
     var expr, query;
 
-    if (_.isObject(this._v)) {
+    if (_.isPlainObject(this._v)) {
       expr = new Expression(this._v);
       query = expr.toParamSQL(table);
 

@@ -4,14 +4,12 @@ var type = require('type-of');
 module.exports = function (Expression) {
 
   function GreaterThan($gt) {
-    var tp = type($gt);
-
     if (
-      tp === 'object' ||
-      tp === 'number' ||
-      tp === 'string' ||
-      tp === 'boolean' ||
-      tp === 'date' ||
+      _.isPlainObject($gt) ||
+      _.isNumber($gt) ||
+      _.isString($gt) ||
+      _.isBoolean($gt) ||
+      _.isDate($gt) ||
       Buffer.isBuffer($gt)
     ) {
       this._v = $gt;
@@ -19,7 +17,7 @@ module.exports = function (Expression) {
     } else {
       throw new Error(
         'Invalid $gt expression; ' +
-        'expected number, string, boolean, date, buffer or object, received ' + tp
+        'expected number, string, boolean, date, buffer or object, received ' + type($gt)
       );
     }
   }
@@ -27,7 +25,7 @@ module.exports = function (Expression) {
   GreaterThan.prototype.toParamSQL = function (table) {
     var expr, query;
 
-    if (_.isObject(this._v)) {
+    if (_.isPlainObject(this._v)) {
       expr = new Expression(this._v);
       query = expr.toParamSQL(table);
 

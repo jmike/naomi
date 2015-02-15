@@ -4,15 +4,13 @@ var type = require('type-of');
 module.exports = function (Expression) {
 
   function Equal($eq) {
-    var tp = type($eq);
-
     if (
-      tp === 'null' ||
-      tp === 'object' ||
-      tp === 'number' ||
-      tp === 'string' ||
-      tp === 'boolean' ||
-      tp === 'date' ||
+      _.isNull($eq) ||
+      _.isPlainObject($eq) ||
+      _.isNumber($eq) ||
+      _.isString($eq) ||
+      _.isBoolean($eq) ||
+      _.isDate($eq) ||
       Buffer.isBuffer($eq)
     ) {
       this._v = $eq;
@@ -20,7 +18,7 @@ module.exports = function (Expression) {
     } else {
       throw new Error(
         'Invalid $eq expression; ' +
-        'expected number, string, boolean, date, buffer, object or null, received ' + tp
+        'expected number, string, boolean, date, buffer, object or null, received ' + type($eq)
       );
     }
   }
@@ -35,7 +33,7 @@ module.exports = function (Expression) {
       };
     }
 
-    if (_.isObject(this._v)) {
+    if (_.isPlainObject(this._v)) {
       expr = new Expression(this._v);
       query = expr.toParamSQL(table);
 

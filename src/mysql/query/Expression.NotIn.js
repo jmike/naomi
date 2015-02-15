@@ -4,16 +4,14 @@ var type = require('type-of');
 module.exports = function (Expression) {
 
   function NotIn($nin) {
-    var tp = type($nin);
-
-    if (tp === 'array') {
+    if (_.isArray($nin)) {
       if ($nin.length === 0) {
-        throw new Error('Invalid $nin argument; array cannot be empty');
+        throw new Error('Invalid $nin expression; array cannot be empty');
       }
       this._arr = $nin;
 
     } else {
-      throw new Error('Invalid $nin argument; expected array, received ' + tp);
+      throw new Error('Invalid $nin expression; expected array, received ' + type($nin));
     }
   }
 
@@ -25,7 +23,7 @@ module.exports = function (Expression) {
       .map(function (e) {
         var expr, query;
 
-        if (_.isObject(e)) {
+        if (_.isPlainObject(e)) {
           expr = new Expression(e);
           query = expr.toParamSQL(table);
           params = params.concat(query.params);

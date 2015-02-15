@@ -1,20 +1,17 @@
 var assert = require('chai').assert;
-var LessThanOrEqual = require('../src/mysql/query/LessThanOrEqual');
+var Expression = require('../src/mysql/query/Expression');
+var LessThanOrEqual = require('../src/mysql/query/Expression.LessThanOrEqual')(Expression);
 
-describe('MySQL LessThanOrEqual', function () {
+describe('MySQL LessThanOrEqual Expression', function () {
 
   describe('constructor', function () {
 
-    it('throws error when $lte is Object', function () {
-      assert.throws(function () { new LessThanOrEqual({}); }, /invalid \$lte argument/i);
-    });
-
     it('throws error when $lte is Array', function () {
-      assert.throws(function () { new LessThanOrEqual([]); }, /invalid \$lte argument/i);
+      assert.throws(function () { new LessThanOrEqual([]); }, /invalid \$lte expression/i);
     });
 
     it('throws error when $lte is null', function () {
-      assert.throws(function () { new LessThanOrEqual(null); }, /invalid \$lte argument/i);
+      assert.throws(function () { new LessThanOrEqual(null); }, /invalid \$lte expression/i);
     });
 
   });
@@ -39,14 +36,14 @@ describe('MySQL LessThanOrEqual', function () {
       assert.strictEqual(query.params[0], false);
     });
 
-    it('returns valid SQL when $lte is boolean', function () {
+    it('returns valid SQL when $lte is date', function () {
       var d = new Date();
       var query = new LessThanOrEqual(d).toParamSQL();
       assert.strictEqual(query.sql, '<= ?');
       assert.strictEqual(query.params[0], d);
     });
 
-    it('returns valid SQL when $lte is boolean', function () {
+    it('returns valid SQL when $lte is buffer', function () {
       var buf = new Buffer('abcde');
       var query = new LessThanOrEqual(buf).toParamSQL();
       assert.strictEqual(query.sql, '<= ?');

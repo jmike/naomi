@@ -4,16 +4,14 @@ var type = require('type-of');
 module.exports = function (Expression) {
 
   function And($and) {
-    var tp = type($and);
-
-    if (tp === 'array') {
+    if (_.isArray($and)) {
       if ($and.length === 0) {
-        throw new Error('Invalid $and argument; array cannot be empty');
+        throw new Error('Invalid $and expression; array cannot be empty');
       }
       this._arr = $and;
 
     } else {
-      throw new Error('Invalid $and argument; expected array, received ' + tp);
+      throw new Error('Invalid $and expression; expected array, received ' + type($and));
     }
   }
 
