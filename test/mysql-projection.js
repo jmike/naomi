@@ -46,36 +46,36 @@ describe('MySQL Projection', function () {
     it('accepts undefined $projection', function () {
       var projection = new Projection();
       assert.isObject(projection);
-      assert.isArray(projection.$include);
-      assert.lengthOf(projection.$include, 0);
-      assert.isArray(projection.$exclude);
-      assert.lengthOf(projection.$exclude, 0);
+      assert.isArray(projection._include);
+      assert.lengthOf(projection._include, 0);
+      assert.isArray(projection._exclude);
+      assert.lengthOf(projection._exclude, 0);
     });
 
     it('accepts $projection with inclusive columns', function () {
       var projection = new Projection({name: 1, age: 1});
       assert.isObject(projection);
-      assert.isArray(projection.$include);
-      assert.sameMembers(projection.$include, ['name', 'age']);
-      assert.isArray(projection.$exclude);
-      assert.lengthOf(projection.$exclude, 0);
+      assert.isArray(projection._include);
+      assert.sameMembers(projection._include, ['name', 'age']);
+      assert.isArray(projection._exclude);
+      assert.lengthOf(projection._exclude, 0);
     });
 
     it('accepts $projection with exclusive columns', function () {
       var projection = new Projection({id: 0});
       assert.isObject(projection);
-      assert.isArray(projection.$include);
-      assert.lengthOf(projection.$include, 0);
-      assert.isArray(projection.$exclude);
-      assert.sameMembers(projection.$exclude, ['id']);
+      assert.isArray(projection._include);
+      assert.lengthOf(projection._include, 0);
+      assert.isArray(projection._exclude);
+      assert.sameMembers(projection._exclude, ['id']);
     });
 
     it('accepts a mixture of exclusive + inclusive columns', function () {
       var projection = new Projection({id: 0, name: 1, age: 1});
-      assert.isArray(projection.$include);
-      assert.sameMembers(projection.$include, ['name', 'age']);
-      assert.isArray(projection.$exclude);
-      assert.sameMembers(projection.$exclude, ['id']);
+      assert.isArray(projection._include);
+      assert.sameMembers(projection._include, ['name', 'age']);
+      assert.isArray(projection._exclude);
+      assert.sameMembers(projection._exclude, ['id']);
     });
 
   });
