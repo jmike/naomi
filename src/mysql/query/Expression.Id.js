@@ -2,31 +2,11 @@ var _ = require('lodash');
 var type = require('type-of');
 var escape = require('./escape');
 
-module.exports = function (Expression) {
+module.exports = function (expression) {
 
-  function Id($id) {
-    if (
-      _.isNull($id) ||
-      _.isPlainObject($id) ||
-      _.isNumber($id) ||
-      _.isString($id) ||
-      _.isBoolean($id) ||
-      _.isDate($id) ||
-      Buffer.isBuffer($id)
-    ) {
-      this._v = $id;
-
-    } else {
-      throw new Error(
-        'Invalid $id expression; ' +
-        'expected number, string, boolean, date, buffer, object or null, received ' + type($id)
-      );
-    }
-  }
-
-  Id.prototype.toParamSQL = function (table) {
+  return function ($id, table) {
     var sql = [];
-    var params, expr, query;
+    var params, result;
 
     if (table.primaryKey.length !== 1) {
       throw new Error('Invalid $id argument; primary key is compound or non existent');
@@ -34,20 +14,31 @@ module.exports = function (Expression) {
 
     sql.push(escape(table.primaryKey[0]));
 
-    if (_.isPlainObject(this._v)) {
-      expr = new Expression(this._v);
-      query = expr.toParamSQL(table);
-    } else {
-      expr = new Expression({$eq: this._v});
-      query = expr.toParamSQL(table);
-    }
+    if (
+      _.isNull($id) ||
+      _.isNumber($id) ||
+      _.isString($id) ||
+      _.isBoolean($id) ||
+      _.isDate($id) ||
+      Buffer.isBuffer($id)
+    ) {
+      result = expression({$eq: $id}, table);
+      sql.push(result.sql);
+      params = result.params;
 
-    sql.push(query.sql);
-    params = query.params;
+    } else if (_.isPlainObject($id)) {
+      result = expression($id, table);
+      sql.push(result.sql);
+      params = result.params;
+
+    } else {
+      throw new Error(
+        'Invalid $id expression; ' +
+        'expected number, string, boolean, date, buffer, object or null, received ' + type($id)
+      );
+    }
 
     return {sql: sql.join(' '), params: params};
   };
-
-  return Id;
 
 };

@@ -1,9 +1,9 @@
 var assert = require('chai').assert;
-var Offset = require('../src/mysql/query/Offset');
+var offset = require('../src/mysql/query/offset');
 var Database = require('../src/mysql/Database');
 var Table = require('../src/mysql/Table');
 
-describe('MySQL Offset', function () {
+describe('MySQL offset', function () {
 
   var db = new Database({database: 'something'});
 
@@ -16,68 +16,51 @@ describe('MySQL Offset', function () {
   ];
   table.primaryKey = ['id'];
 
-  describe('contructor', function () {
-
-    it('throws error when $offset is Object', function () {
-      assert.throws(function () { new Offset({}); }, /invalid \$offset argument/i);
-    });
-
-    it('throws error when $offset is Boolean', function () {
-      assert.throws(function () { new Offset(true); }, /invalid \$offset argument/i);
-      assert.throws(function () { new Offset(false); }, /invalid \$offset argument/i);
-    });
-
-    it('throws error when $offset is String', function () {
-      assert.throws(function () { new Offset(''); }, /invalid \$offset argument/i);
-    });
-
-    it('throws error when $offset is Array', function () {
-      assert.throws(function () { new Offset([]); }, /invalid \$offset argument/i);
-    });
-
-    it('throws error when $offset is null', function () {
-      assert.throws(function () { new Offset(null); }, /invalid \$offset argument/i);
-    });
-
-    it('throws error when $offset is negative integer', function () {
-      assert.throws(function () { new Offset(-1); }, /invalid \$offset argument/i);
-    });
-
-    it('throws error when $offset is float', function () {
-      assert.throws(function () { new Offset(1.1234); }, /invalid \$offset argument/i);
-    });
-
-    it('accepts undefined $offset', function () {
-      var offset = Offset.fromObject({});
-      assert.strictEqual(offset._v, null);
-    });
-
-    it('accepts positive integer as $offset', function () {
-      var offset = new Offset(10);
-      assert.strictEqual(offset._v, 10);
-    });
-
-    it('accepts zero (0) as $offset', function () {
-      var offset = new Offset(0);
-      assert.strictEqual(offset._v, 0);
-    });
-
+  it('throws error when $offset is Object', function () {
+    assert.throws(function () { offset({}); }, /invalid \$offset argument/i);
   });
 
-  describe('#toParamSQL()', function () {
+  it('throws error when $offset is Boolean', function () {
+    assert.throws(function () { offset(true); }, /invalid \$offset argument/i);
+    assert.throws(function () { offset(false); }, /invalid \$offset argument/i);
+  });
 
-    it('returns null when $offset is undefined', function () {
-      var offset = new Offset();
-      var query = offset.toParamSQL(table);
-      assert.strictEqual(query, null);
-    });
+  it('throws error when $offset is String', function () {
+    assert.throws(function () { offset(''); }, /invalid \$offset argument/i);
+  });
 
-    it('successfully returns SQL given a valid $offset', function () {
-      var offset = new Offset(9);
-      var query = offset.toParamSQL(table);
-      assert.strictEqual(query.sql, '9');
-    });
+  it('throws error when $offset is Array', function () {
+    assert.throws(function () { offset([]); }, /invalid \$offset argument/i);
+  });
 
+  it('throws error when $offset is null', function () {
+    assert.throws(function () { offset(null); }, /invalid \$offset argument/i);
+  });
+
+  it('throws error when $offset is negative integer', function () {
+    assert.throws(function () { offset(-1); }, /invalid \$offset argument/i);
+  });
+
+  it('throws error when $offset is float', function () {
+    assert.throws(function () { offset(1.1234); }, /invalid \$offset argument/i);
+  });
+
+  it('accepts undefined $offset', function () {
+    var result = offset();
+    assert.strictEqual(result.sql, '');
+    assert.lengthOf(result.params, 0);
+  });
+
+  it('accepts positive integer as $offset', function () {
+    var result = offset(99);
+    assert.strictEqual(result.sql, '99');
+    assert.lengthOf(result.params, 0);
+  });
+
+  it('accepts zero (0) as $offset', function () {
+    var result = offset(0);
+    assert.strictEqual(result.sql, '0');
+    assert.lengthOf(result.params, 0);
   });
 
 });

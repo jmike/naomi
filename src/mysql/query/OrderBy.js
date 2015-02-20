@@ -2,13 +2,21 @@ var _ = require('lodash');
 var type = require('type-of');
 var escape = require('./escape');
 
-function OrderBy($orderby) {
-  if (_.isUndefined($orderby)) {
-    this._arr = [];
+module.exports = function ($orderby, table) {
+  var sql;
 
-  } else if (_.isArray($orderby)) {
-    // validate array elements
-    $orderby = $orderby.map(function (e, i) {
+  // handle optional $orderby argument
+  if (_.isUndefined($orderby)) $orderby = [];
+
+  // make sure $orderby is valid
+  if (!_.isArray($orderby)) {
+    throw new Error('Invalid $orderby argument; expected array, received ' + type($orderby));
+  }
+
+  sql = $orderby
+
+    // validate + normalize array elements
+    .map(function (e, i) {
       var obj, keys, value;
 
       // check if element is String
@@ -41,23 +49,9 @@ function OrderBy($orderby) {
 
       // everything else is unacceptable
       throw new Error('Invalid $orderby element at position ' + i + '; expected object or string, received ' + type(e));
-    });
+    })
 
-    this._arr = $orderby;
-
-  } else { // everything else is unacceptable
-    throw new Error('Invalid $orderby argument; expected array, received ' + type($orderby));
-  }
-}
-
-OrderBy.prototype.toParamSQL = function (table) {
-  var sql;
-
-  // check if value array is empty
-  if (_.isEmpty(this._arr)) return null;
-
-  // build SQL
-  sql = this._arr
+    // generate SQL
     .map(function (e) {
       var k = Object.keys(e)[0];
       var v = e[k];
@@ -73,10 +67,3 @@ OrderBy.prototype.toParamSQL = function (table) {
 
   return {sql: sql, params: []};
 };
-
-OrderBy.fromObject = function (query) {
-  if (!_.isPlainObject(query)) return new OrderBy();
-  return new OrderBy(query.$orderby);
-};
-
-module.exports = OrderBy;

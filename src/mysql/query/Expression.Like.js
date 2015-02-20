@@ -1,36 +1,25 @@
 var _ = require('lodash');
 var type = require('type-of');
 
-module.exports = function (Expression) {
+module.exports = function (expression) {
 
-  function Like($like) {
-    if (_.isString($like) || _.isPlainObject($like)) {
-      this._v = $like;
+  return function ($like, table) {
+    var sql, params, result;
+
+    if (_.isString($like)) {
+      sql = ['LIKE', '?'].join(' ');
+      params = [$like];
+
+    } else if (_.isPlainObject($like)) {
+      result = expression($like, table);
+      sql = ['LIKE', result.sql].join(' ');
+      params = result.params;
 
     } else {
       throw new Error('Invalid $like expression; expected object or string, received ' + type($like));
     }
-  }
 
-  Like.prototype.toParamSQL = function (table) {
-    var expr, query;
-
-    if (_.isPlainObject(this._v)) {
-      expr = new Expression(this._v);
-      query = expr.toParamSQL(table);
-
-      return {
-        sql: ['LIKE', query.sql].join(' '),
-        params: query.params
-      };
-    }
-
-    return {
-      sql: ['LIKE', '?'].join(' '),
-      params: [this._v]
-    };
+    return {sql: sql, params: params};
   };
-
-  return Like;
 
 };

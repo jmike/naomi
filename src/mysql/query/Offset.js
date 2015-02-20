@@ -1,29 +1,19 @@
 var _ = require('lodash');
 var type = require('type-of');
 
-function Offset($offset) {
-  if (_.isUndefined($offset)) {
-    this._v = null;
+module.exports = function ($offset) {
+  // handle optional $offset argument
+  if (_.isUndefined($offset)) return {sql: '', params: []}; // exit
 
-  } else if (_.isNumber($offset)) {
-    if ($offset % 1 !== 0 || $offset < 0) {
-      throw new Error('Invalid $offset argument; expected non-negative integer, i.e. >= 0');
-    }
-    this._v = $offset;
-
-  } else { // everything else is unacceptable
+  // make sure $offset is number
+  if (!_.isNumber($offset)) {
     throw new Error('Invalid $offset argument; expected number, received ' + type($offset));
   }
-}
 
-Offset.prototype.toParamSQL = function () {
-  if (this._v === null) return null;
-  return {sql: this._v.toString(), params: []};
+  // make sure $offset is positive integer
+  if ($offset % 1 !== 0 || $offset < 0) {
+    throw new Error('Invalid $offset argument; expected non-negative integer, i.e. greater than or equal to 0');
+  }
+
+  return {sql: $offset.toString(), params: []};
 };
-
-Offset.fromObject = function (query) {
-  if (!_.isPlainObject(query)) return new Offset();
-  return new Offset(query.$offset);
-};
-
-module.exports = Offset;

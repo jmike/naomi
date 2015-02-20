@@ -1,47 +1,31 @@
 var _ = require('lodash');
 var type = require('type-of');
 
-function Values($values) {
-  if (_.isUndefined($values)) {
-    this._arr = null;
-
-  } else if (_.isPlainObject($values)) {
-    if (_.isEmpty($values)) throw new Error('Invalid $values argument; object cannot be empty');
-    this._arr = [$values];
-
-  } else if (_.isArray($values)) {
-    if (_.isEmpty($values)) throw new Error('Invalid $values argument; array cannot be empty');
-
-    // validate array elements
-    $values = $values.map(function (e, i) {
-      if (!_.isPlainObject(e)) {
-        throw new Error('Invalid $values element at position ' + i + '; expected object, received ' + type(e));
-      }
-
-      if (_.isEmpty(e)) {
-        throw new Error('Invalid $values element at position ' + i + '; object cannot be empty');
-      }
-
-      return e;
-    });
-
-    this._arr = $values;
-
-  } else { // everything else is unacceptable
-    throw new Error('Invalid $values argument; expected object or Array, received ' + type($values));
-  }
-}
-
-Values.prototype.toParamSQL = function (table) {
-  var sql = [];
+module.exports = function ($values, table) {
   var params = [];
+  var sql;
   var columns;
 
-  // check if internal array is null
-  if (this._arr === null) return null;
+  // handle optional $values argument
+  if (_.isUndefined($values)) $values = [{}];
+
+  // convert $values object -> array
+  if (_.isPlainObject($values)) $values = [$values];
+
+  // make sure $values is valid
+  if (!_.isArray($values)) {
+    throw new Error('Invalid $values argument; expected object or Array, received ' + type($values));
+  }
+
+  // make sure $values elements are valid
+  $values.forEach(function (e, i) {
+    if (!_.isPlainObject(e)) {
+      throw new Error('Invalid $values element at position ' + i + '; expected object, received ' + type(e));
+    }
+  });
 
   // extract column names
-  columns = Object.keys(this._arr[0]);
+  columns = Object.keys($values[0]);
 
   // make sure columns actually exist
   columns.forEach(function (column) {
@@ -51,7 +35,7 @@ Values.prototype.toParamSQL = function (table) {
   });
 
   // generate SQL + params
-  sql = this._arr
+  sql = $values
     .map(function (e) {
       var group = columns
         .map(function (k) {
@@ -66,5 +50,3 @@ Values.prototype.toParamSQL = function (table) {
 
   return {sql: sql, params: params};
 };
-
-module.exports = Values;

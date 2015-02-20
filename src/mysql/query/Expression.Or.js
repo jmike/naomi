@@ -1,30 +1,24 @@
 var _ = require('lodash');
 var type = require('type-of');
 
-module.exports = function (Expression) {
+module.exports = function (expression) {
 
-  function Or($or) {
-    if (_.isArray($or)) {
-      if ($or.length === 0) {
-        throw new Error('Invalid $or expression; array cannot be empty');
-      }
-      this._arr = $or;
+  return function ($or, table) {
+    var sql, params = [];
 
-    } else {
+    if (!_.isArray($or)) {
       throw new Error('Invalid $or expression; expected array, received ' + type($or));
     }
-  }
 
-  Or.prototype.toParamSQL = function (table) {
-    var params = [];
-    var sql;
+    if ($or.length === 0) {
+      throw new Error('Invalid $or expression; array cannot be empty');
+    }
 
-    sql = this._arr
+    sql = $or
       .map(function (e) {
-        var expr = new Expression(e);
-        var query = expr.toParamSQL(table);
-        params = params.concat(query.params);
-        return query.sql;
+        var result = expression(e, table);
+        params = params.concat(result.params);
+        return result.sql;
       })
       .join(' OR ');
 
@@ -32,12 +26,5 @@ module.exports = function (Expression) {
 
     return {sql: sql, params: params};
   };
-
-  Or.fromObject = function (query) {
-    if (!_.isObject(query)) return new Or();
-    return new Or(query.$or);
-  };
-
-  return Or;
 
 };

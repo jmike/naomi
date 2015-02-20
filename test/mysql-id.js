@@ -1,20 +1,28 @@
 var assert = require('chai').assert;
-var Expression = require('../src/mysql/query/Expression');
-var Id = require('../src/mysql/query/Expression.Id')(Expression);
+var expression = require('../src/mysql/query/expression');
+var id = require('../src/mysql/query/expression.id')(expression);
+var Database = require('../src/mysql/Database');
+var Table = require('../src/mysql/Table');
 
-describe('MySQL Id Expression', function () {
+describe('MySQL id expression', function () {
 
-  describe('contructor', function () {
+  var db = new Database({database: 'something'});
 
-    it('throws error when $id is Array', function () {
-      assert.throws(function () { new Id([]); }, /invalid \$id expression/i);
-    });
+  var table = new Table(db, 'employees');
+  table.columns = [
+    {name: 'id'},
+    {name: 'name'},
+    {name: 'age'},
+    {name: 'country'}
+  ];
+  table.primaryKey = ['id'];
 
-    it('accepts null values', function () {
-      assert.doesNotThrow(function () { new Id(null); });
-    });
-
+  it('throws error when $id is Array', function () {
+    assert.throws(function () { id([], table); }, /invalid \$id expression/i);
   });
 
+  it('accepts null values', function () {
+    assert.doesNotThrow(function () { id(null, table); });
+  });
 
 });

@@ -1,30 +1,24 @@
 var _ = require('lodash');
 var type = require('type-of');
 
-module.exports = function (Expression) {
+module.exports = function (expression) {
 
-  function And($and) {
-    if (_.isArray($and)) {
-      if ($and.length === 0) {
-        throw new Error('Invalid $and expression; array cannot be empty');
-      }
-      this._arr = $and;
+  return function ($and, table) {
+    var sql, params = [];
 
-    } else {
+    if (!_.isArray($and)) {
       throw new Error('Invalid $and expression; expected array, received ' + type($and));
     }
-  }
 
-  And.prototype.toParamSQL = function (table) {
-    var params = [];
-    var sql;
+    if ($and.length === 0) {
+      throw new Error('Invalid $and expression; array cannot be empty');
+    }
 
-    sql = this._arr
+    sql = $and
       .map(function (e) {
-        var expr = new Expression(e);
-        var query = expr.toParamSQL(table);
-        params = params.concat(query.params);
-        return query.sql;
+        var result = expression(e, table);
+        params = params.concat(result.params);
+        return result.sql;
       })
       .join(' AND ');
 
@@ -32,12 +26,5 @@ module.exports = function (Expression) {
 
     return {sql: sql, params: params};
   };
-
-  And.fromObject = function (query) {
-    if (!_.isObject(query)) return new And();
-    return new And(query.$and);
-  };
-
-  return And;
 
 };

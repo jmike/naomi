@@ -3,18 +3,18 @@ var type = require('type-of');
 
 module.exports = function (expression) {
 
-  return function ($in, table) {
+  return function ($nin, table) {
     var sql, params = [];
 
-    if (!_.isArray($in)) {
-      throw new Error('Invalid $in expression; expected array, received ' + type($in));
+    if (!_.isArray($nin)) {
+      throw new Error('Invalid $nin expression; expected array, received ' + type($nin));
     }
 
-    if ($in.length === 0) {
-      throw new Error('Invalid $in expression; array cannot be empty');
+    if ($nin.length === 0) {
+      throw new Error('Invalid $nin expression; array cannot be empty');
     }
 
-    sql = $in
+    sql = $nin
       .map(function (e) {
         var query;
 
@@ -29,7 +29,7 @@ module.exports = function (expression) {
       })
       .join(', ');
 
-    sql = 'IN (' + sql + ')';
+    sql = 'NOT IN (' + sql + ')';
 
     return {sql: sql, params: params};
   };

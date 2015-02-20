@@ -1,9 +1,9 @@
 var assert = require('chai').assert;
-var Count = require('../src/mysql/query/Count');
+var count = require('../src/mysql/query/count');
 var Database = require('../src/mysql/Database');
 var Table = require('../src/mysql/Table');
 
-describe('MySQL Count', function () {
+describe('MySQL count', function () {
 
   var db = new Database({database: 'something'});
 
@@ -16,47 +16,29 @@ describe('MySQL Count', function () {
   ];
   table.primaryKey = ['id'];
 
-  describe('constructor', function () {
-
-    it('accepts undefined $query', function () {
-      var count = new Count();
-      assert.strictEqual(count._filter._v, null);
-      assert.lengthOf(count._orderby._arr, 0);
-      assert.strictEqual(count._limit._v, null);
-      assert.strictEqual(count._offset._v, null);
-    });
-
+  it('accepts undefined $query', function () {
+    var result = count(undefined, table);
+    assert.strictEqual(result.sql, 'SELECT COUNT(*) AS `count` FROM `employees`;');
+    assert.lengthOf(result.params, 0);
   });
 
-  describe('#toParamSQL()', function () {
+  it('returns SQL + params when $query is number', function () {
+    var result = count(1, table);
+    assert.strictEqual(result.sql, 'SELECT COUNT(*) AS `count` FROM `employees` WHERE `id` = ?;');
+    assert.lengthOf(result.params, 1);
+    assert.strictEqual(result.params[0], 1);
+  });
 
-    it('returns SQL + params when $query is undefined', function () {
-      var count = new Count();
-      var query = count.toParamSQL(table);
-      assert.strictEqual(query.sql, 'SELECT COUNT(*) AS `count` FROM `employees`;');
-    });
-
-    it('returns SQL + params when $query is number', function () {
-      var count = new Count(1);
-      var query = count.toParamSQL(table);
-      assert.strictEqual(query.sql, 'SELECT COUNT(*) AS `count` FROM `employees` WHERE `id` = ?;');
-      assert.lengthOf(query.params, 1);
-      assert.strictEqual(query.params[0], 1);
-    });
-
-    it('returns SQL + params when $query is object', function () {
-      var count = new Count({
-        $orderby: [{id: 1}],
-        $limit: 99,
-        $offset: 1,
-        age: {$gte: 18}
-      });
-      var query = count.toParamSQL(table);
-      assert.strictEqual(query.sql, 'SELECT COUNT(*) AS `count` FROM `employees` WHERE `age` >= ? ORDER BY `id` ASC LIMIT 99 OFFSET 1;');
-      assert.lengthOf(query.params, 1);
-      assert.strictEqual(query.params[0], 18);
-    });
-
+  it('returns SQL + params when $query is object', function () {
+    var result = count({
+      $orderby: [{id: 1}],
+      $limit: 99,
+      $offset: 1,
+      age: {$gte: 18}
+    }, table);
+    assert.strictEqual(result.sql, 'SELECT COUNT(*) AS `count` FROM `employees` WHERE `age` >= ? ORDER BY `id` ASC LIMIT 99 OFFSET 1;');
+    assert.lengthOf(result.params, 1);
+    assert.strictEqual(result.params[0], 18);
   });
 
 });

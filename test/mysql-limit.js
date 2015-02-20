@@ -1,9 +1,9 @@
 var assert = require('chai').assert;
-var Limit = require('../src/mysql/query/Limit');
+var limit = require('../src/mysql/query/limit');
 var Database = require('../src/mysql/Database');
 var Table = require('../src/mysql/Table');
 
-describe('MySQL Limit', function () {
+describe('MySQL limit', function () {
 
   var db = new Database({database: 'something'});
 
@@ -16,67 +16,49 @@ describe('MySQL Limit', function () {
   ];
   table.primaryKey = ['id'];
 
-  describe('constructor', function () {
-
-    it('throws error when $limit is Object', function () {
-      assert.throws(function () { new Limit({}); }, /invalid \$limit argument/i);
-    });
-
-    it('throws error when $limit is Boolean', function () {
-      assert.throws(function () { new Limit(true); }, /invalid \$limit argument/i);
-      assert.throws(function () { new Limit(false); }, /invalid \$limit argument/i);
-    });
-
-    it('throws error when $limit is String', function () {
-      assert.throws(function () { new Limit(''); }, /invalid \$limit argument/i);
-    });
-
-    it('throws error when $limit is Array', function () {
-      assert.throws(function () { new Limit([]); }, /invalid \$limit argument/i);
-    });
-
-    it('throws error when $limit is null', function () {
-      assert.throws(function () { new Limit(null); }, /invalid \$limit argument/i);
-    });
-
-    it('throws error when $limit is negative integer', function () {
-      assert.throws(function () { new Limit(-1); }, /invalid \$limit argument/i);
-    });
-
-    it('throws error when $limit is float', function () {
-      assert.throws(function () { new Limit(1.1234); }, /invalid \$limit argument/i);
-    });
-
-    it('throws error when $limit is zero', function () {
-      assert.throws(function () { new Limit(0); }, /invalid \$limit argument/i);
-    });
-
-    it('accepts undefined $limit', function () {
-      var limit = Limit.fromObject({});
-      assert.strictEqual(limit._v, null);
-    });
-
-    it('accepts positive integer as $limit', function () {
-      var limit = new Limit(10);
-      assert.strictEqual(limit._v, 10);
-    });
-
+  it('throws error when $limit is Object', function () {
+    assert.throws(function () { limit({}); }, /invalid \$limit argument/i);
   });
 
-  describe('#toParamSQL()', function () {
+  it('throws error when $limit is Boolean', function () {
+    assert.throws(function () { limit(true); }, /invalid \$limit argument/i);
+    assert.throws(function () { limit(false); }, /invalid \$limit argument/i);
+  });
 
-    it('returns null when $limit is undefined', function () {
-      var limit = new Limit();
-      var query = limit.toParamSQL(table);
-      assert.strictEqual(query, null);
-    });
+  it('throws error when $limit is String', function () {
+    assert.throws(function () { limit(''); }, /invalid \$limit argument/i);
+  });
 
-    it('successfully returns SQL given a valid $limit', function () {
-      var limit = new Limit(99);
-      var query = limit.toParamSQL(table);
-      assert.strictEqual(query.sql, '99');
-    });
+  it('throws error when $limit is Array', function () {
+    assert.throws(function () { limit([]); }, /invalid \$limit argument/i);
+  });
 
+  it('throws error when $limit is null', function () {
+    assert.throws(function () { limit(null); }, /invalid \$limit argument/i);
+  });
+
+  it('throws error when $limit is negative integer', function () {
+    assert.throws(function () { limit(-1); }, /invalid \$limit argument/i);
+  });
+
+  it('throws error when $limit is float', function () {
+    assert.throws(function () { limit(1.1234); }, /invalid \$limit argument/i);
+  });
+
+  it('throws error when $limit is zero', function () {
+    assert.throws(function () { limit(0); }, /invalid \$limit argument/i);
+  });
+
+  it('accepts undefined $limit', function () {
+    var result = limit();
+    assert.strictEqual(result.sql, '');
+    assert.lengthOf(result.params, 0);
+  });
+
+  it('accepts positive integer as $limit', function () {
+    var result = limit(10);
+    assert.strictEqual(result.sql, '10');
+    assert.lengthOf(result.params, 0);
   });
 
 });

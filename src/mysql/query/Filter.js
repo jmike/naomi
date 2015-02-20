@@ -1,8 +1,7 @@
-var util = require('util');
 var _ = require('lodash');
-var Expression = require('./Expression');
+var expression = require('./expression');
 
-function Filter($expression) {
+module.exports = function ($expression, table) {
   var keys;
 
   if (_.isPlainObject($expression)) {
@@ -10,10 +9,7 @@ function Filter($expression) {
 
     keys = Object.keys($expression);
 
-    if (keys.length === 0) {
-      $expression = undefined;
-
-    } else if (keys.length > 1) {
+    if (keys.length > 1) {
       $expression = {
         $and: keys.map(function (k) {
           return _.pick($expression, k);
@@ -25,11 +21,5 @@ function Filter($expression) {
     $expression = {$or: $expression};
   }
 
-  Expression.call(this, $expression);
-}
-
-// @extends Expression
-util.inherits(Filter, Expression);
-_.extend(Filter, Expression);
-
-module.exports = Filter;
+  return expression($expression, table);
+};

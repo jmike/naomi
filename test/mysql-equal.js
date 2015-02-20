@@ -1,61 +1,53 @@
 var assert = require('chai').assert;
-var Expression = require('../src/mysql/query/Expression');
-var Equal = require('../src/mysql/query/Expression.Equal')(Expression);
+var expression = require('../src/mysql/query/expression');
+var equal = require('../src/mysql/query/expression.eq')(expression);
 
-describe('MySQL Equal Expression', function () {
+describe('MySQL equal expression', function () {
 
-  describe('constructor', function () {
-
-    it('throws error when $eq is Array', function () {
-      assert.throws(function () { new Equal([]); }, /invalid \$eq expression/i);
-    });
-
-    it('accepts null values', function () {
-      assert.doesNotThrow(function () { new Equal(null); });
-    });
-
+  it('throws error when $eq is Array', function () {
+    assert.throws(function () { equal([]); }, /invalid \$eq expression/i);
   });
 
-  describe('#toParamSQL', function () {
+  it('accepts null values', function () {
+    assert.doesNotThrow(function () { equal(null); });
+  });
 
-    it('returns valid SQL when $eq is null', function () {
-      var query = new Equal(null).toParamSQL();
-      assert.strictEqual(query.sql, 'IS NULL');
-      assert.lengthOf(query.params, 0);
-    });
+  it('returns valid SQL when $eq is null', function () {
+    var query = equal(null);
+    assert.strictEqual(query.sql, 'IS NULL');
+    assert.lengthOf(query.params, 0);
+  });
 
-    it('returns valid SQL when $eq is string', function () {
-      var query = new Equal('string').toParamSQL();
-      assert.strictEqual(query.sql, '= ?');
-      assert.strictEqual(query.params[0], 'string');
-    });
+  it('returns valid SQL when $eq is string', function () {
+    var query = equal('string');
+    assert.strictEqual(query.sql, '= ?');
+    assert.strictEqual(query.params[0], 'string');
+  });
 
-    it('returns valid SQL when $eq is number', function () {
-      var query = new Equal(123).toParamSQL();
-      assert.strictEqual(query.sql, '= ?');
-      assert.strictEqual(query.params[0], 123);
-    });
+  it('returns valid SQL when $eq is number', function () {
+    var query = equal(123);
+    assert.strictEqual(query.sql, '= ?');
+    assert.strictEqual(query.params[0], 123);
+  });
 
-    it('returns valid SQL when $eq is boolean', function () {
-      var query = new Equal(false).toParamSQL();
-      assert.strictEqual(query.sql, '= ?');
-      assert.strictEqual(query.params[0], false);
-    });
+  it('returns valid SQL when $eq is boolean', function () {
+    var query = equal(false);
+    assert.strictEqual(query.sql, '= ?');
+    assert.strictEqual(query.params[0], false);
+  });
 
-    it('returns valid SQL when $eq is date', function () {
-      var d = new Date();
-      var query = new Equal(d).toParamSQL();
-      assert.strictEqual(query.sql, '= ?');
-      assert.strictEqual(query.params[0], d);
-    });
+  it('returns valid SQL when $eq is date', function () {
+    var d = new Date();
+    var query = equal(d);
+    assert.strictEqual(query.sql, '= ?');
+    assert.strictEqual(query.params[0], d);
+  });
 
-    it('returns valid SQL when $eq is buffer', function () {
-      var buf = new Buffer('abcde');
-      var query = new Equal(buf).toParamSQL();
-      assert.strictEqual(query.sql, '= ?');
-      assert.strictEqual(query.params[0], buf);
-    });
-
+  it('returns valid SQL when $eq is buffer', function () {
+    var buf = new Buffer('abcde');
+    var query = equal(buf);
+    assert.strictEqual(query.sql, '= ?');
+    assert.strictEqual(query.params[0], buf);
   });
 
 });
