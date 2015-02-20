@@ -4,7 +4,7 @@ var type = require('type-of');
 module.exports = function ($values, table) {
   var params = [];
   var sql;
-  var columns;
+  var keys;
 
   // handle optional $values argument
   if (_.isUndefined($values)) $values = [{}];
@@ -25,10 +25,10 @@ module.exports = function ($values, table) {
   });
 
   // extract column names
-  columns = Object.keys($values[0]);
+  keys = Object.keys($values[0]);
 
-  // make sure columns actually exist
-  columns.forEach(function (column) {
+  // make sure keys are actually columns
+  keys.forEach(function (column) {
     if (!table.hasColumn(column))  {
       throw new Error('Unknown column "' + column + '"; not found in table "' + table.name + '"');
     }
@@ -37,7 +37,7 @@ module.exports = function ($values, table) {
   // generate SQL + params
   sql = $values
     .map(function (e) {
-      var group = columns
+      var group = keys
         .map(function (k) {
           params.push(e[k]);
           return '?';
@@ -48,5 +48,5 @@ module.exports = function ($values, table) {
     })
     .join(', ');
 
-  return {sql: sql, params: params};
+  return {sql: sql, params: params, keys: keys};
 };
