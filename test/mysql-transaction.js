@@ -1,26 +1,28 @@
 require('dotenv').load(); // load environmental variables
 
-var chai = require('chai'),
-  naomi = require('../src/naomi'),
-  Transaction = require('../src/mysql/Transaction'),
-  assert = chai.assert,
-  db, transaction;
-
-db = naomi.create('mysql', {
-  host: process.env.MYSQL_HOST,
-  port: parseInt(process.env.MYSQL_PORT, 10),
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE
-});
+var assert = require('chai').assert;
+var naomi = require('../src/naomi');
+var Transaction = require('../src/mysql/Transaction');
 
 describe('MySQL Transaction', function () {
 
+  var db = naomi.create('mysql', {
+    host: process.env.MYSQL_HOST,
+    port: parseInt(process.env.MYSQL_PORT, 10),
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE
+  });
+
+  var transaction;
+
   before(function (done) {
-    db.once('ready', done);
-    db.connect().then(function () {
-      transaction = new Transaction(db);
-    });
+    db.connect()
+      .then(function () {
+        transaction = new Transaction(db);
+      })
+      .then(done)
+      .catch(done);
   });
 
   after(function (done) {
@@ -30,21 +32,23 @@ describe('MySQL Transaction', function () {
   describe('@void', function () {
 
     it('rejects promise on #commit() with "invalid transaction state"', function (done) {
-      transaction.commit().catch(function (err) {
-        assert.match(err, /invalid transaction state/i);
-        done();
-      });
+      transaction.commit()
+        .catch(function (err) {
+          assert.match(err, /invalid transaction state/i);
+          done();
+        });
     });
 
     it('rejects promise on #query() with "invalid transaction state"', function (done) {
-      transaction.query('SELECT 1;').catch(function (err) {
-        assert.match(err, /invalid transaction state/i);
-        done();
-      });
+      transaction.query('SELECT 1;')
+        .catch(function (err) {
+          assert.match(err, /invalid transaction state/i);
+          done();
+        });
     });
 
     it('has null internal db client', function () {
-      assert.isNull(transaction._client);
+      assert.isNull(transaction.client);
     });
 
   });
@@ -56,14 +60,19 @@ describe('MySQL Transaction', function () {
     });
 
     it('has valid internal db client', function () {
-      assert.isNotNull(transaction._client);
+      assert.isNotNull(transaction.client);
     });
 
     it('resolves promise with results on #query()', function (done) {
       transaction.query('INSERT INTO `employees` SET firstname = ?, lastname = ?, age = ?;', ['James', 'Bond', 38])
-      .then(function () {
-        this.query('DELETE FROM `employees` WHERE id = LAST_INSERT_ID();', done);
-      });
+        .then(function () {
+          return transaction.query('DELETE FROM `employees` WHERE id = LAST_INSERT_ID();');
+        })
+        .then(function (results) {
+          assert.strictEqual(results.affectedRows, 1);
+          done();
+        })
+        .catch(done);
     });
 
   });
@@ -89,7 +98,7 @@ describe('MySQL Transaction', function () {
     });
 
     it('has null internal db client', function () {
-      assert.isNull(transaction._client);
+      assert.isNull(transaction.client);
     });
 
   });
