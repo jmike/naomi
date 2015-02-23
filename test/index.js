@@ -35,10 +35,9 @@ mocha.addFile(path.resolve(__dirname, './mysql-count'));
 mocha.addFile(path.resolve(__dirname, './mysql-delete'));
 mocha.addFile(path.resolve(__dirname, './mysql-insert'));
 mocha.addFile(path.resolve(__dirname, './mysql-upsert'));
+mocha.addFile(path.resolve(__dirname, './mysql-table'));
 
 // mocha.addFile(path.resolve(__dirname, './postgres-database'));
-// mocha.addFile(path.resolve(__dirname, './mysql-querybuilder'));
-// mocha.addFile(path.resolve(__dirname, './mysql-table'));
 // mocha.addFile(path.resolve(__dirname, './mysql-transaction'));
 // mocha.addFile(path.resolve(__dirname, './postgres-querybuilder'));
 // mocha.addFile(path.resolve(__dirname, './postgres-table'));

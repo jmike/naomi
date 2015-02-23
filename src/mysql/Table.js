@@ -3,13 +3,7 @@ var EventEmitter = require('events').EventEmitter;
 var _ = require('lodash');
 var type = require('type-of');
 var Promise = require('bluebird');
-var Projection = require('./query/Projection');
-var Filter = require('./query/Filter');
-var OrderBy = require('./query/OrderBy');
-var Limit = require('./query/Limit');
-var Offset = require('./query/Offset');
-var Values = require('./query/Values');
-var QueryBuilder = require('./QueryBuilder');
+var querybuilder = require('./query');
 
 /**
  * Constructs a new Table instance.
@@ -26,7 +20,6 @@ function Table (db, name) {
   this.indexKeys = {};
   // this.foreignKeys = {};
   this.isReady = false;
-  this.querybuilder = new QueryBuilder(this);
 
   // init the EventEmitter
   EventEmitter.call(this);
@@ -361,23 +354,17 @@ Table.prototype.hasAutoIncPrimaryKey = function () {
 
 /**
  * Retrieves the designated record(s) from the table.
- * @param {(Boolean|Number|String|Date|Object|Array.<Object>)} [query] a mongo-like query object.
+ * @param {(Boolean|Number|String|Date|Object|Array.<Object>)} [$query] a mongo-like query object.
  * @param {Function} [callback] an optional callback function with (err, records) arguments.
  * @returns {Promise} resolving to an Array of records
  */
-Table.prototype.get = function (query, callback) {
+Table.prototype.get = function ($query, callback) {
   var _this = this;
   var resolver;
 
   resolver = function (resolve, reject) {
     // build parameterized SQL statement
-    var stmt = _this.querybuilder.select({
-      $projection: Projection.fromQuery(query),
-      $filter: Filter.fromQuery(query),
-      $orderby: OrderBy.fromQuery(query),
-      $limit: Limit.fromQuery(query),
-      $offset: Offset.fromQuery(query)
-    });
+    var stmt = querybuilder.select($query, _this);
     // run statement
     return _this.db.query(stmt.sql, stmt.params)
       .then(resolve, reject);
@@ -388,22 +375,17 @@ Table.prototype.get = function (query, callback) {
 
 /**
  * Counts the designated record(s) in this table.
- * @param {(Boolean|Number|String|Date|Object|Array.<Object>)} [query] a query object.
+ * @param {(Boolean|Number|String|Date|Object|Array.<Object>)} [$query] a query object.
  * @param {Function} [callback] an optional callback function with (err, count) arguments.
  * @returns {Promise} resolving to the count of records
  */
-Table.prototype.count = function (query, callback) {
+Table.prototype.count = function ($query, callback) {
   var _this = this;
   var resolver;
 
   resolver = function (resolve, reject) {
     // build parameterized SQL statement
-    var stmt = _this.querybuilder.count({
-      $filter: Filter.fromQuery(query),
-      $orderby: OrderBy.fromQuery(query),
-      $limit: Limit.fromQuery(query),
-      $offset: Offset.fromQuery(query)
-    });
+    var stmt = querybuilder.count($query, _this);
     // run statement
     return _this.db.query(stmt.sql, stmt.params)
       .then(resolve, reject);
@@ -419,22 +401,18 @@ Table.prototype.count = function (query, callback) {
 
 /**
  * Deletes the designated record(s) from this table.
- * @param {(Boolean|Number|String|Date|Object|Array.<Object>)} [query] a query object.
+ * @param {(Boolean|Number|String|Date|Object|Array.<Object>)} [$query] a query object.
  * @param {Function} [callback] an optional callback function with (err) arguments.
  * @returns {Promise}
  */
-Table.prototype.del = function (query, callback) {
+Table.prototype.del = function ($query, callback) {
   var _this = this;
   var resolver;
 
   // define promise resolver
   resolver = function (resolve, reject) {
     // build parameterized SQL statement
-    var stmt = _this.querybuilder.delete({
-      $filter: Filter.fromQuery(query),
-      $orderby: OrderBy.fromQuery(query),
-      $limit: Limit.fromQuery(query)
-    });
+    var stmt = querybuilder.del($query, _this);
     // run statement
     return _this.db.query(stmt.sql, stmt.params)
       .then(resolve, reject);
@@ -446,15 +424,14 @@ Table.prototype.del = function (query, callback) {
 };
 
 /**
- * Creates or updates (if already exists) the specified record(s) in table.
- * @param {(Object|Array.<Object>)} attrs the attributes of the record(s) to create/update
+ * Creates or updates (if already exist) the specified record(s) in table.
+ * @param {(Object|Array.<Object>)} $values the record(s) to create/update
  * @param {Object} options query options
  * @param {Function} [callback] an optional callback function with (err, keys) arguments.
  * @returns {Promise} resolving to the primary key of the created/updated record(s)
  */
-Table.prototype.set = function (attrs, options, callback) {
+Table.prototype.set = function ($values, options, callback) {
   var _this = this;
-  var $query;
   var resolver;
 
   // handle optional options argument
@@ -470,16 +447,10 @@ Table.prototype.set = function (attrs, options, callback) {
     throw new Error('Invalid options argument; expected object, received ' + type(options));
   }
 
-  // parse attrs + options
-  $query = {
-    $values: Values.fromValues(attrs),
-    $ignore: options.ignore
-  };
-
   // define promise resolver
   resolver = function (resolve, reject) {
     // build parameterized SQL statement
-    var stmt = _this.querybuilder.upsert($query);
+    var stmt = querybuilder.upsert(_.assign(options, {$values: $values}), _this);
     // run statement
     return _this.db.query(stmt.sql, stmt.params)
       .then(resolve, reject);
@@ -487,30 +458,36 @@ Table.prototype.set = function (attrs, options, callback) {
 
   return this._enqueue(resolver)
     .then(function (result) {
+      var records = _.isPlainObject($values) ? [$values] : $values;
       var hasAutoIncPrimaryKey = _this.hasAutoIncPrimaryKey();
       var insertedRows = 0;
 
-      return $query.$values.map(function (e) {
-        var obj = {};
+      return records
+        .map(function (record) {
+          var obj = {};
 
-        // check if element contains primary key
-        var containsPrimaryKey = _this.primaryKey.every(function (k) {
-          return e.hasOwnProperty(k);
+          // check if record contains primary key
+          var containsPrimaryKey = _this.primaryKey.every(function (k) {
+            return record.hasOwnProperty(k);
+          });
+
+          if (containsPrimaryKey) return _.pick(record, _this.primaryKey);
+
+          // check if table has simple auto-inc primary key
+          if (hasAutoIncPrimaryKey) {
+            obj[_this.primaryKey[0]] = result.insertId + insertedRows;
+            insertedRows++;
+            return obj;
+          }
+
+          // return empty object by default
+          return {};
         });
-
-        if (containsPrimaryKey) return _.pick(e, _this.primaryKey);
-
-        if (hasAutoIncPrimaryKey) {
-          obj[_this.primaryKey[0]] = result.insertId + insertedRows;
-          insertedRows++;
-          return obj;
-        }
-
-        return {};
-      });
     })
     .then(function (records) {
-      if (_.isPlainObject(attrs)) return records[0];
+      if (_.isPlainObject($values)) {
+        return records[0];
+      }
       return records;
     })
     .nodeify(callback);
@@ -518,14 +495,13 @@ Table.prototype.set = function (attrs, options, callback) {
 
 /**
  * Creates the specified record(s) in table.
- * @param {(Object|Array.<Object>)} attrs the attributes of the record(s) to create
+ * @param {(Object|Array.<Object>)} $values the attributes of the record(s) to create
  * @param {Object} options query options
  * @param {Function} [callback] an optional callback function with (err, keys) arguments.
  * @returns {Promise} resolving to the primary key of the created record(s).
  */
-Table.prototype.add = function (attrs, options, callback) {
+Table.prototype.add = function ($values, options, callback) {
   var _this = this;
-  var $query;
   var resolver;
 
   // handle optional options argument
@@ -541,16 +517,10 @@ Table.prototype.add = function (attrs, options, callback) {
     throw new Error('Invalid options argument; expected object, received ' + type(options));
   }
 
-  // parse attrs + options
-  $query = {
-    $values: Values.fromValues(attrs),
-    $ignore: options.ignore
-  };
-
   // define promise resolver
   resolver = function (resolve, reject) {
     // build parameterized SQL statement
-    var stmt = _this.querybuilder.upsert($query);
+    var stmt = querybuilder.insert(_.assign(options, {$values: $values}), _this);
     // run statement
     return _this.db.query(stmt.sql, stmt.params)
       .then(resolve, reject);
@@ -559,21 +529,27 @@ Table.prototype.add = function (attrs, options, callback) {
   // run statement
   return this._enqueue(resolver)
     .then(function (result) {
+      var records = _.isPlainObject($values) ? [$values] : $values;
       var hasAutoIncPrimaryKey = _this.hasAutoIncPrimaryKey();
 
-      return $query.$values.map(function (e, i) {
-        var obj = {};
+      return records
+        .map(function (record, i) {
+          var obj = {};
 
-        if (hasAutoIncPrimaryKey) {
-          obj[_this.primaryKey[0]] = result.insertId + i;
-          return obj;
-        }
+          // check if table has simple auto-inc primary key
+          if (hasAutoIncPrimaryKey) {
+            obj[_this.primaryKey[0]] = result.insertId + i;
+            return obj;
+          }
 
-        return _.pick(e, _this.primaryKey);
-      });
+          // extract primary key from record
+          return _.pick(record, _this.primaryKey);
+        });
     })
     .then(function (records) {
-      if (_.isPlainObject(attrs)) return records[0];
+      if (_.isPlainObject($values)) {
+        return records[0];
+      }
       return records;
     })
     .nodeify(callback);
