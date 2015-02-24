@@ -304,9 +304,6 @@ Database.prototype.getTables = function (callback) {
     .nodeify(callback);
 };
 
-// associate with Table class
-Database.prototype.Table = Table;
-
 /**
  * Returns a new Table, augmented with the given properties and methods.
  * Please note: this method will not create a new table on database - it will merely reference an existing one.
@@ -323,7 +320,7 @@ Database.prototype.extend = function (tableName, customProperties) {
   }
 
   // create table
-  table = new this.Table(this, tableName);
+  table = new Table(this, tableName);
 
   // extend with custom properties
   if (_.isPlainObject(customProperties)) {
@@ -341,7 +338,15 @@ Database.prototype.extend = function (tableName, customProperties) {
   return table;
 };
 
-// associate with MySQL Transaction class
-Database.prototype.Transaction = Transaction;
+/**
+ * Begins a new transaction with this database.
+ * @param {Function} [callback] an optional callback function with (err, transaction) arguments
+ * @returns {Promise} resolving to a new Transaction instance
+ */
+Database.prototype.beginTransaction = function (callback) {
+  return new Transaction(this)
+    .begin()
+    .nodeify(callback);
+};
 
 module.exports = Database;
