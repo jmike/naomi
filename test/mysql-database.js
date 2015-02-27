@@ -15,79 +15,6 @@ describe('MySQL Database', function () {
 
   describe('@disconnected', function () {
 
-    describe('#query()', function () {
-
-      it('throws error when sql statement is unspecified', function () {
-        assert.throws(function () { db.query(); }, /invalid sql argument/i);
-      });
-
-      it('throws error when sql statement is Number', function () {
-        assert.throws(function () { db.query(-1); }, /invalid sql argument/i);
-        assert.throws(function () { db.query(0); }, /invalid sql argument/i);
-        assert.throws(function () { db.query(1); }, /invalid sql argument/i);
-      });
-
-      it('throws error when sql statement is Boolean', function () {
-        assert.throws(function () { db.query(true); }, /invalid sql argument/i);
-        assert.throws(function () { db.query(false); }, /invalid sql argument/i);
-      });
-
-      it('throws error when sql statement is Object', function () {
-        assert.throws(function () { db.query({}); }, /invalid sql argument/i);
-      });
-
-      it('throws error when sql statement is Array', function () {
-        assert.throws(function () { db.query([]); }, /invalid sql argument/i);
-      });
-
-      it('throws error when sql statement is null', function () {
-        assert.throws(function () { db.query(null); }, /invalid sql argument/i);
-      });
-
-      it('throws error when params is Number', function () {
-        assert.throws(function () { db.query('sql', -1); }, /invalid params argument/i);
-        assert.throws(function () { db.query('sql', 0); }, /invalid params argument/i);
-        assert.throws(function () { db.query('sql', 1); }, /invalid params argument/i);
-      });
-
-      it('throws error when params is Boolean', function () {
-        assert.throws(function () { db.query('sql', true); }, /invalid params argument/i);
-        assert.throws(function () { db.query('sql', false); }, /invalid params argument/i);
-      });
-
-      it('throws error when params is String', function () {
-        assert.throws(function () { db.query('sql', ''); }, /invalid params argument/i);
-      });
-
-      it('throws error when params is null', function () {
-        assert.throws(function () { db.query('sql', null); }, /invalid params argument/i);
-      });
-
-      it('throws error when options is Number', function () {
-        assert.throws(function () { db.query('sql', [], -1); }, /invalid options argument/i);
-        assert.throws(function () { db.query('sql', [], 0); }, /invalid options argument/i);
-        assert.throws(function () { db.query('sql', [], 1); }, /invalid options argument/i);
-      });
-
-      it('throws error when options is Boolean', function () {
-        assert.throws(function () { db.query('sql', [], true); }, /invalid options argument/i);
-        assert.throws(function () { db.query('sql', [], false); }, /invalid options argument/i);
-      });
-
-      it('throws error when options is String', function () {
-        assert.throws(function () { db.query('sql', [], ''); }, /invalid options argument/i);
-      });
-
-      it('throws error when options is Array', function () {
-        assert.throws(function () { db.query('sql', [], []); }, /invalid options argument/i);
-      });
-
-      it('throws error when options is null', function () {
-        assert.throws(function () { db.query('sql', [], null); }, /invalid options argument/i);
-      });
-
-    });
-
     describe('#hasTable()', function () {
 
       it('throws error when table is unspecified', function () {
@@ -135,6 +62,130 @@ describe('MySQL Database', function () {
 
       it('returns true', function () {
         assert.strictEqual(db.isConnected, true);
+      });
+
+    });
+
+    describe('#query()', function () {
+
+      it('rejects with error when sql statement is unspecified', function (done) {
+        db.query()
+          .catch(function (err) {
+            assert.match(err, /invalid sql argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when sql statement is number', function (done) {
+        db.query(123)
+          .catch(function (err) {
+            assert.match(err, /invalid sql argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when sql statement is Boolean', function (done) {
+        db.query(true)
+          .catch(function (err) {
+            assert.match(err, /invalid sql argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when sql statement is Object', function (done) {
+        db.query({})
+          .catch(function (err) {
+            assert.match(err, /invalid sql argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when sql statement is Array', function (done) {
+        db.query([])
+          .catch(function (err) {
+            assert.match(err, /invalid sql argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when sql statement is null', function (done) {
+        db.query(null)
+          .catch(function (err) {
+            assert.match(err, /invalid sql argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when params is Number', function (done) {
+        db.query('sql', 123)
+          .catch(function (err) {
+            assert.match(err, /invalid params argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when params is Boolean', function (done) {
+        db.query('sql', true)
+          .catch(function (err) {
+            assert.match(err, /invalid params argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when params is String', function (done) {
+        db.query('sql', '')
+          .catch(function (err) {
+            assert.match(err, /invalid params argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when params is null', function (done) {
+        db.query('sql', null)
+          .catch(function (err) {
+            assert.match(err, /invalid params argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when options is Number', function (done) {
+        db.query('sql', [], 123)
+          .catch(function (err) {
+            assert.match(err, /invalid options argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when options is Boolean', function (done) {
+        db.query('sql', [], true)
+          .catch(function (err) {
+            assert.match(err, /invalid options argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when options is String', function (done) {
+        db.query('sql', [], '')
+          .catch(function (err) {
+            assert.match(err, /invalid options argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when options is Array', function (done) {
+        db.query('sql', [], [])
+          .catch(function (err) {
+            assert.match(err, /invalid options argument/i);
+            done();
+          });
+      });
+
+      it('rejects with error when options is null', function (done) {
+        db.query('sql', [], null)
+          .catch(function (err) {
+            assert.match(err, /invalid options argument/i);
+            done();
+          });
       });
 
     });

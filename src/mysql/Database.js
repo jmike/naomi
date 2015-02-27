@@ -149,51 +149,19 @@ Database.prototype.releaseClient = function (client) {
 
 /**
  * Runs the given parameterized SQL statement to the supplied db client.
+ * Please note: This is a low-level function of the #query method.
  * @param {Client} client a db client.
  * @param {(String|Object)} sql a parameterized SQL statement.
  * @param {Array} params an array of parameter values.
- * @returns {Promise} resolving to the query results.
- * @private
- * @static
- */
-function queryClient(client, sql, params) {
-  var resolver;
-
-  resolver = function (resolve, reject) {
-    client.query(sql, params, function (err, records) {
-      if (err) return reject(err);
-
-      // check if sql is SELECT statement
-      if (_.isArray(records)) {
-        resolve(records);
-      } else {
-        // sql is DML statement
-        resolve({
-          insertId: records.insertId,
-          affectedRows: records.affectedRows
-        });
-      }
-    });
-  };
-
-  return new Promise(resolver);
-}
-
-/**
- * Runs the given parameterized SQL statement.
- * @param {string} sql the SQL statement.
- * @param {Array} [params] an array of parameter values.
- * @param {object} [options] query options.
  * @param {Function} [callback] a callback function with (err, records) arguments.
- * @returns {Promise} resolving to the query results.
+ * @return {Promise} resolving to the query results.
  */
-Database.prototype.query = function (sql, params, options, callback) {
-  var _this = this;
+Database.prototype.queryClient = function (client, sql, params, options, callback) {
   var resolver;
 
   // validate sql argument
   if (!_.isString(sql)) {
-    throw new Error('Invalid sql argument; expected string, received ' + type(sql));
+    return Promise.reject(new Error('Invalid sql argument; expected string, received ' + type(sql))).nodeify(callback);
   }
 
   // handle optional params argument
@@ -213,7 +181,7 @@ Database.prototype.query = function (sql, params, options, callback) {
 
   // validate params argument
   if (!_.isArray(params)) {
-    throw new Error('Invalid params argument; expected array, received ' + type(params));
+    return Promise.reject(new Error('Invalid params argument; expected array, received ' + type(params))).nodeify(callback);
   }
 
   // handle optional options argument
@@ -227,22 +195,57 @@ Database.prototype.query = function (sql, params, options, callback) {
 
   // validate options argument
   if (!_.isPlainObject(options)) {
-    throw new Error('Invalid options argument; expected object, received ' + type(options));
+    return Promise.reject(new Error('Invalid options argument; expected object, received ' + type(options))).nodeify(callback);
+  }
+
+  // check if options is not empty
+  if (!_.isEmpty(options)) {
+    sql = _.assign({sql: sql}, options); // merge with sql
   }
 
   // define promise resolver
   resolver = function (resolve, reject) {
+    client.query(sql, params, function (err, records) {
+      if (err) return reject(err);
+
+      // check if sql is SELECT statement
+      if (_.isArray(records)) {
+        resolve(records);
+      } else {
+        // sql is DML statement
+        resolve({
+          insertId: records.insertId,
+          affectedRows: records.affectedRows
+        });
+      }
+    });
+  };
+
+  return new Promise(resolver).nodeify(callback);
+};
+
+/**
+ * Runs the given parameterized SQL statement.
+ * @param {string} sql the SQL statement.
+ * @param {Array} [params] an array of parameter values.
+ * @param {object} [options] query options.
+ * @param {Function} [callback] a callback function with (err, records) arguments.
+ * @returns {Promise} resolving to the query results.
+ */
+Database.prototype.query = function (sql, params, options, callback) {
+  var _this = this;
+  var resolver;
+
+  // define promise resolver
+  resolver = function (resolve, reject) {
     // acquire client
-    return _this.acquireClient()
+    _this.acquireClient()
+      // query query
       .then(function (client) {
-        // check if options is specified
-        if (!_.isEmpty(options)) {
-          sql = _.assign({sql: sql}, options); // merge with sql
-        }
-        // execute query
-        return queryClient(client, sql, params)
+        return _this.queryClient(client, sql, params, options)
+          // always release previously acquired client
           .finally(function () {
-            return _this.releaseClient(client); // always release previously acquired client
+            return _this.releaseClient(client);
           });
       })
       .then(resolve, reject);
