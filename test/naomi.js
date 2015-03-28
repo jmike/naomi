@@ -1,6 +1,5 @@
 var assert = require('chai').assert;
 var naomi = require('../src/naomi');
-var Database = require('../src/Database');
 var MySQLDatabase = require('../src/mysql/Database');
 var PostgresDatabase = require('../src/postgres/Database');
 
