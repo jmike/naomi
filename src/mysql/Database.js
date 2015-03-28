@@ -79,7 +79,10 @@ Database.prototype.connect = function (callback) {
   var _this = this;
 
   // check if already connected
-  if (this.isConnected) Promise.resolve().nodeify(callback); // exit gracefully
+  if (this.isConnected) {
+    return Promise.resolve()
+      .nodeify(callback);
+  }
 
   // connect
   return Promise.try(function () {
@@ -104,7 +107,10 @@ Database.prototype.disconnect = function (callback) {
   var resolver;
 
   // check if already disconnected
-  if (!this.isConnected) return Promise.resolve().nodeify(callback); // exit gracefully
+  if (!this.isConnected) {
+    return Promise.resolve()
+      .nodeify(callback);
+  }
 
   // define promise resolver
   resolver = function (resolve, reject) {
@@ -161,7 +167,8 @@ Database.prototype.queryClient = function (client, sql, params, options, callbac
 
   // validate sql argument
   if (!_.isString(sql)) {
-    return Promise.reject(new Error('Invalid sql argument; expected string, received ' + type(sql))).nodeify(callback);
+    return Promise.reject(new Error('Invalid sql argument; expected string, received ' + type(sql)))
+      .nodeify(callback);
   }
 
   // handle optional params argument
@@ -181,7 +188,8 @@ Database.prototype.queryClient = function (client, sql, params, options, callbac
 
   // validate params argument
   if (!_.isArray(params)) {
-    return Promise.reject(new Error('Invalid params argument; expected array, received ' + type(params))).nodeify(callback);
+    return Promise.reject(new Error('Invalid params argument; expected array, received ' + type(params)))
+      .nodeify(callback);
   }
 
   // handle optional options argument
@@ -195,7 +203,8 @@ Database.prototype.queryClient = function (client, sql, params, options, callbac
 
   // validate options argument
   if (!_.isPlainObject(options)) {
-    return Promise.reject(new Error('Invalid options argument; expected object, received ' + type(options))).nodeify(callback);
+    return Promise.reject(new Error('Invalid options argument; expected object, received ' + type(options)))
+      .nodeify(callback);
   }
 
   // check if options is not empty
@@ -266,7 +275,8 @@ Database.prototype.hasTable = function (table, callback) {
 
   // validate table argument
   if (!_.isString(table)) {
-    throw new Error('Invalid table argument; expected string, received ' + type(table));
+    return Promise.reject(new Error('Invalid table argument; expected string, received ' + type(table)))
+      .nodeify(callback);
   }
 
   sql = [

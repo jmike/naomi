@@ -3,15 +3,16 @@ require('dotenv').load(); // load environmental variables
 var chai = require('chai');
 var naomi = require('../../src/naomi');
 var assert = chai.assert;
+var _ = require('lodash');
 
-describe('MySQL Table', function () {
+describe('Postgres Table', function () {
 
-  var db = naomi.create('mysql', {
-    host: process.env.MYSQL_HOST,
-    port: parseInt(process.env.MYSQL_PORT, 10),
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE
+  var db = naomi.create('postgres', {
+    host: process.env.POSTGRES_HOST,
+    port: parseInt(process.env.POSTGRES_PORT, 10),
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DATABASE
   });
 
   before(function (done) {
@@ -44,14 +45,14 @@ describe('MySQL Table', function () {
       assert.strictEqual(employees.primaryKey[0], 'id');
       // unique keys
       assert.isObject(employees.uniqueKeys);
-      assert.property(employees.uniqueKeys, 'unique_idx');
-      assert.isArray(employees.uniqueKeys.unique_idx);
-      assert.sameMembers(employees.uniqueKeys.unique_idx, ['firstname', 'lastname']);
+      assert.property(employees.uniqueKeys, 'employees_name_uidx');
+      assert.isArray(employees.uniqueKeys.employees_name_uidx);
+      assert.sameMembers(employees.uniqueKeys.employees_name_uidx, ['firstname', 'lastname']);
       // index keys
-      assert.isObject(employees.indexKeys);
-      assert.property(employees.indexKeys, 'age_idx');
-      assert.lengthOf(employees.indexKeys.age_idx, 1);
-      assert.sameMembers(employees.indexKeys.age_idx, ['age']);
+      // assert.isObject(employees.indexKeys);
+      // assert.property(employees.indexKeys, 'age_idx');
+      // assert.lengthOf(employees.indexKeys.age_idx, 1);
+      // assert.sameMembers(employees.indexKeys.age_idx, ['age']);
     });
 
     describe('#isPrimaryKey()', function () {
@@ -98,29 +99,29 @@ describe('MySQL Table', function () {
 
     });
 
-    describe('#isIndexKey()', function () {
+    // describe('#isIndexKey()', function () {
 
-      it('returns true on "age"', function () {
-        assert.isTrue(employees.isIndexKey('age'));
-      });
+    //   it('returns true on "age"', function () {
+    //     assert.isTrue(employees.isIndexKey('age'));
+    //   });
 
-      it('returns false on "age" + "firstname"', function () {
-        assert.isFalse(employees.isIndexKey('age', 'firstname'));
-      });
+    //   it('returns false on "age" + "firstname"', function () {
+    //     assert.isFalse(employees.isIndexKey('age', 'firstname'));
+    //   });
 
-      it('returns false on "invalid-column"', function () {
-        assert.isFalse(employees.isIndexKey('invalid-column'));
-      });
+    //   it('returns false on "invalid-column"', function () {
+    //     assert.isFalse(employees.isIndexKey('invalid-column'));
+    //   });
 
-      it('returns false on "id"', function () {
-        assert.isFalse(employees.isIndexKey('id'));
-      });
+    //   it('returns false on "id"', function () {
+    //     assert.isFalse(employees.isIndexKey('id'));
+    //   });
 
-      it('returns false on empty string', function () {
-        assert.isFalse(employees.isIndexKey());
-      });
+    //   it('returns false on empty string', function () {
+    //     assert.isFalse(employees.isIndexKey());
+    //   });
 
-    });
+    // });
 
     describe('#get()', function () {
 
@@ -176,7 +177,7 @@ describe('MySQL Table', function () {
           .then(function (result) {
             assert.isObject(result);
             assert.isNumber(result.id);
-            pk = result;
+            pk = _.pick(result, 'id');
           })
           // count records to validate #add
           .then(function () {
@@ -203,16 +204,10 @@ describe('MySQL Table', function () {
 
       it('updates record (using primary key)', function (done) {
         employees.set({id: pk.id, firstname: 'Donnie', lastname: 'Azoff', age: 37})
-          .then(function (key) {
-            assert.deepEqual(key, pk);
-            return key;
-          })
-          // read employee to validate #update
-          .then(function (key) {
-            return employees.get(key);
-          })
-          .then(function (records) {
-            assert.strictEqual(records[0].age, 37);
+          .then(function (record) {
+            assert.isObject(record);
+            assert.strictEqual(record.age, 37);
+            assert.deepEqual(_.pick(record, 'id'), pk);
           })
           .then(done)
           .catch(done);
@@ -220,16 +215,10 @@ describe('MySQL Table', function () {
 
       it('updates record (using unique key)', function (done) {
         employees.set({firstname: 'Donnie', lastname: 'Azoff', age: 38})
-          .then(function (key) {
-            assert.deepEqual(key, pk);
-            return key;
-          })
-          // read employee to validate #update
-          .then(function (key) {
-            return employees.get(key);
-          })
-          .then(function (records) {
-            assert.strictEqual(records[0].age, 38);
+          .then(function (record) {
+            assert.isObject(record);
+            assert.strictEqual(record.age, 38);
+            assert.deepEqual(_.pick(record, 'id'), pk);
           })
           .then(done)
           .catch(done);
@@ -273,12 +262,14 @@ describe('MySQL Table', function () {
 
       it('creates records', function (done) {
         employees.add($values)
-          .then(function (result) {
-            assert.isArray(result);
-            assert.lengthOf(result, 3);
-            assert.isObject(result[0]);
-            assert.property(result[0], 'id');
-            pk = result;
+          .then(function (records) {
+            assert.isArray(records);
+            assert.lengthOf(records, 3);
+            assert.isObject(records[0]);
+            assert.property(records[0], 'id');
+            pk = _.map(records, function (record) {
+              return _.pick(record, 'id');
+            });
           })
           // count records to validate #add
           .then(function () {
@@ -300,15 +291,11 @@ describe('MySQL Table', function () {
         });
 
         employees.set($values)
-          .then(function (key) {
-            assert.deepEqual(key, pk);
-            return key;
-          })
-          // read employee to validate #update
-          .then(function (key) {
-            return employees.get(key);
-          })
           .then(function (records) {
+            records.forEach(function (record, i) {
+              assert.deepEqual(_.pick(record, 'id'), pk[i]);
+            });
+
             assert.deepEqual(records, $values);
           })
           .then(done)
@@ -330,80 +317,80 @@ describe('MySQL Table', function () {
 
     });
 
-    describe('Mix of existing and non-existing records CRUD operation', function () {
+    // describe('Mix of existing and non-existing records CRUD operation', function () {
 
-      var $values = [
-        {firstname: 'Monsieur', lastname: 'Levanter', age: 20},
-        {firstname: 'Miss', lastname: 'Goldie', age: 18},
-        {firstname: 'Mister', lastname: 'White', age: 38}
-      ];
+    //   var $values = [
+    //     {firstname: 'Monsieur', lastname: 'Levanter', age: 20},
+    //     {firstname: 'Miss', lastname: 'Goldie', age: 18},
+    //     {firstname: 'Mister', lastname: 'White', age: 38}
+    //   ];
 
-      var pk, count;
+    //   var pk, count;
 
-      it('counts records', function (done) {
-        employees.count()
-          .then(function (n) {
-            assert.isNumber(n);
-            assert.operator(n, '>=', 1);
-            count = n;
-          })
-          .then(done)
-          .catch(done);
-      });
+    //   it('counts records', function (done) {
+    //     employees.count()
+    //       .then(function (n) {
+    //         assert.isNumber(n);
+    //         assert.operator(n, '>=', 1);
+    //         count = n;
+    //       })
+    //       .then(done)
+    //       .catch(done);
+    //   });
 
-      it('creates just one record', function (done) {
-        employees.add($values[0])
-          .then(function (result) {
-            assert.isObject(result);
-            assert.isNumber(result.id);
-            $values[0].id = result.id;
-          })
-          // count records to validate #add
-          .then(function () {
-            return employees.count();
-          })
-          .then(function (n) {
-            assert.strictEqual(n, count + 1);
-            count = n;
-          })
-          .then(done)
-          .catch(done);
-      });
+    //   it('creates just one record', function (done) {
+    //     employees.add($values[0])
+    //       .then(function (result) {
+    //         assert.isObject(result);
+    //         assert.isNumber(result.id);
+    //         $values[0].id = result.id;
+    //       })
+    //       // count records to validate #add
+    //       .then(function () {
+    //         return employees.count();
+    //       })
+    //       .then(function (n) {
+    //         assert.strictEqual(n, count + 1);
+    //         count = n;
+    //       })
+    //       .then(done)
+    //       .catch(done);
+    //   });
 
-      it('updates existing and non-existing records at a single step', function (done) {
-        employees.set($values)
-          .then(function (key) {
-            assert.isArray(key);
-            assert.lengthOf(key, 3);
-            assert.strictEqual(key[0].id, $values[0].id);
-            pk = key;
-          })
-          // count records to validate #set
-          .then(function () {
-            return employees.count();
-          })
-          .then(function (n) {
-            assert.strictEqual(n, count + 2);
-            count = n;
-          })
-          .then(done)
-          .catch(done);
-      });
+    //   it('updates existing and non-existing records at a single step', function (done) {
+    //     employees.set($values)
+    //       .then(function (key) {
+    //         assert.isArray(key);
+    //         assert.lengthOf(key, 3);
+    //         assert.strictEqual(key[0].id, $values[0].id);
+    //         pk = key;
+    //       })
+    //       // count records to validate #set
+    //       .then(function () {
+    //         return employees.count();
+    //       })
+    //       .then(function (n) {
+    //         assert.strictEqual(n, count + 2);
+    //         count = n;
+    //       })
+    //       .then(done)
+    //       .catch(done);
+    //   });
 
-      it('deletes records (using primary key)', function (done) {
-        employees.del(pk)
-          // count records to validate #del
-          .then(function () {
-            return employees.count();
-          })
-          .then(function (n) {
-            assert.strictEqual(n, count - 3);
-          })
-          .then(done)
-          .catch(done);
-      });
+    //   it('deletes records (using primary key)', function (done) {
+    //     employees.del(pk)
+    //       // count records to validate #del
+    //       .then(function () {
+    //         return employees.count();
+    //       })
+    //       .then(function (n) {
+    //         assert.strictEqual(n, count - 3);
+    //       })
+    //       .then(done)
+    //       .catch(done);
+    //   });
 
-    });
+    // });
 
   });
 

@@ -55,14 +55,11 @@ Table.prototype._enqueue = function (resolver) {
  * Retrieves column metadata from database.
  * @param {Function} [callback] an optional callback function with (err, columns) arguments.
  * @returns {Promise} resolving to Array.<object>
- * @private
  */
-Table.prototype._getColumns = function (callback) {
+Table.prototype.getColumns = function (callback) {
   var re = /auto_increment/i;
-  var sql;
-  var params;
 
-  sql = [
+  var sql = [
     'SELECT `COLUMN_NAME`, `DATA_TYPE`, `IS_NULLABLE`, `EXTRA`, `COLUMN_DEFAULT`,',
     '`COLLATION_NAME`, `COLUMN_COMMENT`, `ORDINAL_POSITION`',
     'FROM information_schema.COLUMNS',
@@ -70,7 +67,8 @@ Table.prototype._getColumns = function (callback) {
     'AND `TABLE_NAME` = ?',
     'ORDER BY `ORDINAL_POSITION` ASC;'
   ].join(' ');
-  params = [this.db.name, this.name];
+
+  var params = [this.db.name, this.name];
 
   return this.db.query(sql, params)
     .then(function (records) {
@@ -95,11 +93,8 @@ Table.prototype._getColumns = function (callback) {
  * @returns {Promise} resolving to Array.<string>
  * @private
  */
-Table.prototype._getPrimaryKey = function (callback) {
-  var sql;
-  var params;
-
-  sql = [
+Table.prototype.getPrimaryKey = function (callback) {
+  var sql = [
     'SELECT `COLUMN_NAME`',
     'FROM information_schema.STATISTICS',
     'WHERE `TABLE_SCHEMA` = ?',
@@ -107,7 +102,8 @@ Table.prototype._getPrimaryKey = function (callback) {
     'AND `INDEX_NAME` = \'PRIMARY\'',
     'ORDER BY `SEQ_IN_INDEX` ASC;'
   ].join(' ');
-  params = [this.db.name, this.name];
+
+  var params = [this.db.name, this.name];
 
   return this.db.query(sql, params)
     .then(function (records) {
@@ -122,13 +118,9 @@ Table.prototype._getPrimaryKey = function (callback) {
  * Retrieves unique key metadata from database.
  * @param {Function} [callback] an optional callback function with (err, uniqueKeys) arguments.
  * @returns {Promise} resolving to object
- * @private
  */
-Table.prototype._getUniqueKeys = function (callback) {
-  var sql;
-  var params;
-
-  sql = [
+Table.prototype.getUniqueKeys = function (callback) {
+  var sql = [
     'SELECT `INDEX_NAME`, `COLUMN_NAME`',
     'FROM information_schema.STATISTICS',
     'WHERE `TABLE_SCHEMA` = ?',
@@ -137,7 +129,8 @@ Table.prototype._getUniqueKeys = function (callback) {
     'AND `NON_UNIQUE` = 0',
     'ORDER BY `SEQ_IN_INDEX` ASC;'
   ].join(' ');
-  params = [this.db.name, this.name];
+
+  var params = [this.db.name, this.name];
 
   return this.db.query(sql, params)
     .then(function (records) {
@@ -157,13 +150,9 @@ Table.prototype._getUniqueKeys = function (callback) {
  * Retrieves index key metadata from database.
  * @param {Function} [callback] an optional callback function with (err, indexKeys) arguments.
  * @returns {Promise} resolving to object
- * @private
  */
-Table.prototype._getIndexKeys = function (callback) {
-  var sql;
-  var params;
-
-  sql = [
+Table.prototype.getIndexKeys = function (callback) {
+  var sql = [
     'SELECT `INDEX_NAME`, `COLUMN_NAME`',
     'FROM information_schema.STATISTICS',
     'WHERE `TABLE_SCHEMA` = ?',
@@ -172,7 +161,8 @@ Table.prototype._getIndexKeys = function (callback) {
     'AND `NON_UNIQUE` = 1',
     'ORDER BY `SEQ_IN_INDEX` ASC;'
   ].join(' ');
-  params = [this.db.name, this.name];
+
+  var params = [this.db.name, this.name];
 
   return this.db.query(sql, params)
     .then(function (records) {
@@ -195,16 +185,14 @@ Table.prototype._getIndexKeys = function (callback) {
  * @private
  */
 Table.prototype._getForeignKeys = function (callback) {
-  var sql;
-  var params;
-
-  sql = [
+  var sql = [
     'SELECT CONSTRAINT_NAME, TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME',
     'FROM information_schema.KEY_COLUMN_USAGE',
     'WHERE TABLE_SCHEMA = ? AND REFERENCED_TABLE_SCHEMA = ?',
     'AND (TABLE_NAME = ? OR REFERENCED_TABLE_NAME = ?);'
   ].join(' ');
-  params = [this.db.name, this.db.name, this.name, this.name];
+
+  var params = [this.db.name, this.db.name, this.name, this.name];
 
   return this.db.query(sql, params)
     .then(function (records) {
@@ -241,10 +229,10 @@ Table.prototype.loadMeta = function (callback) {
 
       // retrieve metadata
       return Promise.props({
-        columns: _this._getColumns(),
-        primaryKey: _this._getPrimaryKey(),
-        uniqueKeys: _this._getUniqueKeys(),
-        indexKeys: _this._getIndexKeys(),
+        columns: _this.getColumns(),
+        primaryKey: _this.getPrimaryKey(),
+        uniqueKeys: _this.getUniqueKeys(),
+        indexKeys: _this.getIndexKeys(),
         // foreignKeys: _this._getForeignKeys()
       })
         // update table properties

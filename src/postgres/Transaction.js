@@ -1,76 +1,98 @@
-var Promise = require('bluebird'),
-  GenericTransaction = require('../Transaction');
+var Promise = require('bluebird');
 
 /**
- * Constructs a new Postgres transaction.
- * @extends {GenericTransaction}
+ * Creates a new Transaction with the designated database.
+ * @param {Database} db
  * @constructor
  */
-function Transaction () {
-  GenericTransaction.apply(this, arguments);
+function Transaction (db) {
+  this.db = db;
+  this.client = null;
 }
 
-// Postgres Transaction extends GenericTransaction
-Transaction.prototype = Object.create(GenericTransaction.prototype);
-
 /**
- * Runs the given parameterized SQL query as part of this transaction.
- * @param {string} sql a parameterized SQL statement.
- * @param {Array} params an array of parameter values.
- * @param {object} options query options.
- * @returns {Promise}
- * @private
- */
-Transaction.prototype._query = function (sql, params) {
-  var self = this, resolver;
-
-  sql = self._db.prepareSQL(sql);
-
-  resolver = function (resolve, reject) {
-    self._client.query(sql, params, function(err, result) {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(result.rows);
-      }
-    });
-  };
-
-  return new Promise(resolver).bind(this);
-};
-
-/**
- * Begins this transaction.
- * @param {function} [callback] an optional callback function.
- * @return {Promise} resolving to this transaction instance.
+ * Initiates the transaction.
+ * @param {Function} [callback] an optional callback function with (err, transaction) arguments
+ * @return {Promise} resolving to this transaction
  */
 Transaction.prototype.begin = function (callback) {
-  return this._db.acquireClient()
-    .bind(this)
+  var _this = this;
+
+  if (this.client !== null) {
+    return Promise.reject(new Error('Invalid transaction state; transaction already in progress'));
+  }
+
+  return this.db.acquireClient()
     .then(function (client) {
-      this._client = client;
-      return this.query('BEGIN;');
+      _this.client = client;
+      return _this.query('BEGIN;');
     })
-    .then(function () {
-      return this;
-    })
+    .return(_this)
+    .bind(this)
     .nodeify(callback);
 };
 
 /**
- * Commits this transaction.
+ * Commits the transaction.
  * Please note: transaction will become effectively useless after calling this method.
- * @param {function} [callback] an optional callback function.
- * @return {Promise} resolving to this transaction instance.
+ * @param {Function} [callback] an optional callback function. with (err, transaction) arguments
+ * @return {Promise} resolving to this transaction
  */
 Transaction.prototype.commit = function (callback) {
+  var _this = this;
+
+  if (this.client === null) {
+    return Promise.reject(new Error('Invalid transaction state; transaction not yet started'));
+  }
+
   return this.query('COMMIT;')
-    .bind(this)
     .then (function () {
-      this._db.releaseClient(this._client);
-      this._client = null;
-      return this;
+      _this.db.releaseClient(_this.client);
+      _this.client = null;
     })
+    .return(_this)
+    .bind(this)
+    .nodeify(callback);
+};
+
+/**
+ * Rolls back the transaction.
+ * Please note: transaction will become effectively useless after calling this method.
+ * @param {Function} [callback] an optional callback function. with (err, transaction) arguments
+ * @return {Promise} resolving to this transaction
+ */
+Transaction.prototype.rollback = function (callback) {
+  var _this = this;
+
+  if (this.client === null) {
+    return Promise.reject(new Error('Invalid transaction state; transaction not yet started'));
+  }
+
+  return this.query('ROLLBACK;')
+    .then (function () {
+      _this.db.releaseClient(_this.client);
+      _this.client = null;
+    })
+    .return(_this)
+    .bind(this)
+    .nodeify(callback);
+};
+
+/**
+ * Runs the given parameterized SQL statement as part of the transaction.
+ * @param {String} sql parameterized SQL statement
+ * @param {Array} [params] an array of parameter values
+ * @param {Object} [options] query options
+ * @param {Function} [callback] a callback function with (err, records) arguments
+ * @returns {Promise} resolving to the query results
+ */
+Transaction.prototype.query = function (sql, params, options, callback) {
+  if (this.client === null) {
+    return Promise.reject(new Error('Invalid transaction state; transaction not yet started'));
+  }
+
+  return this.db.queryClient(this.client, sql, params, options)
+    .bind(this)
     .nodeify(callback);
 };
 
