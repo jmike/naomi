@@ -27,7 +27,7 @@
     "type-of": "^2.0.1"
   },
   "devDependencies": {
-    "chai": "^1.10.0",
+    "chai": "^2.2.0",
     "mocha": "^2.2.1"
   },
   "author": {
