@@ -1,54 +1,60 @@
-require('dotenv').load(); // load environmental variables
-
-var Joi = require('joi');
 var _ = require('lodash');
+var type = require('type-of');
 var MySQLDatabase = require('./mysql/Database');
 var PostgresDatabase = require('./postgres/Database');
 
-var typeSchema = Joi.string()
-  .strict()
-  .required()
-  .label('database type')
-  .valid(['mysql', 'postgres'])
-  .insensitive();
+var mysqlRegex = /mysql/i;
+var postgresRegex = /postgres|pg/i;
 
 /**
- * Creates and returns a new Database instance of the designated type.
+ * Creates and returns a new Database of the designated type.
  * Please note: connection properties may vary depending on the database type.
- * @param {string} type the database type, i.e. "mysql", "postgres".
+ * @param {string} engine the database engine, i.e. "mysql", "postgres".
  * @param {object} [props] connection properties.
  * @throws {Error} if params are invalid or unspecified.
  * @returns {Database}
  * @static
  */
-exports.create = function (type, props) {
-  var validationResult;
+exports.create = function (engine, props) {
+  // validate engine argument
+  if (!_.isString(engine)) {
+    throw new Error('Invalid engine argument; expected string, received ' + type(engine));
+  }
 
-  // validate db type
-  validationResult = Joi.validate(type, typeSchema);
+  // handle optional props
+  if (_.isUndefined(props)) {
+    props = {};
+  }
 
-  if (validationResult.error) throw validationResult.error;
-  type = validationResult.value;
+  // validate props argument
+  if (!_.isPlainObject(props)) {
+    throw new Error('Invalid props argument; expected object, received ' + type(props));
+  }
 
-  // handle optional connection properties
-  props = props || {};
-
-  // contruct and return db
-  if (type === 'mysql') {
-    return new MySQLDatabase(_.defaults(props, {
+  // create and return db
+  if (mysqlRegex.test(engine)) {
+    props = _.defaults(props, {
       host: process.env.MYSQL_HOST,
       port: parseInt(process.env.MYSQL_PORT, 10),
       user: process.env.MYSQL_USER,
       password: process.env.MYSQL_PASSWORD,
       database: process.env.MYSQL_DATABASE
-    }));
+    });
+
+    return new MySQLDatabase(props);
   }
 
-  return new PostgresDatabase(_.defaults(props, {
-    host: process.env.POSTGRES_HOST,
-    port: parseInt(process.env.POSTGRES_PORT, 10),
-    user: process.env.POSTGRES_USER,
-    password: process.env.POSTGRES_PASSWORD,
-    database: process.env.POSTGRES_DATABASE
-  }));
+  if (postgresRegex.test(engine)) {
+    props = _.defaults(props, {
+      host: process.env.POSTGRES_HOST,
+      port: parseInt(process.env.POSTGRES_PORT, 10),
+      user: process.env.POSTGRES_USER,
+      password: process.env.POSTGRES_PASSWORD,
+      database: process.env.POSTGRES_DATABASE
+    });
+
+    return new PostgresDatabase(props);
+  }
+
+  throw new Error('Unknown engine; please specify one of "mysql" or "postgres"');
 };

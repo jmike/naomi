@@ -1,6 +1,6 @@
 {
   "name": "naomi",
-  "version": "0.8.7",
+  "version": "0.9.0-beta.5",
   "description": "Simple, productive, relational db client for MySQL and Postgres.",
   "repository": {
     "type": "git",
@@ -15,19 +15,17 @@
     "npm": "1.4.x"
   },
   "dependencies": {
-    "bluebird": "^2.4.0",
-    "dotenv": "~0.4.0",
-    "generic-pool": "~2.1.1",
-    "handlebars": "^2.0.0",
-    "joi": "^5.0.2",
-    "lodash": "~2.4.1",
-    "mysql": "^2.5.4",
+    "bluebird": "^2.9.21",
+    "generic-pool": "^2.2.0",
+    "lodash": "^3.6.0",
+    "mysql": "^2.6.1",
     "pg.js": "^4.1.1",
-    "sql": "^0.42.0"
+    "type-of": "^2.0.1"
   },
   "devDependencies": {
-    "chai": "^1.10.0",
-    "mocha": "^2.0.1"
+    "chai": "^2.2.0",
+    "dotenv": "^1.1.0",
+    "mocha": "^2.2.1"
   },
   "author": {
     "name": "Dimitrios C. Michalakos",
