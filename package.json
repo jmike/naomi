@@ -21,7 +21,6 @@
     "lodash": "^3.0.0",
     "mysql": "^2.5.5",
     "pg.js": "^4.1.1",
-    "sql": "^0.42.0",
     "type-of": "^2.0.1"
   },
   "devDependencies": {
