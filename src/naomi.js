@@ -1,5 +1,3 @@
-require('dotenv').load(); // load environmental variables
-
 var _ = require('lodash');
 var type = require('type-of');
 var MySQLDatabase = require('./mysql/Database');
