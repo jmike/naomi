@@ -3,7 +3,6 @@ require('dotenv').load(); // load environmental variables
 var chai = require('chai');
 var naomi = require('../../src/naomi');
 var assert = chai.assert;
-var _ = require('lodash');
 
 describe('Postgres Table', function () {
 
@@ -177,7 +176,7 @@ describe('Postgres Table', function () {
           .then(function (result) {
             assert.isObject(result);
             assert.isNumber(result.id);
-            pk = _.pick(result, 'id');
+            pk = result;
           })
           // count records to validate #add
           .then(function () {
@@ -205,9 +204,15 @@ describe('Postgres Table', function () {
       it('updates record (using primary key)', function (done) {
         employees.set({id: pk.id, firstname: 'Donnie', lastname: 'Azoff', age: 37})
           .then(function (record) {
-            assert.isObject(record);
-            assert.strictEqual(record.age, 37);
-            assert.deepEqual(_.pick(record, 'id'), pk);
+            assert.deepEqual(record, pk);
+            return record;
+          })
+          // read employee to validate #update
+          .then(function (record) {
+            return employees.get(record);
+          })
+          .then(function (records) {
+            assert.strictEqual(records[0].age, 37);
           })
           .then(done)
           .catch(done);
@@ -216,9 +221,15 @@ describe('Postgres Table', function () {
       it('updates record (using unique key)', function (done) {
         employees.set({firstname: 'Donnie', lastname: 'Azoff', age: 38})
           .then(function (record) {
-            assert.isObject(record);
-            assert.strictEqual(record.age, 38);
-            assert.deepEqual(_.pick(record, 'id'), pk);
+            assert.deepEqual(record, pk);
+            return record;
+          })
+          // read employee to validate #update
+          .then(function (record) {
+            return employees.get(record);
+          })
+          .then(function (records) {
+            assert.strictEqual(records[0].age, 38);
           })
           .then(done)
           .catch(done);
@@ -267,9 +278,7 @@ describe('Postgres Table', function () {
             assert.lengthOf(records, 3);
             assert.isObject(records[0]);
             assert.property(records[0], 'id');
-            pk = _.map(records, function (record) {
-              return _.pick(record, 'id');
-            });
+            pk = records;
           })
           // count records to validate #add
           .then(function () {
@@ -292,11 +301,7 @@ describe('Postgres Table', function () {
 
         employees.set($values)
           .then(function (records) {
-            records.forEach(function (record, i) {
-              assert.deepEqual(_.pick(record, 'id'), pk[i]);
-            });
-
-            assert.deepEqual(records, $values);
+            assert.deepEqual(records, pk);
           })
           .then(done)
           .catch(done);
@@ -317,80 +322,80 @@ describe('Postgres Table', function () {
 
     });
 
-    // describe('Mix of existing and non-existing records CRUD operation', function () {
+    describe('Mix of existing and non-existing records CRUD operation', function () {
 
-    //   var $values = [
-    //     {firstname: 'Monsieur', lastname: 'Levanter', age: 20},
-    //     {firstname: 'Miss', lastname: 'Goldie', age: 18},
-    //     {firstname: 'Mister', lastname: 'White', age: 38}
-    //   ];
+      var $values = [
+        {firstname: 'Monsieur', lastname: 'Levanter', age: 20},
+        {firstname: 'Miss', lastname: 'Goldie', age: 18},
+        {firstname: 'Mister', lastname: 'White', age: 38}
+      ];
 
-    //   var pk, count;
+      var pk, count;
 
-    //   it('counts records', function (done) {
-    //     employees.count()
-    //       .then(function (n) {
-    //         assert.isNumber(n);
-    //         assert.operator(n, '>=', 1);
-    //         count = n;
-    //       })
-    //       .then(done)
-    //       .catch(done);
-    //   });
+      it('counts records', function (done) {
+        employees.count()
+          .then(function (n) {
+            assert.isNumber(n);
+            assert.operator(n, '>=', 1);
+            count = n;
+          })
+          .then(done)
+          .catch(done);
+      });
 
-    //   it('creates just one record', function (done) {
-    //     employees.add($values[0])
-    //       .then(function (result) {
-    //         assert.isObject(result);
-    //         assert.isNumber(result.id);
-    //         $values[0].id = result.id;
-    //       })
-    //       // count records to validate #add
-    //       .then(function () {
-    //         return employees.count();
-    //       })
-    //       .then(function (n) {
-    //         assert.strictEqual(n, count + 1);
-    //         count = n;
-    //       })
-    //       .then(done)
-    //       .catch(done);
-    //   });
+      it('creates just one record', function (done) {
+        employees.add($values[0])
+          .then(function (result) {
+            assert.isObject(result);
+            assert.isNumber(result.id);
+            $values[0].id = result.id;
+          })
+          // count records to validate #add
+          .then(function () {
+            return employees.count();
+          })
+          .then(function (n) {
+            assert.strictEqual(n, count + 1);
+            count = n;
+          })
+          .then(done)
+          .catch(done);
+      });
 
-    //   it('updates existing and non-existing records at a single step', function (done) {
-    //     employees.set($values)
-    //       .then(function (key) {
-    //         assert.isArray(key);
-    //         assert.lengthOf(key, 3);
-    //         assert.strictEqual(key[0].id, $values[0].id);
-    //         pk = key;
-    //       })
-    //       // count records to validate #set
-    //       .then(function () {
-    //         return employees.count();
-    //       })
-    //       .then(function (n) {
-    //         assert.strictEqual(n, count + 2);
-    //         count = n;
-    //       })
-    //       .then(done)
-    //       .catch(done);
-    //   });
+      it('updates existing and non-existing records at a single step', function (done) {
+        employees.set($values)
+          .then(function (key) {
+            assert.isArray(key);
+            assert.lengthOf(key, 3);
+            assert.strictEqual(key[0].id, $values[0].id);
+            pk = key;
+          })
+          // count records to validate #set
+          .then(function () {
+            return employees.count();
+          })
+          .then(function (n) {
+            assert.strictEqual(n, count + 2);
+            count = n;
+          })
+          .then(done)
+          .catch(done);
+      });
 
-    //   it('deletes records (using primary key)', function (done) {
-    //     employees.del(pk)
-    //       // count records to validate #del
-    //       .then(function () {
-    //         return employees.count();
-    //       })
-    //       .then(function (n) {
-    //         assert.strictEqual(n, count - 3);
-    //       })
-    //       .then(done)
-    //       .catch(done);
-    //   });
+      it('deletes records (using primary key)', function (done) {
+        employees.del(pk)
+          // count records to validate #del
+          .then(function () {
+            return employees.count();
+          })
+          .then(function (n) {
+            assert.strictEqual(n, count - 3);
+          })
+          .then(done)
+          .catch(done);
+      });
 
-    // });
+    });
 
   });
 

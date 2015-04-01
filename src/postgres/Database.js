@@ -252,14 +252,22 @@ Database.prototype.queryClient = function (client, sql, params, options, callbac
 
   resolver = function (resolve, reject) {
     client.query(sql, params, function(err, result) {
+      var records;
+
       if (err) return reject(err);
-      resolve(result.rows);
+
+      records = result.rows.map(function (row) {
+         return _.create(Object.prototype, row);
+      });
+
+      result.rows.length = 0; // memory optimization
+
+      resolve(records);
     });
   };
 
   return new Promise(resolver).nodeify(callback);
 };
-
 
 /**
  * Runs the given parameterized SQL statement.

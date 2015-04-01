@@ -31,7 +31,14 @@ module.exports = function ($query, table) {
   sql.push('VALUES', _values.sql);
   params = params.concat(_values.params);
 
-  sql.push('RETURNING *');
+  sql.push('RETURNING');
+  sql.push(
+    table.primaryKey
+      .map(function (k) {
+        return escape(k);
+      })
+      .join(', ')
+  );
 
   return {sql: sql.join(' ') + ';', params: params};
 };

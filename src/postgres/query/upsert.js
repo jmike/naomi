@@ -65,7 +65,14 @@ module.exports = function (query, table) {
 
   sql.push('WHERE', expr);
 
-  sql.push('RETURNING *');
+  sql.push('RETURNING');
+  sql.push(
+    table.primaryKey
+      .map(function (k) {
+        return escape(k);
+      })
+      .join(', ')
+  );
 
   sql.push('),');
 
@@ -94,7 +101,14 @@ module.exports = function (query, table) {
 
   sql.push('WHERE NOT EXISTS (SELECT * FROM updated)');
 
-  sql.push('RETURNING *');
+  sql.push('RETURNING');
+  sql.push(
+    table.primaryKey
+      .map(function (k) {
+        return escape(k);
+      })
+      .join(', ')
+  );
 
   sql.push(')');
 
