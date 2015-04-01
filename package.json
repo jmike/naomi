@@ -17,7 +17,6 @@
   "dependencies": {
     "bluebird": "^2.9.3",
     "generic-pool": "~2.1.1",
-    "handlebars": "^2.0.0",
     "joi": "^5.0.2",
     "lodash": "^3.0.0",
     "mysql": "^2.5.5",
