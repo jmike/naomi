@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0-beta.5 - 2015.04.01
+
+* Spring cleanup of npm dependencies
+
 ## 0.9.0-beta.4 - 2015.04.01
 
 * Refactor postgres engine
