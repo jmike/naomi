@@ -15,7 +15,7 @@
     "npm": "1.4.x"
   },
   "dependencies": {
-    "bluebird": "^2.9.3",
+    "bluebird": "^2.9.21",
     "generic-pool": "~2.1.1",
     "lodash": "^3.6.0",
     "mysql": "^2.6.1",
