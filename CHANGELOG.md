@@ -1,8 +1,12 @@
 # Changelog
 
+## 0.9.0-beta.4 - 2015.04.01
+
+* Refactor postgres engine
+
 ## 0.9.0-beta.3 - 2015.02.27
 
-* Introduce Database#queryClient as a low-lever #query function
+* Introduce Database#queryClient as low-level #query function
 * Use #queryClient in Transaction for DRY
 * Add Transaction#rollback method
 * Update mysql@2.5.5 to address Amazon RDS SSL cert update
