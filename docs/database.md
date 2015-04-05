@@ -14,10 +14,11 @@ A detailed description of the Database API.
   * [hasTable(table, [callback])](#hasTable)
   * [getTables([callback])](#getTables)
   * [extend(table, props)](#extend)
+  * [beginTransaction([callback])](#beginTransaction)
 * [Events](#events)
-  * [connect](#connect-event)
-  * [disconnect](#disconnect-event)
-  * [ready](#ready-event)
+  * [connect](#event-connect)
+  * [disconnect](#event-disconnect)
+  * [ready](#event-ready)
 
 ## Methods
 
@@ -171,8 +172,8 @@ Indicates whether the designated table exists in database.
 
 ##### Parameters
 
-* `table` _(string)_ the name of the table to look for (required)
-* `callback` _(function)_ optional callback function with (err, bool) arguments
+* `table` _(String)_ the name of the table to look fo
+* `callback` _(Function)_ optional callback function with (err, hasTable) arguments
 
 ##### Returns
 
@@ -182,8 +183,8 @@ A promise resolving to a boolean value.
 
 ```javascript
 db.hasTable('accounts')
-  .then(function (bool) {
-    if (bool) {
+  .then(function (hasTable) {
+    if (hasTable) {
       // table exists in database
     } else {) {
       // table not found in database
@@ -200,7 +201,7 @@ Retreives table names from database.
 
 ##### Parameters
 
-* `callback` _(function)_ optional callback function with (err, tables) arguments
+* `callback` _(Function)_ optional callback function with (err, tables) arguments
 
 ##### Returns
 
@@ -222,16 +223,17 @@ db.getTables()
 
 ### <a name="extend" href="extend">#</a>extend(table, props) -> Table
 
-Returns a new Table, extended with the given properties and methods. Please note: this method will not create a new table on database - it will merely reference an existing one.
+Returns a new Table, augmented with the given properties and methods.
+Please note: this method will not create a new table on database - it will merely reference an existing one.
 
 ##### Parameters
 
-* `table` _(string)_ the name of the table to look for (required)
-* `props` _(object)_ optional properties and methods
+* `tableName` _(String)_ the name of the table in database
+* `customProperties` _(Object)_ the table's custom properties and methods
 
 ##### Returns
 
-New Table instance.
+A new Table of the designated name and properties.
 
 ##### Example
 
@@ -247,9 +249,21 @@ var accounts = db.extend('accounts', {
 });
 ```
 
+### <a name="beginTransaction" href="beginTransaction">#</a>beginTransaction([callback]) -> Transaction
+
+Begins a new transaction with the database.
+
+##### Parameters
+
+* `callback` _(Function)_ an optional callback function with (err, transaction) arguments
+
+##### Returns
+
+A new Transaction
+
 ## Events
 
-### <a name="connect-event" href="#connect-event">@</a>connect
+### <a name="event-connect" href="#event-connect">@</a>connect
 
 Event "connect" is emitted when database connection is established.
 
@@ -261,7 +275,7 @@ db.on('connect', function () {
 });
 ```
 
-### <a name="disconnect-event" href="#disconnect-event">@</a>disconnect
+### <a name="event-disconnect" href="#event-disconnect">@</a>disconnect
 
 Event "disconnect" is emitted when database is disconnected.
 
@@ -271,7 +285,7 @@ db.on('disconnect', function () {
 });
 ```
 
-### <a name="ready-event" href="#ready-event">@</a>ready
+### <a name="event-ready" href="#event-ready">@</a>ready
 
 Event "ready" is emitted when all pending tables tables are ready to use, i.e. have loaded metadata in memory.
 
