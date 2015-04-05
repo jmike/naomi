@@ -1,10 +1,10 @@
-> Naomi
+# Naomi
 
-A detailed description of the naomi module.
+A detailed description of the naomi API.
 
 ## Table of Contents
 
-* [Quick start](#wiki-quick-start)
+* [Quick start](#quick-start)
 * [Methods](#methods)
   * [create(engine, [props])](#create)
 
@@ -18,27 +18,24 @@ var naomi = require('naomi');
 
 ## Methods
 
-### <a name="create" href="#wiki-create">#</a>create(type, [properties]) -> [Database](https://github.com/jmike/naomi/wiki/Database)
+### <a name="create" href="#create">#</a>create(engine, [props]) -> [Database](https://github.com/jmike/naomi/blob/master/docs/database.md)
 
-Creates and returns a new [Database](https://github.com/jmike/naomi/wiki/Database) of the designated type.
+Creates and returns a new Database of the designated engine type and properties.
 
 ##### Parameters
 
-Name | Type | Description | Notes
-:--- | :--- | :--- | :---
-type | string | the database type, i.e. "mysql", "postgres" | required
-properties | object | connection properties | optional
+* `engine` _(String)_ the database engine, i.e. "mysql" or "postgres"
+* `props` _(Object)_ connection properties
+  * `host` _(String)_ optional hostname; defaults to "localhost"
+  * `port` _(Number)_ optional port number; defaults to 3306 for MySQL, 5432 for Postgres
+  * `user` _(String)_ optional user name to access the database; defaults to "root"
+  * `password` _(String)_ optional password to access the database; defaults to "" (i.e. empty string)
+  * `connectionLimit` _(Number)_ optional maximum number of connections to maintain in the pool; defaults to 10
+  * `ssl` _(String)_ optional ssl options; set to "Amazon RDS" to connect to an Amazon RDS server securely
 
-###### Available connection properties
+##### Returns
 
-Name | Type | Description | Notes
-:--- | :--- | :--- | :---
-host | string | hostname of the database server | default: `localhost`
-port | string | port number of the database server | default: `3306` (mysql), `5432` (postgres)
-user | string | user to access the database | default: `root`
-password | string | the password of the user |
-database | string | the name of the database |
-connectionLimit | number | number of unique connections to maintain in the pool | default: `10`
+A new [Database](https://github.com/jmike/naomi/blob/master/docs/database.md) instance.
 
 ##### Example
 
