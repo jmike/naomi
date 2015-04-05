@@ -4,12 +4,129 @@ A detailed description of the Naomi query syntax.
 
 ## Table of Contents
 
+* [$and](#and)
+* [$or](#or)
+* [$eq](#eq)
+* [$ne](#ne)
+* [$lt](#lt)
+* [$lte](#lte)
+* [$gt](#gt)
+* [$gte](#gte)
+* [$in](#in)
+* [$nin](#nin)
+* [$like](#like)
+* [$nlike](#nlike)
+* [$id](#id)
 * [$projection](#projection)
 * [$orderby](#orderby)
 * [$limit](#limit)
 * [$offset](#offset)
-* [$and](#and)
-* [$or](#or)
+
+### <a name="and" href="#and">$</a>and
+
+Logical AND.
+
+##### Accepted Values
+
+* _Array of expressions_
+
+##### Example
+
+```javascript
+var $query = {
+  $and: [
+    {firstname: 'john'}
+    {lastname: 'doe'}
+  ]
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+firstname = 'john' AND lastname = 'doe'
+```
+
+### <a name="or" href="#or">$</a>or
+
+Logical OR.
+
+##### Accepted Values
+
+* _Array of expressions_
+
+##### Example
+
+```javascript
+var $query = {
+  $or: [
+    {firstname: 'john'}
+    {firstname: 'maria'}
+  ]
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+firstname = 'john' OR firstname = 'maria'
+```
+
+### <a name="eq" href="#eq">$</a>eq
+
+Equals with.
+
+##### Accepted Values
+
+* _String, Number, Boolean, Date, Buffer_
+
+##### Example
+
+```javascript
+var $query = {
+  id: {
+    $eq: 1
+  }
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+id = 1
+```
+
+The same can be written simply as:
+
+```javascript
+var $query = {
+  id: 1 // $eq is implied
+};
+```
+
+### <a name="ne" href="#ne">$</a>ne
+
+Not equal with.
+
+##### Accepted Values
+
+* _String, Number, Boolean, Date, Buffer_
+
+##### Example
+
+```javascript
+var $query = {
+  age: {
+    $ne: 20
+  }
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+age != 20
+```
 
 ### <a name="projection" href="#projection">$</a>projection
 
