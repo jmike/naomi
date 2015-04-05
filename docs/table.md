@@ -377,6 +377,36 @@ table.set({
   });
 ```
 
+### <a name="add" href="add">#</a>add($values, [options], [callback]) -> Promise
+
+Creates the specified record(s) in table.
+
+##### Parameters
+
+* `$values` _(Object, Array.<Object>)_ the record(s) to create/update
+* `options` _(Object)_ optional query options
+* `callback` _(Function)_ optional callback function with (err) arguments
+
+##### Returns
+
+A promise resolving to the primary key of the created record(s).
+
+##### Example
+
+```javascript
+table.add({
+  firstname: 'Donnie',
+  lastname: 'Azoff',
+  age: 38
+})
+  .then(function (pk) {
+    // do something with pk
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
 ## Events
 
 ### <a name="ready-event" href="#ready-event">@</a>ready event
