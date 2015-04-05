@@ -261,6 +261,122 @@ if (table.hasAutoIncPrimaryKey()) {
 }
 ```
 
+### <a name="get" href="get">#</a>get($query, [callback]) -> Promise
+
+Retrieves the designated record(s) from the table.
+
+##### Parameters
+
+* `$query` _(Boolean, Number, String, Date, Object, Array.<Object>)_ query object
+* `callback` _(Function)_ an optional callback function with (err, records) arguments
+
+##### Returns
+
+A promise resolving to an array of records.
+
+##### Example
+
+```javascript
+table.get({
+  age: {$gt: 18},
+  $order: [{name: 1}],
+  $limit: 10
+})
+  .then(function (records) {
+    // do something with records
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
+### <a name="count" href="count">#</a>count($query, [callback]) -> Promise
+
+Counts the designated record(s) in the table.
+
+##### Parameters
+
+* `$query` _(Boolean, Number, String, Date, Object, Array.<Object>)_ query object
+* `callback` _(Function)_ an optional callback function with (err, count) arguments
+
+##### Returns
+
+A promise resolving to the count of records.
+
+##### Example
+
+```javascript
+table.count({
+  age: {$gt: 18}
+})
+  .then(function (count) {
+    // do something with count
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
+### <a name="del" href="del">#</a>del($query, [callback]) -> Promise
+
+Deletes the designated record(s) from the table.
+
+##### Parameters
+
+* `$query` _(Boolean, Number, String, Date, Object, Array.<Object>)_ query object
+* `callback` _(Function)_ an optional callback function with (err) arguments
+
+##### Returns
+
+An empty promise.
+
+##### Example
+
+```javascript
+table.del({
+  $and: [
+    {firstname: 'John'},
+    {lastname: 'Doe'}
+  ]
+})
+  .then(function () {
+    // record(s) successfully deleted
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
+### <a name="set" href="set">#</a>set($values, [options], [callback]) -> Promise
+
+Creates or updates the specified record(s) in table.
+
+##### Parameters
+
+* `$values` _(Object, Array.<Object>)_ the record(s) to create/update
+* `options` _(Object)_ optional query options
+* `callback` _(Function)_ optional callback function with (err) arguments
+
+##### Returns
+
+A promise resolving to the primary key of the created/updated record(s).
+
+##### Example
+
+```javascript
+table.set({
+  firstname: 'Donnie',
+  lastname: 'Azoff',
+  age: 38
+})
+  .then(function (pk) {
+    // do something with pk
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
 ## Events
 
 ### <a name="ready-event" href="#ready-event">@</a>ready event
