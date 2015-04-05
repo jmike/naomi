@@ -1,10 +1,14 @@
-# Database API reference
+# Database
+
+A detailed description of the Database API.
 
 ## Table of Contents
 
 * [Methods](#methods)
   * [connect([callback])](#connect)
   * [disconnect([callback])](#disconnect)
+  * [acquireClient([callback])](#acquireClient)
+  * [releaseClient(client)](#releaseClient)
   * [query(sql, [params], [options], [callback])](#query)
   * [hasTable(table, [callback])](#hasTable)
   * [getTables([callback])](#getTables)
@@ -16,13 +20,13 @@
 
 ## Methods
 
-### <a name="connect" href="connect">#</a>connect([callback]) -> promise
+### <a name="connect" href="connect">#</a>connect([callback]) -> Promise
 
-Attempts to connect to the server.
+Connects to server using the connection properties supplied at construction time.
 
 ##### Parameters
 
-* `callback` _(function)_ optional callback function with (err) arguments
+* `callback` _(Function)_ optional callback function with (err) arguments
 
 ##### Returns
 
@@ -44,14 +48,14 @@ db.connect()
   });
 ```
 
-### <a name="disconnect" href="disconnect">#</a>disconnect([callback]) -> promise
+### <a name="disconnect" href="disconnect">#</a>disconnect([callback]) -> Promise
 
-Gracefully closes any open connection to the server.
-Please note: database will become practically useless after calling this method.
+Gracefully closes any open connection(s) to the server.
+Please note: the database instance will become practically useless after calling this method.
 
 ##### Parameters
 
-* `callback` _(function)_ optional callback function with (err) arguments
+* `callback` _(Function)_ optional callback function with (err) arguments
 
 ##### Returns
 
@@ -72,6 +76,38 @@ db.disconnect()
     console.error(err);
   });
 ```
+
+### <a name="acquireClient" href="acquireClient">#</a>acquireClient([callback]) -> Promise
+
+Acquires the first available client from the internal connection pool.
+
+##### Parameters
+
+* `callback` _(Function)_ optional callback function with (err, client) arguments.
+
+##### Returns
+
+A promise resolving to client.
+
+##### Example
+
+```javascript
+db.acquireClient()
+  .then(function (client) {
+    // do something with db client
+  })
+  .catch(function (err) {
+    console.error(err);
+  });
+```
+
+### <a name="releaseClient" href="releaseClient">#</a>releaseClient([callback]) -> Promise
+
+Releases the designated client and restores it in the internal connection pool.
+
+##### Parameters
+
+* `client` _(Client)_ the db client to release
 
 ### <a name="query" href="query">#</a>query(sql, [params], [options], [callback]) -> promise
 
