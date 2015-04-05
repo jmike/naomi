@@ -6,6 +6,9 @@ A detailed description of the transaction API.
 
 * [Methods](#methods)
   * [begin([callback])](#begin)
+  * [commit([callback])](#commit)
+  * [rollback([callback])](#rollback)
+  * [query(sql, [params], [options], [callback])](#query)
 
 ## Methods
 
