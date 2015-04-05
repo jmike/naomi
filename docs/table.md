@@ -1,4 +1,6 @@
-# Table API reference
+# Table
+
+A detailed description of the Table API.
 
 ## Table of Contents
 
@@ -23,25 +25,25 @@
 
 ## Methods
 
-### <a name="getColumns" href="getColumns">#</a>getColumns([callback]) -> promise
+### <a name="getColumns" href="getColumns">#</a>getColumns([callback]) -> Promise
 
 Retrieves column metadata from database.
 
 ##### Parameters
 
-* `callback` _(function)_ optional callback function with (err, columns) arguments
+* `callback` _(Function)_ optional callback function with (err, columns) arguments
 
 ##### Returns
 
 A promise resolving to array of objects, having the following properties.
 
-* `name` _(string)_ the column name
-* `type` _(string)_ the column datatype, e.g. "VARCHAR"
-* `isNullable` _(boolean)_ indicates whether the column accepts `null` values
-* `isAutoInc` _(boolean)_ indicates whether the column is automatically incremented
-* `default` _(boolean, string, number, null)_ the column default value
-* `collation` _(string)_ the column collation
-* `comment` _(string, null)_ some commentary about the column
+* `name` _(String)_ the column name
+* `type` _(String)_ the column datatype, e.g. "VARCHAR"
+* `isNullable` _(Boolean)_ indicates whether the column accepts `null` values
+* `isAutoInc` _(Boolean)_ indicates whether the column is automatically incremented
+* `default` _(Boolean, String, Number, null)_ the column default value
+* `collation` _(String)_ the column collation
+* `comment` _(String, null)_ some commentary about the column
 
 ##### Example
 
@@ -58,13 +60,13 @@ table.getColumns()
   });
 ```
 
-### <a name="getPrimaryKey" href="getPrimaryKey">#</a>getPrimaryKey([callback]) -> promise
+### <a name="getPrimaryKey" href="getPrimaryKey">#</a>getPrimaryKey([callback]) -> Promise
 
 Retrieves primary key metadata from database. Please note: primary keys can be composite, i.e. consisting of more-than-one columns.
 
 ##### Parameters
 
-* `callback` _(function)_ optional callback function with (err, primaryKey) arguments
+* `callback` _(Function)_ optional callback function with (err, primaryKey) arguments
 
 ##### Returns
 
@@ -84,7 +86,7 @@ table.getPrimaryKey()
   });
 ```
 
-### <a name="getUniqueKeys" href="getUniqueKeys">#</a>getUniqueKeys([callback]) -> promise
+### <a name="getUniqueKeys" href="getUniqueKeys">#</a>getUniqueKeys([callback]) -> Promise
 
 Retrieves unique key metadata from database. Please note: a table may have multiple, as well as composite, unique keys.
 
@@ -113,20 +115,20 @@ table.getUniqueKeys()
   });
 ```
 
-### <a name="getIndexKeys" href="getIndexKeys">#</a>getIndexKeys([callback]) -> promise
+### <a name="getIndexKeys" href="getIndexKeys">#</a>getIndexKeys([callback]) -> Promise
 
 Retrieves index key metadata from database. Please note: A table may have multiple, as well as composite, index keys.
 
 ##### Parameters
 
-* `callback` _(function)_ optional callback function with (err, indexKeys) arguments
+* `callback` _(Function)_ optional callback function with (err, indexKeys) arguments
 
 ##### Returns
 
 A promise resolving to an array of objects, having the following properties.
 
-* `name` _(string)_ the name of the index key
-* `columns` _(Array.<string>)_ the column names of the index key
+* `name` _(String)_ the name of the index key
+* `columns` _(Array.<String>)_ the column names of the index key
 
 ##### Example
 
@@ -142,46 +144,14 @@ table.getIndexKeys()
   });
 ```
 
-### <a name="getForeignKeys" href="getForeignKeys">#</a>getForeignKeys([callback]) -> promise
+### <a name="hasColumn" href="hasColumn">#</a>hasColumn(column) -> Boolean
 
-Retrieves foreign key metadata from database. Please note: a table may have multiple, as well as composite, foreign keys.
-
-##### Parameters
-
-* `callback` _(function)_ optional callback function with (err, foreignKeys) arguments
-
-##### Returns
-
-A promise resolving to an array of objects, having the following properties.
-
-* `name` _(string)_ the foreign-key name
-* `references` _(Array.<object>)_ foreign-key references
-  * `table1` _(string)_ table name #1
-  * `column1` _(string)_ column name #1
-  * `table2` _(string)_ table name #2
-  * `column2` _(string)_ column name #2
-
-##### Example
-
-```javascript
-table.getForeignKeys()
-  .then(function (foreignKeys) {
-    foreignKeys.forEach(function (key) {
-      console.log('Foreign key "' + key.name + '" contains ' + key.references.length + ' reference(s)');
-    });
-  })
-  .catch(function (err) {
-    console.error(err);
-  });
-```
-
-### <a name="hasColumn" href="hasColumn">#</a>hasColumn(column) -> boolean
-
-Indicates whether the specified column exists in table. Please note: this method will always return false until database is ready.
+Indicates whether the specified column exists in table.
+Please note: this method will always return false until database is ready.
 
 ##### Parameters
 
-* `columns` _(string)_ the name of the column (required)
+* `column` _(string)_ the name of the column (required)
 
 ##### Returns
 
@@ -195,13 +165,13 @@ if (table.hasColumn('firstname')) {
 }
 ```
 
-### <a name="isPrimaryKey" href="isPrimaryKey">#</a>isPrimaryKey(columns*) -> boolean
+### <a name="isPrimaryKey" href="isPrimaryKey">#</a>isPrimaryKey(columns*) -> Boolean
 
 Indicates whether the designated column(s) represent a primary key. Please note: primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function. This method will always return false until database is ready.
 
 ##### Parameters
 
-* `columns` _(...string)_ the name of the column(s)
+* `columns` _(...String)_ the name of the column(s)
 
 ##### Returns
 
@@ -215,13 +185,13 @@ if (table.isPrimaryKey('firstname', 'lastname')) {
 }
 ```
 
-### <a name="isUniqueKey" href="isUniqueKey">#</a>isUniqueKey(columns*) -> boolean
+### <a name="isUniqueKey" href="isUniqueKey">#</a>isUniqueKey(columns*) -> Boolean
 
 Indicates whether the designated column(s) represent a unique key. Please note: unique keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function. This method will always return false until database is ready.
 
 ##### Parameters
 
-* `columns` _(...string)_ the name of the column(s)
+* `columns` _(...String)_ the name of the column(s)
 
 ##### Returns
 
@@ -235,13 +205,13 @@ if (table.isUniqueKey('firstname', 'lastname')) {
 }
 ```
 
-### <a name="isIndexKey" href="isIndexKey">#</a>isIndexKey(columns*) -> boolean
+### <a name="isIndexKey" href="isIndexKey">#</a>isIndexKey(columns*) -> Boolean
 
 Indicates whether the designated column(s) represent an index key. Please note: index keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params. This method will always return false until database is ready.
 
 ##### Parameters
 
-* `columns` _(...string)_ the name of the column(s)
+* `columns` _(...String)_ the name of the column(s)
 
 ##### Returns
 
@@ -255,13 +225,13 @@ if (table.isIndexKey('firstname', 'lastname')) {
 }
 ```
 
-### <a name="isAutoInc" href="isAutoInc">#</a>isAutoInc(column) -> boolean
+### <a name="isAutoInc" href="isAutoInc">#</a>isAutoInc(column) -> Boolean
 
 Indicates whether the specified column is automatically incremented. Please note: this method will always return false until database is ready.
 
 ##### Parameters
 
-* `column` _(string)_ the name of the column
+* `column` _(String)_ the name of the column
 
 ##### Returns
 
@@ -277,7 +247,7 @@ if (table.isAutoInc('id')) {
 
 ## Events
 
-### <a name="ready-event" href="#ready-event">@</a>ready
+### <a name="ready-event" href="#ready-event">@</a>ready event
 
 Event "ready" is emitted when table is ready to use, i.e. has loaded metadata in memory.
 
