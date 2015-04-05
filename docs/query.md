@@ -224,6 +224,30 @@ The above is the rough equivalent of:
 age >= 30
 ```
 
+### <a name="in" href="#in">$</a>in
+
+"In" expression.
+
+##### Accepted Values
+
+* _Array of String, Number, Boolean, Date, Buffer_
+
+##### Example
+
+```javascript
+var $query = {
+  age: {
+    $in: [18, 30]
+  }
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+age IN (18, 30)
+```
+
 ### <a name="projection" href="#projection">$</a>projection
 
 Sets the columns of records in a dataset.
