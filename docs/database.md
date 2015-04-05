@@ -16,9 +16,9 @@ A detailed description of the Database API.
   * [extend(table, props)](#extend)
   * [beginTransaction([callback])](#beginTransaction)
 * [Events](#events)
-  * [connect](#event-connect)
-  * [disconnect](#event-disconnect)
-  * [ready](#event-ready)
+  * [connect](#connect-event)
+  * [disconnect](#disconnect-event)
+  * [ready](#ready-event)
 
 ## Methods
 
@@ -263,7 +263,7 @@ A new Transaction
 
 ## Events
 
-### <a name="event-connect" href="#event-connect">@</a>connect
+### <a name="connect-event" href="#connect-event">@</a>connect event
 
 Event "connect" is emitted when database connection is established.
 
@@ -275,7 +275,7 @@ db.on('connect', function () {
 });
 ```
 
-### <a name="event-disconnect" href="#event-disconnect">@</a>disconnect
+### <a name="disconnect-event" href="#disconnect-event">@</a>disconnect event
 
 Event "disconnect" is emitted when database is disconnected.
 
@@ -285,7 +285,7 @@ db.on('disconnect', function () {
 });
 ```
 
-### <a name="event-ready" href="#event-ready">@</a>ready
+### <a name="ready-event" href="#ready-event">@</a>ready event
 
 Event "ready" is emitted when all pending tables tables are ready to use, i.e. have loaded metadata in memory.
 
