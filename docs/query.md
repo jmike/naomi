@@ -24,7 +24,7 @@ A detailed description of the Naomi query syntax.
 
 ### <a name="and" href="#and">$</a>and
 
-Logical AND.
+Logical AND expression.
 
 ##### Accepted Values
 
@@ -49,7 +49,7 @@ firstname = 'john' AND lastname = 'doe'
 
 ### <a name="or" href="#or">$</a>or
 
-Logical OR.
+Logical OR expression.
 
 ##### Accepted Values
 
@@ -74,7 +74,7 @@ firstname = 'john' OR firstname = 'maria'
 
 ### <a name="eq" href="#eq">$</a>eq
 
-Equals with.
+Equals with expression.
 
 ##### Accepted Values
 
@@ -106,7 +106,7 @@ var $query = {
 
 ### <a name="ne" href="#ne">$</a>ne
 
-Not equal with.
+Not equal with expression.
 
 ##### Accepted Values
 
@@ -126,6 +126,102 @@ The above is the rough equivalent of:
 
 ```sql
 age != 20
+```
+
+### <a name="lt" href="#lt">$</a>lt
+
+"Less than" expression.
+
+##### Accepted Values
+
+* _String, Number, Boolean, Date, Buffer_
+
+##### Example
+
+```javascript
+var $query = {
+  age: {
+    $lt: 30
+  }
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+age < 30
+```
+
+### <a name="lte" href="#lte">$</a>lte
+
+"Less than or equal" expression.
+
+##### Accepted Values
+
+* _String, Number, Boolean, Date, Buffer_
+
+##### Example
+
+```javascript
+var $query = {
+  age: {
+    $lte: 30
+  }
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+age <= 30
+```
+
+### <a name="gt" href="#gt">$</a>gt
+
+"Greater than" expression.
+
+##### Accepted Values
+
+* _String, Number, Boolean, Date, Buffer_
+
+##### Example
+
+```javascript
+var $query = {
+  age: {
+    $gt: 18
+  }
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+age > 18
+```
+
+### <a name="gte" href="#gte">$</a>gte
+
+"Greater than or equal" expression.
+
+##### Accepted Values
+
+* _String, Number, Boolean, Date, Buffer_
+
+##### Example
+
+```javascript
+var $query = {
+  age: {
+    $gte: 18
+  }
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+age >= 30
 ```
 
 ### <a name="projection" href="#projection">$</a>projection
