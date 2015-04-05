@@ -9,7 +9,6 @@ A detailed description of the Table API.
   * [getPrimaryKey([callback])](#getPrimaryKey)
   * [getUniqueKeys([callback])](#getUniqueKeys)
   * [getIndexKeys([callback])](#getIndexKeys)
-  * [getForeignKeys([callback])](#getForeignKeys)
   * [hasColumn(column)](#hasColumn)
   * [isPrimaryKey(columns*)](#isPrimaryKey)
   * [isUniqueKey(columns*)](#isUniqueKey)
