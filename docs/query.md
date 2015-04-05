@@ -8,6 +8,8 @@ A detailed description of the Naomi query syntax.
 * [$orderby](#orderby)
 * [$limit](#limit)
 * [$offset](#offset)
+* [$and](#and)
+* [$or](#or)
 
 ### <a name="projection" href="#projection">$</a>projection
 
