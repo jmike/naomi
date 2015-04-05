@@ -9,6 +9,7 @@ A detailed description of the Database API.
   * [disconnect([callback])](#disconnect)
   * [acquireClient([callback])](#acquireClient)
   * [releaseClient(client)](#releaseClient)
+  * [queryClient(client, sql, [params], [options], [callback])](#queryClient)
   * [query(sql, [params], [options], [callback])](#query)
   * [hasTable(table, [callback])](#hasTable)
   * [getTables([callback])](#getTables)
@@ -109,16 +110,35 @@ Releases the designated client and restores it in the internal connection pool.
 
 * `client` _(Client)_ the db client to release
 
+### <a name="queryClient" href="queryClient">#</a>queryClient(client, sql, [params], [options], [callback]) -> Promise
+
+Runs the given parameterized SQL statement against the supplied db client.
+Please note: This is a low-level function of the #query method.
+
+##### Parameters
+
+* `client` _(Client)_ the db client
+* `sql` _(String, Object)_ a parameterized SQL statement
+* `params` _(Array)_ an optional array of parameter values
+* `options` _(Object)_ optional query options
+  * `nestTables` (Boolean, String) applies only to MySQL database (see [Joins with overlapping column names](https://github.com/felixge/node-mysql/#joins-with-overlapping-column-names)) 
+* `callback` _(Function)_ an optional callback function with (err, records) arguments
+
+##### Returns
+
+A promise resolving to an array of records for SELECT statements and an object of metadata for DML statements.
+
 ### <a name="query" href="query">#</a>query(sql, [params], [options], [callback]) -> promise
 
 Executes the given parameterized SQL statement.
 
 ##### Parameters
 
-* `sql` _(string)_ a parameterized SQL statement (required)
+* `sql` _(String, Object)_ a parameterized SQL statement
 * `params` _(Array)_ an optional array of parameter values
-* `options` _(object)_ optional query options
-* `callback` _(function)_ optional callback function with (err, records) arguments
+* `options` _(Object)_ optional query options
+  * `nestTables` (Boolean, String) applies only to MySQL database (see [Joins with overlapping column names](https://github.com/felixge/node-mysql/#joins-with-overlapping-column-names)) 
+* `callback` _(Function)_ an optional callback function with (err, records) arguments
 
 ##### Returns
 
