@@ -14,6 +14,7 @@ A detailed description of the Table API.
   * [isUniqueKey(columns*)](#isUniqueKey)
   * [isIndexKey(columns*)](#isIndexKey)
   * [isAutoInc(column)](#isAutoInc)
+  * [hasAutoIncPrimaryKey()](#hasAutoIncPrimaryKey)
   * [get(selector, [options], [callback])](#get)
   * [count(selector, [options], [callback])](#count)
   * [del(selector, [options], [callback])](#del)
@@ -240,6 +241,22 @@ Indicates whether the specified column is automatically incremented. Please note
 
 ```javascript
 if (table.isAutoInc('id')) {
+  // do something
+}
+```
+
+### <a name="hasAutoIncPrimaryKey" href="hasAutoIncPrimaryKey">#</a>hasAutoIncPrimaryKey() -> Boolean
+
+Indicates whether the table has a simple automatically incremented primary key. This method will always return false until database is ready.
+
+##### Returns
+
+`true` if table has simple auto incremented primary key, `false` if not.
+
+##### Example
+
+```javascript
+if (table.hasAutoIncPrimaryKey()) {
   // do something
 }
 ```
