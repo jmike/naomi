@@ -9,6 +9,42 @@ A detailed description of the Naomi query syntax.
 * [$limit](#limit)
 * [$offset](#offset)
 
+### <a name="projection" href="#projection">$</a>projection
+
+Sets the columns of records in a dataset.
+
+##### Accepted Values
+
+* Plain object
+
+##### Example
+
+```javascript
+var $query = {
+  $projection: {
+    firstname: 1,
+    lastname: 1
+  }
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+SELECT firstname, lastname
+```
+
+You may also exclude column(s) and get only the columns that are left is left.
+
+```javascript
+var $query = {
+  $projection: {
+    id: -1,
+    age: -1
+  }
+};
+```
+
 ### <a name="orderby" href="#orderby">$</a>orderby
 
 Orders the records in a dataset.
