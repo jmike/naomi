@@ -294,10 +294,6 @@ While this approach may seem intriguing to new developers, it is in fact the nat
 
 Naomi takes care of the SQL code by automating repetitive data queries. And if you need some custom logic you can always write it yourself.
 
-## Contributors
-
-Author: [Dimitrios C. Michalakos](https://github.com/jmike)
-
 ## Acknowledgements
 
 This project would not be without the extraordinary work of:
@@ -305,6 +301,20 @@ This project would not be without the extraordinary work of:
 * Felix Geisendörfer (https://github.com/felixge/node-mysql)
 * Brian C (https://github.com/brianc/node-postgres)
 * Petka Antonov (https://github.com/petkaantonov/bluebird)
+
+## Contribute
+
+Source code contributions are most welcome. The following rules apply:
+
+1. JavaScript source code needs to follow the [Airbnb Style Guide](https://github.com/airbnb/javascript);
+2. Functions need to be well documented in [API docs](https://github.com/jmike/naomi/blob/master/docs);
+3. Unit tests are necessary.
+
+## Support
+
+If you are having issues with this library, please let us know.
+
+* Issue Tracker: [github.com/jmike/naomi/issues](https://github.com/jmike/naomi/issues)
 
 ## License
 
