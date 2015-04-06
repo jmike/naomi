@@ -24,11 +24,11 @@ A detailed description of the Naomi query syntax.
 
 ### <a name="and" href="#and">$</a>and
 
-Logical AND expression.
+"Logical and" expression.
 
 ##### Accepted Values
 
-* _Array of expressions_
+_Array_
 
 ##### Example
 
@@ -49,11 +49,11 @@ firstname = 'john' AND lastname = 'doe'
 
 ### <a name="or" href="#or">$</a>or
 
-Logical OR expression.
+"Logical or" expression.
 
 ##### Accepted Values
 
-* _Array of expressions_
+_Array_
 
 ##### Example
 
@@ -74,11 +74,11 @@ firstname = 'john' OR firstname = 'maria'
 
 ### <a name="eq" href="#eq">$</a>eq
 
-Equals with expression.
+"Equals with" expression.
 
 ##### Accepted Values
 
-* _String, Number, Boolean, Date, Buffer_
+_String, Number, Boolean, Date, Buffer_
 
 ##### Example
 
@@ -106,11 +106,11 @@ var $query = {
 
 ### <a name="ne" href="#ne">$</a>ne
 
-Not equal with expression.
+"Not equal with" expression.
 
 ##### Accepted Values
 
-* _String, Number, Boolean, Date, Buffer_
+_String, Number, Boolean, Date, Buffer_
 
 ##### Example
 
@@ -134,7 +134,7 @@ age != 20
 
 ##### Accepted Values
 
-* _String, Number, Boolean, Date, Buffer_
+_String, Number, Boolean, Date, Buffer_
 
 ##### Example
 
@@ -158,7 +158,7 @@ age < 30
 
 ##### Accepted Values
 
-* _String, Number, Boolean, Date, Buffer_
+_String, Number, Boolean, Date, Buffer_
 
 ##### Example
 
@@ -182,7 +182,7 @@ age <= 30
 
 ##### Accepted Values
 
-* _String, Number, Boolean, Date, Buffer_
+_String, Number, Boolean, Date, Buffer_
 
 ##### Example
 
@@ -206,7 +206,7 @@ age > 18
 
 ##### Accepted Values
 
-* _String, Number, Boolean, Date, Buffer_
+_String, Number, Boolean, Date, Buffer_
 
 ##### Example
 
@@ -230,7 +230,7 @@ age >= 30
 
 ##### Accepted Values
 
-* _Array of String, Number, Boolean, Date, Buffer_
+_Array of String, Number, Boolean, Date, Buffer_
 
 ##### Example
 
@@ -248,13 +248,105 @@ The above is the rough equivalent of:
 age IN (18, 30)
 ```
 
+### <a name="nin" href="#nin">$</a>nin
+
+"Not in" expression.
+
+##### Accepted Values
+
+_Array of String, Number, Boolean, Date, Buffer_
+
+##### Example
+
+```javascript
+var $query = {
+  age: {
+    $nin: [19, 31]
+  }
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+age NOT IN (19, 31)
+```
+
+### <a name="like" href="#like">$</a>like
+
+"Like" expression.
+
+##### Accepted Values
+
+_String_
+
+##### Example
+
+```javascript
+var $query = {
+  firstname: {
+    $like: 'Joh%'
+  }
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+firstname LIKE 'Joh%'
+```
+
+### <a name="nlike" href="#nlike">$</a>nlike
+
+"Not like" expression.
+
+##### Accepted Values
+
+_String_
+
+##### Example
+
+```javascript
+var $query = {
+  firstname: {
+    $nlike: '%ar'
+  }
+};
+```
+
+The above is the rough equivalent of:
+
+```sql
+firstname NOT LIKE '%ar'
+```
+
+### <a name="id" href="#id">$</a>id
+
+Special ID clause; $id will be replaced with the primary key column.
+
+##### Example
+
+```javascript
+var $query = {
+  $id: {
+    $ne: 15
+  }
+};
+```
+
+Given a table with a simple PK: "key", the above is the rough equivalent of:
+
+```sql
+key != 15
+```
+
 ### <a name="projection" href="#projection">$</a>projection
 
 Sets the columns of records in a dataset.
 
 ##### Accepted Values
 
-* Plain object
+_Plain object_
 
 ##### Example
 
@@ -290,7 +382,7 @@ Orders the records in a dataset.
 
 ##### Accepted Values
 
-* Array of objects or strings
+_Array of Objects or Strings_
 
 ##### Example
 
@@ -316,7 +408,7 @@ Limits the number of records in a dataset.
 
 ##### Accepted Values
 
-* Positive integer, i.e. > 0
+_Positive integer, i.e. > 0_
 
 ##### Example
 
@@ -338,7 +430,7 @@ Skips the designated number of records.
 
 ##### Accepted Values
 
-* Non-negative integer, i.e. >= 0
+_Non-negative integer, i.e. >= 0_
 
 ##### Example
 
