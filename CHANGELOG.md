@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.0 - 2015.04.06
+
+* Rewrite docs and README.md
+
 ## 0.9.0-beta.5 - 2015.04.01
 
 * Spring cleanup of npm dependencies
