@@ -30,15 +30,14 @@ $ npm install naomi
 
 #### Connect to database
 
-Use [naomi#create()](https://github.com/jmike/naomi/wiki/naomi#create) to construct a new [Database](https://github.com/jmike/naomi/wiki/Database) instance. For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+Use [naomi#create()](https://github.com/jmike/naomi/blob/master/docs/naomi.md#create) to create a new [Database](https://github.com/jmike/naomi/blob/master/docs/database.md). For further info refer to the [docs](https://github.com/jmike/naomi/blob/master/docs).
 
 MySQL example:
 
 ```javascript
-var naomi = require('naomi'),
-  db;
+var naomi = require('naomi');
 
-db = naomi.create('mysql', {
+var db = naomi.create('mysql', {
   host: 'host',
   port: 3306,
   user: 'user',
@@ -50,10 +49,9 @@ db = naomi.create('mysql', {
 Postgres example:
 
 ```javascript
-var naomi = require('naomi'),
-  db;
+var naomi = require('naomi');
 
-db = naomi.create('postgres', {
+var db = naomi.create('postgres', {
   host: 'host',
   port: 5432,
   user: 'user',
@@ -64,13 +62,13 @@ db = naomi.create('postgres', {
 
 #### Run custom queries
 
-Use [Database#query()](https://github.com/jmike/naomi/wiki/Database#query) to run a _parameterised_ SQL query. For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+Use [Database#query()](https://github.com/jmike/naomi/blob/master/docs/database.md#query) to run a _parameterised_ SQL query.
 
 MySQL example:
 
 ```javascript
-var sql = 'SELECT `firstname`, `lastname` FROM `employees` WHERE `id` = ?;',
-  params = [1];
+var sql = 'SELECT `firstname`, `lastname` FROM `employees` WHERE `id` = ?;';
+var params = [1];
 
 db.query(sql, params)
   .then(function (records) {
@@ -88,8 +86,8 @@ db.query(sql, params)
 Postgres example:
 
 ```javascript
-var sql = 'SELECT "firstname", "lastname" FROM "employees" WHERE "id" = ?;',
-  params = [1];
+var sql = 'SELECT "firstname", "lastname" FROM "employees" WHERE "id" = ?;';
+var params = [1];
 
 db.query(sql, params)
   .then(function (records) {
@@ -106,9 +104,9 @@ db.query(sql, params)
 
 #### Map table to object
 
-You wouldn't normally use an ORM to run custom queries. Naomi provides the [Table](https://github.com/jmike/naomi/wiki/Table) class to map tables to objects and run repretitive CRUD tasks.
+You wouldn't normally use an ORM to run custom queries. Naomi provides a [Table](https://github.com/jmike/naomi/blob/master/docs/table.md) interface to map tables to objects and run repretitive CRUD tasks.
 
-Use [Database#extend()](https://github.com/jmike/naomi/wiki/Database#extend) to create a new Table instance.
+Use [Database#extend()](https://github.com/jmike/naomi/blob/master/docs/database.md#extend) to create a new Table instance.
 
 ```javascript
 var employees = db.extend('employees');
@@ -116,15 +114,15 @@ var employees = db.extend('employees');
 
 The Table class exposes the following methods:
 
-1. Table#add() - create records in table;
-2. Table#set() - create or update records in table;
-3. Table#get() - read records from table;
-4. Table#del() - delete records in table;
-5. Table#count() - count records in table;
+1. [add()](https://github.com/jmike/naomi/blob/master/docs/table.md#add) - creates records in table;
+2. [set()](https://github.com/jmike/naomi/blob/master/docs/table.md#set) - creates or updates records in table;
+3. [get()](https://github.com/jmike/naomi/blob/master/docs/table.md#get) - reads records from table;
+4. [del()](https://github.com/jmike/naomi/blob/master/docs/table.md#del) - deletes records in table;
+5. [count()](https://github.com/jmike/naomi/blob/master/docs/table.md#count) - counts records in table.
 
-#### Map table with custom properties
+#### Extend table with custom properties
 
-In case a Table's methods are not enough, you can write your own custom methods.
+In case the above methods are not enough, you can write your own custom methods.
 
 Postgres example:
 
@@ -161,7 +159,7 @@ The above will result to the following SQL statement, run under the hood:
 INSERT INTO `employees` SET `firstName` = 'Thomas', `lastName` = 'Anderson', `age` = 30;
 ```
 
-For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+For further info refer to the [docs](https://github.com/jmike/naomi/blob/master/docs/table.md#add).
 
 #### Create / Update records in table
 
@@ -196,12 +194,12 @@ employees.set({
 });
 ```
 
-For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+For further info refer to the [docs](https://github.com/jmike/naomi/blob/master/docs/table.md#set).
 
 #### Retrieve records from table
 
 ```javascript
-employees.get({age: 30})
+employees.get({age: {$lt: 30}})
   .then(function (records) {
     // do something with records
   })
@@ -213,7 +211,7 @@ employees.get({age: 30})
 This will result to the following SQL, run under the hood:
 
 ```sql
-SELECT * FROM `employees` WHERE `age` = 30;
+SELECT * FROM `employees` WHERE `age` < 30;
 ```
 
 In case of tables with simple primary keys, i.e. primary keys composed by a single column, you may also do:
@@ -234,7 +232,7 @@ This will result to the following SQL, run under the hood:
 SELECT * FROM `employees` WHERE `id` = 1;
 ```
 
-Table#get() can get fairly complicated, e.g. using complex selectors, order, limit, offset, etc. For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+Table#get() can get fairly complicated, e.g. using complex selectors, order, limit, offset, etc. For further info refer to the  [query docs](https://github.com/jmike/naomi/blob/master/docs/query.md).
 
 #### Delete records from table
 
@@ -251,7 +249,7 @@ This will result to the following SQL, run under the hood:
 DELETE FROM `employees` WHERE id = 1;
 ```
 
-For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+For further info refer to the [docs](https://github.com/jmike/naomi/blob/master/docs/table.md#delete).
 
 #### Count records in table
 
@@ -268,7 +266,7 @@ This will result to the following SQL, run under the hood:
 SELECT COUNT(*) AS 'count' FROM `employees`;
 ```
 
-For further info refer to the [API reference](https://github.com/jmike/naomi/wiki/API-reference).
+For further info refer to the [docs](https://github.com/jmike/naomi/blob/master/docs/table.md#count).
 
 ## Philosophy
 
@@ -282,7 +280,7 @@ Databases, besides data, contain metadata - stuff like:
 These metadata can be extracted from the database and are sufficient for generating basic validation rules and application structure. Yet most ORM tools tend to ignore database metadata and replicate that information in the application layer. This results to:
 
 * **Unnecessary complexity**, i.e. you trade SQL with an ORM-specific API that is equally complex;
-* **Synchronization issues**, i.e. sky falls on your head when you change the db schema;
+* **Synchronization issues**, i.e. the sky falls on your head when you change the db schema;
 * **Reduced expressiveness**, i.e. no ORM can fully implement the expressiveness of SQL.
 
 ##### How is Naomi different?
@@ -292,9 +290,9 @@ Naomi works the other way around:
 1. You first create the database using a tool of your choice, e.g. [MySQL Workbench](http://www.mysql.com/products/workbench/), [pgAdmin](http://www.pgadmin.org/) - a tool you already know;
 2. You call a few simple methods to extract meta-information to the application layer.
 
-While this approach may seem intriguing to new developers, it is in fact the natural way of thinking for experienced engineers. Creating a database requires creativity and imagination that machines lack.
+While this approach may seem intriguing to new developers, it is in fact the natural way of thinking for experienced engineers. Creating a database requires creativity and imagination that machines lack. It is a task made for humans.
 
-Naomi takes care of SQL code by automating repetitive data queries. And if you need some custom logic you can always write it yourself.
+Naomi takes care of the SQL code by automating repetitive data queries. And if you need some custom logic you can always write it yourself.
 
 ## Contributors
 
