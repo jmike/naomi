@@ -21,16 +21,16 @@
     "type-of": "^2.0.1"
   },
   "devDependencies": {
-    "chai": "^2.2.0",
-    "dotenv": "^1.1.0",
-    "mocha": "^2.2.1",
     "babel": "^5.8.23",
-    "rimraf": "^2.4.3",
+    "chai": "^3.2.0",
+    "dotenv": "^1.1.0",
     "gulp": "^3.9.0",
     "gulp-babel": "^5.2.1",
     "gulp-load-plugins": "^0.10.0",
     "gulp-plumber": "^1.0.1",
-    "mkdirp": "^0.5.1"
+    "mkdirp": "^0.5.1",
+    "mocha": "^2.2.1",
+    "rimraf": "^2.4.3"
   },
   "author": {
     "name": "Dimitrios C. Michalakos",
