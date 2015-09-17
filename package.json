@@ -16,7 +16,7 @@
     "bluebird": "^2.10.0",
     "dotenv": "^1.2.0",
     "generic-pool": "^2.2.0",
-    "lodash": "^3.6.0",
+    "lodash": "^3.10.1",
     "mysql": "^2.6.1",
     "pg.js": "^4.1.1",
     "type-of": "^2.0.1"
