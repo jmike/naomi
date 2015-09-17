@@ -1,8 +1,12 @@
 .travis.yml
 .env
-.jshintrc
+.eslintrc
 .gitignore
 .idea
 assets/
 test/
 docs/
+src/
+CHANGELOG.md
+gulpfile.js
+
