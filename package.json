@@ -13,7 +13,7 @@
     "test": "node test/index.js"
   },
   "dependencies": {
-    "bluebird": "^2.9.21",
+    "bluebird": "^2.10.0",
     "generic-pool": "^2.2.0",
     "lodash": "^3.6.0",
     "mysql": "^2.6.1",
