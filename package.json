@@ -17,7 +17,7 @@
     "generic-pool": "^2.2.0",
     "lodash": "^3.10.1",
     "mysql": "^2.9.0",
-    "pg.js": "^4.1.1",
+    "pg": "^4.4.1",
     "type-of": "^2.0.1"
   },
   "devDependencies": {
