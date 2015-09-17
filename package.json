@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "bluebird": "^2.10.0",
+    "customerror": "^1.0.1",
     "generic-pool": "^2.2.0",
     "lodash": "^3.10.1",
     "mysql": "^2.9.0",
