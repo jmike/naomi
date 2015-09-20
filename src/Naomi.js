@@ -2,6 +2,7 @@ import _ from 'lodash';
 import type from 'type-of';
 import MySQLDatabase from './mysql/Database';
 import PgDatabase from './postgres/Database';
+import CustomError from 'customerror';
 
 const reMySQL = /mysql/i;
 const rePg = /postgres|pg/i;
