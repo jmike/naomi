@@ -98,10 +98,46 @@ describe('Queryparser', function() {
     ]);
   });
 
-  it('parses object with $eq operator', function() {
-    const ast = Expr.parse({a: {$eq: 1}});
+  it('parses object with $ne operator', function() {
+    const ast = Expr.parse({a: {$ne: 1}});
     assert.deepEqual(ast, [
-      'EQ',
+      'NE',
+      ['KEY', 'a'],
+      ['VALUE', 1]
+    ]);
+  });
+
+  it('parses object with $lt operator', function() {
+    const ast = Expr.parse({a: {$lt: 1}});
+    assert.deepEqual(ast, [
+      'LT',
+      ['KEY', 'a'],
+      ['VALUE', 1]
+    ]);
+  });
+
+  it('parses object with $lte operator', function() {
+    const ast = Expr.parse({a: {$lte: 1}});
+    assert.deepEqual(ast, [
+      'LTE',
+      ['KEY', 'a'],
+      ['VALUE', 1]
+    ]);
+  });
+
+  it('parses object with $gt operator', function() {
+    const ast = Expr.parse({a: {$gt: 1}});
+    assert.deepEqual(ast, [
+      'GT',
+      ['KEY', 'a'],
+      ['VALUE', 1]
+    ]);
+  });
+
+  it('parses object with $gte operator', function() {
+    const ast = Expr.parse({a: {$gte: 1}});
+    assert.deepEqual(ast, [
+      'GTE',
       ['KEY', 'a'],
       ['VALUE', 1]
     ]);
@@ -113,6 +149,50 @@ describe('Queryparser', function() {
       'IN',
       ['KEY', 'a'],
       ['VALUES', 1, 2, 3]
+    ]);
+  });
+
+  it('parses object with $nin operator', function() {
+    const ast = Expr.parse({a: {$nin: [1, 2, 3]}});
+    assert.deepEqual(ast, [
+      'NIN',
+      ['KEY', 'a'],
+      ['VALUES', 1, 2, 3]
+    ]);
+  });
+
+  it('parses object with $like operator', function() {
+    const ast = Expr.parse({a: {$like: 's%'}});
+    assert.deepEqual(ast, [
+      'LIKE',
+      ['KEY', 'a'],
+      ['VALUE', 's%']
+    ]);
+  });
+
+  it('parses object with $nlike operator', function() {
+    const ast = Expr.parse({a: {$nlike: 's%'}});
+    assert.deepEqual(ast, [
+      'NLIKE',
+      ['KEY', 'a'],
+      ['VALUE', 's%']
+    ]);
+  });
+
+  it('parses object with $and operator', function() {
+    const ast = Expr.parse({$and: [{a: 1}, {b: 2}]});
+    assert.deepEqual(ast, [
+      'AND',
+      [
+        'EQ',
+        ['KEY', 'a'],
+        ['VALUE', 1]
+      ],
+      [
+        'EQ',
+        ['KEY', 'b'],
+        ['VALUE', 2]
+      ]
     ]);
   });
 
