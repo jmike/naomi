@@ -17,8 +17,6 @@
     "customerror": "^1.0.1",
     "generic-pool": "^2.2.0",
     "lodash": "^3.10.1",
-    "mysql": "^2.9.0",
-    "pg": "^4.4.1",
     "type-of": "^2.0.1"
   },
   "devDependencies": {
@@ -32,7 +30,7 @@
     "gulp-babel": "^6.1.0",
     "gulp-plumber": "^1.0.1",
     "gulp-rimraf": "^0.2.0",
-    "mocha": "^2.3.2",
+    "mocha": "^2.3.4",
     "run-sequence": "^1.1.4"
   },
   "author": {
