@@ -35,6 +35,7 @@ class Naomi {
     }
 
     this._engines.push({
+      id: id,
       re: new RegExp(id, 'i'),
       Database: engine
     });
@@ -45,7 +46,8 @@ class Naomi {
    * Please note: connection properties may vary depending on the database type.
    * @param {String} id database engine identifier, e.g. "mysql", "postgres"
    * @param {Object} [props={}] connection properties
-   * @throws {InvalidArgument} if params are invalid or unspecified
+   * @throws {InvalidArgument} if params are invalid or unspecified.
+   * @throws {UnknownDatabaseEngine} if the specified engine identifier is unknown to Naomi.
    * @returns {Database}
    */
   create(id, props = {}) {
@@ -65,7 +67,7 @@ class Naomi {
       return new engine.Database(props);
     }
 
-    throw new CustomError(`Unknown engine argument; please specify one of "mysql" or "postgres"`, 'InvalidArgument');
+    throw new CustomError(`Unknown engine argument; please specify one of ${this._engines.map((e) => e.id).join(', ')}`, 'UnknownDatabaseEngine');
   }
 
 }

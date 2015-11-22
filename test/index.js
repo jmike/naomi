@@ -11,6 +11,7 @@ const mocha = new Mocha({
 });
 
 // load the test files
+mocha.addFile(path.resolve(__dirname, './naomi'));
 mocha.addFile(path.resolve(__dirname, './queryparser'));
 
 // run the tests
