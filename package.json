@@ -8,7 +8,7 @@
   },
   "main": "dist/Naomi.js",
   "scripts": {
-    "build": "gulp build",
+    "build": "gulp rebuild",
     "prepublish": "npm run build",
     "test": "node test/index.js"
   },
