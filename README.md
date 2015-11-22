@@ -24,7 +24,7 @@ $ npm install naomi
 #### Requirements
 
 * MySQL 5.5+ or PostgreSQL 9.1+
-* Node.js 0.8+
+* Node.js 0.11+
 
 ## Quick start
 
