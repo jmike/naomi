@@ -1,13 +1,6 @@
 language: node_js
 node_js:
-  - 0.10
   - 0.11
-services:
-  - mysql
-  - postgresql
-before_script:
-  - mysql < assets/mysql-test.sql
-  - psql -c 'create database naomi_test;' -U postgres
-  - psql -U postgres naomi_test < assets/postgres-test.sql
-env:
-  - NODE_ENV=development MYSQL_HOST=localhost MYSQL_PORT=3306 MYSQL_USER=root MYSQL_PASSWORD= MYSQL_DATABASE=naomi_test POSTGRES_HOST=localhost POSTGRES_PORT=5432 POSTGRES_USER=postgres POSTGRES_PASSWORD= POSTGRES_DATABASE=naomi_test
+  - 0.12
+  - 4.0
+  - 5.0
