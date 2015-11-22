@@ -21,7 +21,7 @@ class Naomi {
   static create(engine, props = {}) {
     // validate params
     if (!_.isString(engine)) {
-      throw new CustomError(`Invalid engine argument; expected string, received #{type(engine)}`, 'InvalidArgument');
+      throw new CustomError(`Invalid engine argument; expected string, received ${type(engine)}`, 'InvalidArgument');
     }
 
     if (!_.isPlainObject(props)) {
