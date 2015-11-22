@@ -1,9 +1,25 @@
-import {assert} from 'chai';
-import Expr from '../src/queryparser/Expr';
+/* global describe, it */
 
-describe('Queryparser', function() {
+const {assert} = require('chai');
+const QueryParser = require('../src/QueryParser');
+
+// register basic operators
+require('../src/operators/and');
+require('../src/operators/or');
+require('../src/operators/eq');
+require('../src/operators/ne');
+require('../src/operators/gt');
+require('../src/operators/gte');
+require('../src/operators/lt');
+require('../src/operators/lte');
+require('../src/operators/like');
+require('../src/operators/nlike');
+require('../src/operators/in');
+require('../src/operators/nin');
+
+describe('QueryParser', function() {
   it('parses plain number', function() {
-    const ast = Expr.parse(123);
+    const ast = QueryParser.parse(123);
     assert.deepEqual(ast, [
       'EQ',
       ['ID'],
@@ -12,7 +28,7 @@ describe('Queryparser', function() {
   });
 
   it('parses plain string', function() {
-    const ast = Expr.parse('str');
+    const ast = QueryParser.parse('str');
     assert.deepEqual(ast, [
       'EQ',
       ['ID'],
@@ -21,7 +37,7 @@ describe('Queryparser', function() {
   });
 
   it('parses plain boolean', function() {
-    const ast = Expr.parse(true);
+    const ast = QueryParser.parse(true);
     assert.deepEqual(ast, [
       'EQ',
       ['ID'],
@@ -31,7 +47,7 @@ describe('Queryparser', function() {
 
   it('parses plain date', function() {
     const d = new Date();
-    const ast = Expr.parse(d);
+    const ast = QueryParser.parse(d);
     assert.deepEqual(ast, [
       'EQ',
       ['ID'],
@@ -41,7 +57,7 @@ describe('Queryparser', function() {
 
   it('parses plain buffer', function() {
     const buf = new Buffer([1, 2, 3]);
-    const ast = Expr.parse(buf);
+    const ast = QueryParser.parse(buf);
     assert.deepEqual(ast, [
       'EQ',
       ['ID'],
@@ -50,7 +66,7 @@ describe('Queryparser', function() {
   });
 
   it('parses array or numbers', function() {
-    const ast = Expr.parse([1, 2, 3]);
+    const ast = QueryParser.parse([1, 2, 3]);
     assert.deepEqual(ast, [
       'IN',
       ['ID'],
@@ -59,7 +75,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with simple key-value assignment', function() {
-    const ast = Expr.parse({a: 1});
+    const ast = QueryParser.parse({a: 1});
     assert.deepEqual(ast, [
       'EQ',
       ['KEY', 'a'],
@@ -68,7 +84,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with multiple key-value assignments', function() {
-    const ast = Expr.parse({a: 1, b: 2, c: 3});
+    const ast = QueryParser.parse({a: 1, b: 2, c: 3});
     assert.deepEqual(ast, [
       'AND',
       [
@@ -90,7 +106,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $eq operator', function() {
-    const ast = Expr.parse({a: {$eq: 1}});
+    const ast = QueryParser.parse({a: {$eq: 1}});
     assert.deepEqual(ast, [
       'EQ',
       ['KEY', 'a'],
@@ -99,7 +115,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $ne operator', function() {
-    const ast = Expr.parse({a: {$ne: 1}});
+    const ast = QueryParser.parse({a: {$ne: 1}});
     assert.deepEqual(ast, [
       'NE',
       ['KEY', 'a'],
@@ -108,7 +124,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $lt operator', function() {
-    const ast = Expr.parse({a: {$lt: 1}});
+    const ast = QueryParser.parse({a: {$lt: 1}});
     assert.deepEqual(ast, [
       'LT',
       ['KEY', 'a'],
@@ -117,7 +133,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $lte operator', function() {
-    const ast = Expr.parse({a: {$lte: 1}});
+    const ast = QueryParser.parse({a: {$lte: 1}});
     assert.deepEqual(ast, [
       'LTE',
       ['KEY', 'a'],
@@ -126,7 +142,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $gt operator', function() {
-    const ast = Expr.parse({a: {$gt: 1}});
+    const ast = QueryParser.parse({a: {$gt: 1}});
     assert.deepEqual(ast, [
       'GT',
       ['KEY', 'a'],
@@ -135,7 +151,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $gte operator', function() {
-    const ast = Expr.parse({a: {$gte: 1}});
+    const ast = QueryParser.parse({a: {$gte: 1}});
     assert.deepEqual(ast, [
       'GTE',
       ['KEY', 'a'],
@@ -144,7 +160,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $in operator', function() {
-    const ast = Expr.parse({a: {$in: [1, 2, 3]}});
+    const ast = QueryParser.parse({a: {$in: [1, 2, 3]}});
     assert.deepEqual(ast, [
       'IN',
       ['KEY', 'a'],
@@ -153,7 +169,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $nin operator', function() {
-    const ast = Expr.parse({a: {$nin: [1, 2, 3]}});
+    const ast = QueryParser.parse({a: {$nin: [1, 2, 3]}});
     assert.deepEqual(ast, [
       'NIN',
       ['KEY', 'a'],
@@ -162,7 +178,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $like operator', function() {
-    const ast = Expr.parse({a: {$like: 's%'}});
+    const ast = QueryParser.parse({a: {$like: 's%'}});
     assert.deepEqual(ast, [
       'LIKE',
       ['KEY', 'a'],
@@ -171,7 +187,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $nlike operator', function() {
-    const ast = Expr.parse({a: {$nlike: 's%'}});
+    const ast = QueryParser.parse({a: {$nlike: 's%'}});
     assert.deepEqual(ast, [
       'NLIKE',
       ['KEY', 'a'],
@@ -180,7 +196,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $and operator', function() {
-    const ast = Expr.parse({$and: [{a: 1}, {b: 2}]});
+    const ast = QueryParser.parse({$and: [{a: 1}, {b: 2}]});
     assert.deepEqual(ast, [
       'AND',
       [
@@ -197,7 +213,7 @@ describe('Queryparser', function() {
   });
 
   it('parses object with $or operator', function() {
-    const ast = Expr.parse({$or: [{a: 1}, {a: 2}]});
+    const ast = QueryParser.parse({$or: [{a: 1}, {a: 2}]});
     assert.deepEqual(ast, [
       'OR',
       [

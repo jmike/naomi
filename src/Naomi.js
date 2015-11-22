@@ -1,27 +1,57 @@
-import _ from 'lodash';
-import type from 'type-of';
-import MySQLDatabase from './mysql/Database';
-import PgDatabase from './postgres/Database';
-import CustomError from 'customerror';
+const _ = require('lodash');
+const type = require('type-of');
+const CustomError = require('customerror');
 
-const reMySQL = /mysql/i;
-const rePg = /postgres|pg/i;
+// register basic operators
+require('./operators/and');
+require('./operators/or');
+require('./operators/eq');
+require('./operators/ne');
+require('./operators/gt');
+require('./operators/gte');
+require('./operators/lt');
+require('./operators/lte');
+require('./operators/like');
+require('./operators/nlike');
+require('./operators/in');
+require('./operators/nin');
 
 class Naomi {
+
+  constructor() {
+    this._engines = [];
+  }
+
+  /**
+   * Registers the given naomi-compatible database engine under the designated identifier.
+   * @param {String} id database engine identifier, e.g. "mysql", "postgres"
+   * @param {Database} engine the database engine itself
+   * @throws {InvalidArgument} if params are invalid or unspecified
+   */
+  registerEngine(id, engine) {
+    // validate params
+    if (!_.isString(id)) {
+      throw new CustomError(`Invalid id argument; expected string, received ${type(id)}`, 'InvalidArgument');
+    }
+
+    this._engines.push({
+      re: new RegExp(id, 'i'),
+      Database: engine
+    });
+  }
 
   /**
    * Creates and returns a new Database of the designated type.
    * Please note: connection properties may vary depending on the database type.
-   * @param {String} engine the database engine, i.e. "mysql", "postgres"
+   * @param {String} id database engine identifier, e.g. "mysql", "postgres"
    * @param {Object} [props={}] connection properties
-   * @throws {Error} if params are invalid or unspecified
+   * @throws {InvalidArgument} if params are invalid or unspecified
    * @returns {Database}
-   * @static
    */
-  static create(engine, props = {}) {
+  create(id, props = {}) {
     // validate params
-    if (!_.isString(engine)) {
-      throw new CustomError(`Invalid engine argument; expected string, received ${type(engine)}`, 'InvalidArgument');
+    if (!_.isString(id)) {
+      throw new CustomError(`Invalid id argument; expected string, received ${type(id)}`, 'InvalidArgument');
     }
 
     if (!_.isPlainObject(props)) {
@@ -29,28 +59,10 @@ class Naomi {
     }
 
     // create and return db
-    if (reMySQL.test(engine)) {
-      props = _.defaults(props, {
-        host: process.env.MYSQL_HOST,
-        port: parseInt(process.env.MYSQL_PORT, 10),
-        user: process.env.MYSQL_USER,
-        password: process.env.MYSQL_PASSWORD,
-        database: process.env.MYSQL_DATABASE
-      });
+    const engine = _.find(this._engines, (e) => e.re.test(id));
 
-      return new MySQLDatabase(props);
-    }
-
-    if (rePg.test(engine)) {
-      props = _.defaults(props, {
-        host: process.env.POSTGRES_HOST,
-        port: parseInt(process.env.POSTGRES_PORT, 10),
-        user: process.env.POSTGRES_USER,
-        password: process.env.POSTGRES_PASSWORD,
-        database: process.env.POSTGRES_DATABASE
-      });
-
-      return new PgDatabase(props);
+    if (engine) {
+      return new engine.Database(props);
     }
 
     throw new CustomError(`Unknown engine argument; please specify one of "mysql" or "postgres"`, 'InvalidArgument');
@@ -58,4 +70,4 @@ class Naomi {
 
 }
 
-export default Naomi;
+module.exports = new Naomi();
