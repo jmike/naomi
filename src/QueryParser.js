@@ -15,16 +15,7 @@ class QueryParser {
    * @param {Function} parser
    * @throws {InvalidArgument} if params are invalid or unspecified.
    */
-  registerLogicalOperator(id, parser) {
-    // validate params
-    if (!_.isString(id)) {
-      throw new CustomError(`Invalid id argument; expected string, received ${type(id)}`, 'InvalidArgument');
-    }
-
-    if (!_.isFunction(parser)) {
-      throw new CustomError(`Invalid parser argument; expected function, received ${type(parser)}`, 'InvalidArgument');
-    }
-
+  registerLogicalOperator(id: string, parser: Function) {
     this._logical.set(id, parser);
   }
 
@@ -34,16 +25,7 @@ class QueryParser {
    * @param {Function} parser
    * @throws {InvalidArgument} if params are invalid or unspecified.
    */
-  registerComparisonOperator(id, parser) {
-    // validate params
-    if (!_.isString(id)) {
-      throw new CustomError(`Invalid id argument; expected string, received ${type(id)}`, 'InvalidArgument');
-    }
-
-    if (!_.isFunction(parser)) {
-      throw new CustomError(`Invalid parser argument; expected function, received ${type(parser)}`, 'InvalidArgument');
-    }
-
+  registerComparisonOperator(id: string, parser: Function) {
     this._comparison.set(id, parser);
   }
 
@@ -53,7 +35,7 @@ class QueryParser {
    * @throws {QueryParseError} if params are invalid or unspecified
    * @return {Array}
    */
-  parse($expr, _mem) {
+  parse($expr: number | string | boolean | Object | Array, _mem: ?string): Array {
     // check if $expr is number, string, boolean, date of buffer
     if (_.isNumber($expr) || _.isString($expr) || _.isDate($expr) || Buffer.isBuffer($expr) || _.isBoolean($expr)) {
       return this.parse({$id: {$eq: $expr}});
