@@ -13,6 +13,7 @@ const mocha = new Mocha({
 // load the test files
 mocha.addFile(path.resolve(__dirname, './naomi'));
 mocha.addFile(path.resolve(__dirname, './queryparser'));
+mocha.addFile(path.resolve(__dirname, './database'));
 
 // run the tests
 mocha.run(function (failures) {
