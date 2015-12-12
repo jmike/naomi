@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const type = require('type-of');
 const CustomError = require('customerror');
 const Database = require('./Database');
 
@@ -46,10 +45,14 @@ class Naomi {
    * @throws {UnknownDatabaseEngine} if the specified engine identifier is unknown to Naomi.
    * @returns {Database}
    */
-  create(id: string, connectionProperties = {}: Object): Database {
-    // create and return db
+  create(id: string, connectionProperties: ?Object): Database {
+    // handle optional params
+    connectionProperties = connectionProperties || {};
+
+    // find engine by id
     const engine = _.find(this._engines, (e) => e.re.test(id));
 
+    // create + return new db
     if (engine) {
       return new engine.Database(connectionProperties);
     }
