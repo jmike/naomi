@@ -1,12 +1,13 @@
 const {EventEmitter} = require('events');
 const Promise = require('bluebird');
+const Collection = require('./Collection');
 
 class Database extends EventEmitter {
 
   /**
    * Creates a new Database instance with the designated properties.
    * @param {Object} connectionProperties connection properties
-   * @throws {TypeError} If arguments are of invalid type
+   * @throws {TypeError} if arguments are of invalid type
    * @constructor
    */
   constructor(connectionProperties: Object) {
@@ -16,13 +17,14 @@ class Database extends EventEmitter {
 
     this.connectionProperties = connectionProperties;
     this.isConnected = false;
+    this.Collection = Collection.bind(null, this);
   }
 
   /**
    * Connects to the database using the connection properties specified at construction time.
    * @param {Function<err>} [callback] an optional callback function.
    * @returns {Promise} a bluebird promise
-   * @throws {TypeError} If arguments are of invalid type
+   * @throws {TypeError} if arguments are of invalid type
    * @emits Database#connect
    */
   connect(callback: ?Function): Promise {
@@ -45,7 +47,7 @@ class Database extends EventEmitter {
    * Please note: the database instance will become practically useless after calling this method.
    * @param {Function<Error>} [callback] an optional callback function.
    * @returns {Promise} a bluebird promise
-   * @throws {TypeError} If arguments are of invalid type
+   * @throws {TypeError} if arguments are of invalid type
    * @emits Database#disconnect
    */
   disconnect(callback: ?Function): Promise {
@@ -71,6 +73,7 @@ class Database extends EventEmitter {
    * @param {Object} [options] query options.
    * @param {Function} [callback] a callback function with (err, records) arguments.
    * @returns {Promise} a bluebird promise resolving to the query results.
+   * @throws {TypeError} if arguments are of invalid type
    */
   query(sql: string, params: ?Array, options: ?Object, callback: ?Function): Promise {
     return Promise.resolve([{}]).nodeify(callback);

@@ -105,4 +105,12 @@ describe('Database', function () {
         .then(() => assert.instanceOf(db.query('SELECT 123;'), Promise));
     });
   });
+
+  describe('@Collection', function () {
+    it('is bound to the Database instance', function () {
+      const db = new Database({});
+      const employees = new db.Collection('employees');
+      assert.strictEqual(employees.db, db);
+    });
+  });
 });
