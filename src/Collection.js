@@ -25,6 +25,23 @@ class Collection extends EventEmitter {
   }
 
   /**
+   * Reverse engineers the collection's schema from metadata retreived from the database.
+   * This function will update the collection's schema.
+   * @return {Promise}
+   */
+  reverseEngineer(): Promise {
+    return Promise.resolve();
+  }
+
+  /**
+   * Registers the collection to the database, e.g. creates table in MySQL.
+   * @return {Promise}
+   */
+  register(): Promise {
+    return Promise.resolve();
+  }
+
+  /**
    * Retrieves an array of records from the collection based on the given query.
    * @param {(boolean|number|string|Date|Object|Array<Object>)} [$query] a naomi query object
    * @param {Function<Error, Array<Object>>} [callback] an optional callback function
