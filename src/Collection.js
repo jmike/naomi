@@ -1,5 +1,6 @@
 const {EventEmitter} = require('events');
 const Promise = require('bluebird');
+const _ = require('lodash');
 
 class Collection extends EventEmitter {
 
@@ -16,6 +17,11 @@ class Collection extends EventEmitter {
     super();
     this.setMaxListeners(999);
 
+    // validate arguments
+    if (_.isNull(schema)) {
+      throw new TypeError('Invalid schema argument; null is not allowed');
+    }
+
     // handle optional arguments
     schema = schema || {};
 
@@ -27,18 +33,32 @@ class Collection extends EventEmitter {
   /**
    * Reverse engineers the collection's schema from metadata retreived from the database.
    * This function will update the collection's schema.
+   * @param {Function<Error>} [callback] an optional callback function
    * @return {Promise}
    */
-  reverseEngineer(): Promise {
-    return Promise.resolve();
+  reverseEngineer(callback: ?Function): Promise {
+    return Promise.resolve().nodeify(callback);
   }
 
   /**
    * Registers the collection to the database, e.g. creates table in MySQL.
+   * @param {string} [name] optional collection name to register in database
+   * @param {Function<Error>} [callback] an optional callback function
    * @return {Promise}
    */
-  register(): Promise {
-    return Promise.resolve();
+  register(name: string | ?Function, callback: ?Function): Promise {
+    // validate arguments
+    if (_.isNull(name)) {
+      throw new TypeError('Invalid name argument; null is not allowed');
+    }
+
+    // handle optional arguments
+    if (_.isFunction(name)) {
+      callback = name;
+      name = undefined;
+    }
+
+    return Promise.resolve().nodeify(callback);
   }
 
   /**
@@ -48,8 +68,19 @@ class Collection extends EventEmitter {
    * @returns {Promise<Array<Object>>} a bluebird promise resolving to an array of records
    * @throws {TypeError} if arguments are of invalid type
    */
-  find($query: boolean | number | string | Object | Array, callback: ?Function): Promise {
-    return Promise.resolve([{}]).nodeify(callback);
+  find($query: boolean | number | string | ?Object, callback: ?Function): Promise {
+    // validate arguments
+    if (_.isNull($query)) {
+      throw new TypeError('Invalid $query argument; null is not allowed');
+    }
+
+    // handle optional arguments
+    if (_.isFunction($query)) {
+      callback = $query;
+      $query = undefined;
+    }
+
+    return Promise.resolve().nodeify(callback);
   }
 
   /**
@@ -59,8 +90,19 @@ class Collection extends EventEmitter {
    * @returns {Promise<Object>} a bluebird promise resolving to a single record
    * @throws {TypeError} if arguments are of invalid type
    */
-  findOne($query: boolean | number | string | Object | Array, callback: ?Function): Promise {
-    return Promise.resolve({}).nodeify(callback);
+  findOne($query: boolean | number | string | ?Object, callback: ?Function): Promise {
+    // validate arguments
+    if (_.isNull($query)) {
+      throw new TypeError('Invalid $query argument; null is not allowed');
+    }
+
+    // handle optional arguments
+    if (_.isFunction($query)) {
+      callback = $query;
+      $query = undefined;
+    }
+
+    return Promise.resolve().nodeify(callback);
   }
 
   /**
@@ -70,8 +112,19 @@ class Collection extends EventEmitter {
    * @returns {Promise<number>} a bluebird promise resolving to the number of records
    * @throws {TypeError} if arguments are of invalid type
    */
-  count($query: boolean | number | string | Object | Array, callback: ?Function): Promise {
-    return Promise.resolve(123).nodeify(callback);
+  count($query: boolean | number | string | ?Object, callback: ?Function): Promise {
+    // validate arguments
+    if (_.isNull($query)) {
+      throw new TypeError('Invalid $query argument; null is not allowed');
+    }
+
+    // handle optional arguments
+    if (_.isFunction($query)) {
+      callback = $query;
+      $query = undefined;
+    }
+
+    return Promise.resolve().nodeify(callback);
   }
 
   /**
@@ -81,7 +134,18 @@ class Collection extends EventEmitter {
    * @returns {Promise>} a bluebird promise
    * @throws {TypeError} if arguments are of invalid type
    */
-  remove($query: boolean | number | string | Object | Array, callback: ?Function): Promise {
+  remove($query: boolean | number | string | ?Object, callback: ?Function): Promise {
+    // validate arguments
+    if (_.isNull($query)) {
+      throw new TypeError('Invalid $query argument; null is not allowed');
+    }
+
+    // handle optional arguments
+    if (_.isFunction($query)) {
+      callback = $query;
+      $query = undefined;
+    }
+
     return Promise.resolve().nodeify(callback);
   }
 
@@ -94,7 +158,15 @@ class Collection extends EventEmitter {
    * @throws {TypeError} if arguments are of invalid type
    */
   insert(records: Object | Array, options: ?Object, callback: ?Function): Promise {
-    return Promise.resolve({}).nodeify(callback);
+    // handle optional arguments
+    options = options || {};
+
+    if (_.isFunction(options)) {
+      callback = options;
+      options = {};
+    }
+
+    return Promise.resolve().nodeify(callback);
   }
 
   /**
@@ -106,7 +178,15 @@ class Collection extends EventEmitter {
    * @throws {TypeError} if arguments are of invalid type
    */
   update(records: Object | Array, options: ?Object, callback: ?Function): Promise {
-    return Promise.resolve({}).nodeify(callback);
+    // handle optional arguments
+    options = options || {};
+
+    if (_.isFunction(options)) {
+      callback = options;
+      options = {};
+    }
+
+    return Promise.resolve().nodeify(callback);
   }
 
 }

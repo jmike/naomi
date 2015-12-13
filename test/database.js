@@ -1,11 +1,12 @@
 /* global describe, it */
 const {assert} = require('chai');
 const Promise = require('bluebird');
+
 const Database = require('../src/Database');
 
 describe('Database', function () {
   describe('#constructor()', function () {
-    it('throws error when connectionProperties unspecified', function () {
+    it('throws error when connectionProperties is unspecified', function () {
       assert.throws(() => new Database(), TypeError);
     });
 
