@@ -1,21 +1,7 @@
 /* global describe, it */
 
-const {assert} = require('chai');
-const QueryParser = require('../src/QueryParser');
-
-// register basic operators
-require('../src/operators/and');
-require('../src/operators/or');
-require('../src/operators/eq');
-require('../src/operators/ne');
-require('../src/operators/gt');
-require('../src/operators/gte');
-require('../src/operators/lt');
-require('../src/operators/lte');
-require('../src/operators/like');
-require('../src/operators/nlike');
-require('../src/operators/in');
-require('../src/operators/nin');
+import {assert} from 'chai';
+import QueryParser from '../src/QueryParser';
 
 describe('QueryParser', function() {
   it('parses plain number', function() {

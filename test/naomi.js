@@ -1,8 +1,8 @@
 /* global describe, it */
-const {assert} = require('chai');
 
-const naomi = require('../src/Naomi');
-const Database = require('../src/Database');
+import {assert} from 'chai';
+import naomi from '../src/Naomi';
+import Database from '../src/Database';
 
 describe('Naomi', function () {
   describe('#registerEngine()', function () {

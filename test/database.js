@@ -1,8 +1,8 @@
 /* global describe, it */
-const {assert} = require('chai');
-const Promise = require('bluebird');
 
-const Database = require('../src/Database');
+import {assert} from 'chai';
+import Promise from 'bluebird';
+import Database from '../src/Database';
 
 describe('Database', function () {
   describe('#constructor()', function () {
