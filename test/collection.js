@@ -9,6 +9,17 @@ describe('Collection', function () {
   const db = new Database({});
 
   describe('#constructor()', function () {
+    it('throws error when db is unspecified', function () {
+      assert.throws(() => new Collection(), TypeError);
+    });
+
+    it('throws error when db is of invalid type', function () {
+      assert.throws(() => new Collection(123), TypeError);
+      assert.throws(() => new Collection(false), TypeError);
+      assert.throws(() => new Collection(null), TypeError);
+      assert.throws(() => new Collection({}), TypeError);
+    });
+
     it('throws error when name is unspecified', function () {
       assert.throws(() => new Collection(db), TypeError);
     });
