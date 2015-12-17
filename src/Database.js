@@ -56,8 +56,7 @@ class Database extends EventEmitter {
       return Promise.resolve().nodeify(callback);
     }
 
-    // define promise resolver
-    // connect
+    // disconnect
     return Promise.resolve()
       .then(() => {
         this.isConnected = false;
