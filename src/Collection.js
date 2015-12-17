@@ -1,6 +1,7 @@
-const {EventEmitter} = require('events');
-const Promise = require('bluebird');
-const _ = require('lodash');
+import {EventEmitter} from 'events';
+import Promise from 'bluebird';
+import _ from 'lodash';
+import Database from './Database';
 
 class Collection extends EventEmitter {
 
@@ -12,7 +13,7 @@ class Collection extends EventEmitter {
    * @throws {TypeError} if arguments are of invalid type
    * @constructor
    */
-  constructor(db: Object, name: string, schema: ?Object) {
+  constructor(db: Database, name: string, schema: ?Object) {
     // setup EventEmitter
     super();
     this.setMaxListeners(999);
@@ -191,4 +192,4 @@ class Collection extends EventEmitter {
 
 }
 
-module.exports = Collection;
+export default Collection;

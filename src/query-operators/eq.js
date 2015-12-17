@@ -1,11 +1,9 @@
-const _ = require('lodash');
-const CustomError = require('customerror');
-const type = require('type-of');
+import _ from 'lodash';
+import CustomError from 'customerror';
+import type from 'type-of';
+import parseKey from './key';
 
-const QueryParser = require('../QueryParser');
-const parseKey = require('./key');
-
-function parse(k, v) {
+export default function(k: string, v: number | string | boolean | Date | Buffer): Array {
   if (
     !_.isNumber(v) &&
     !_.isString(v) &&
@@ -19,7 +17,3 @@ function parse(k, v) {
 
   return ['EQ', parseKey(k), ['VALUE', v]];
 }
-
-QueryParser.registerComparisonOperator('$eq', parse);
-
-module.exports = parse;

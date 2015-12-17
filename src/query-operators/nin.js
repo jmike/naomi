@@ -1,11 +1,9 @@
-const _ = require('lodash');
-const CustomError = require('customerror');
-const type = require('type-of');
+import _ from 'lodash';
+import CustomError from 'customerror';
+import type from 'type-of';
+import parseKey from './key';
 
-const QueryParser = require('../QueryParser');
-const parseKey = require('./key');
-
-function parse(k, v) {
+export default function(k, v) {
   if (!_.isArray(v)) {
     throw new CustomError(`Invalid $nin expression; expected array, received ${type(v)}`, 'QueryParseError');
   }
@@ -16,7 +14,3 @@ function parse(k, v) {
 
   return ['NIN', parseKey(k), ['VALUES'].concat(v)];
 }
-
-QueryParser.registerComparisonOperator('$nin', parse);
-
-module.exports = parse;

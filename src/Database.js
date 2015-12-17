@@ -1,6 +1,6 @@
-const {EventEmitter} = require('events');
-const Promise = require('bluebird');
-const Collection = require('./Collection');
+import {EventEmitter} from 'events';
+import Promise from 'bluebird';
+import Collection from './Collection';
 
 class Database extends EventEmitter {
 
@@ -80,4 +80,4 @@ class Database extends EventEmitter {
   }
 }
 
-module.exports = Database;
+export default Database;

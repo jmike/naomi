@@ -1,10 +1,9 @@
-const _ = require('lodash');
-const CustomError = require('customerror');
-const type = require('type-of');
+import _ from 'lodash';
+import CustomError from 'customerror';
+import type from 'type-of';
+import QueryParser from '../QueryParser';
 
-const QueryParser = require('../QueryParser');
-
-function parse(v) {
+export default function(v) {
   if (!_.isArray(v)) {
     throw new CustomError(`Invalid $or expression; expected array, received ${type(v)}`, 'QueryParseError');
   }
@@ -15,7 +14,3 @@ function parse(v) {
 
   return ['OR'].concat(v.map((e) => QueryParser.parse(e)));
 }
-
-QueryParser.registerLogicalOperator('$or', parse);
-
-module.exports = parse;

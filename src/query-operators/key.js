@@ -1,8 +1,8 @@
-const _ = require('lodash');
-const type = require('type-of');
-const CustomError = require('customerror');
+import _ from 'lodash';
+import type from 'type-of';
+import CustomError from 'customerror';
 
-function parse(k) {
+export default function(k) {
   const ast = ['KEY'];
 
   if (k === '$id') {
@@ -15,5 +15,3 @@ function parse(k) {
 
   return ast;
 }
-
-module.exports = parse;

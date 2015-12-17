@@ -1,20 +1,7 @@
-const _ = require('lodash');
-const CustomError = require('customerror');
-const Database = require('./Database');
-
-// register basic operators
-require('./operators/and');
-require('./operators/or');
-require('./operators/eq');
-require('./operators/ne');
-require('./operators/gt');
-require('./operators/gte');
-require('./operators/lt');
-require('./operators/lte');
-require('./operators/like');
-require('./operators/nlike');
-require('./operators/in');
-require('./operators/nin');
+import _ from 'lodash';
+import CustomError from 'customerror';
+import Database from './Database';
+import Collection from './Collection';
 
 class Naomi {
 
@@ -62,4 +49,6 @@ class Naomi {
 
 }
 
-module.exports = new Naomi();
+export {Database};
+export {Collection};
+export default new Naomi(); // singleton

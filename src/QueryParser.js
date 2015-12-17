@@ -1,32 +1,25 @@
-const _ = require('lodash');
-const type = require('type-of');
-const CustomError = require('customerror');
+import _ from 'lodash';
+import type from 'type-of';
+import CustomError from 'customerror';
+
+import $and from './query-operators/and';
+import $or from './query-operators/or';
+import $eq from './query-operators/eq';
+import $ne from './query-operators/ne';
+import $gt from './query-operators/gt';
+import $gte from './query-operators/gte';
+import $lt from './query-operators/lt';
+import $lte from './query-operators/lte';
+import $in from './query-operators/in';
+import $nin from './query-operators/nin';
+import $like from './query-operators/like';
+import $nlike from './query-operators/nlike';
 
 class QueryParser {
 
   constructor() {
     this._comparison = new Map();
     this._logical = new Map();
-  }
-
-  /**
-   * Registers the given logical operator under the designated identifier.
-   * @param {String} id logical operator identifier.
-   * @param {Function} parser
-   * @throws {InvalidArgument} if params are invalid or unspecified.
-   */
-  registerLogicalOperator(id: string, parser: Function) {
-    this._logical.set(id, parser);
-  }
-
-  /**
-   * Registers the given comparison operator under the designated identifier.
-   * @param {String} id comparison operator identifier.
-   * @param {Function} parser
-   * @throws {InvalidArgument} if params are invalid or unspecified.
-   */
-  registerComparisonOperator(id: string, parser: Function) {
-    this._comparison.set(id, parser);
   }
 
   /**
@@ -86,7 +79,23 @@ class QueryParser {
 
     throw new CustomError(`Invalid expression; expected number, string, boolean, date, buffer, array or object, received ${type($expr)}`, 'QueryParseError');
   }
-
 }
 
-module.exports = new QueryParser(); // singleton
+// create parser instance
+const parser = new QueryParser();
+
+parser._logical.set('$and', $and);
+parser._logical.set('$or', $or);
+
+parser._comparison.set('$eq', $eq);
+parser._comparison.set('$ne', $ne);
+parser._comparison.set('$gt', $gt);
+parser._comparison.set('$gte', $gte);
+parser._comparison.set('$lt', $lt);
+parser._comparison.set('$lte', $lte);
+parser._comparison.set('$in', $in);
+parser._comparison.set('$nin', $nin);
+parser._comparison.set('$like', $like);
+parser._comparison.set('$nlike', $nlike);
+
+export default parser; // singleton
