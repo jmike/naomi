@@ -84,7 +84,7 @@ class Database extends EventEmitter {
    * @return {Promise}
    * @private
    */
-  _awaitConnect(timeout: number): Promise {
+  _awaitConnect(timeout: ?number): Promise {
     timeout = timeout || 60000; // 1 min
 
     return new Promise((resolve) => {
