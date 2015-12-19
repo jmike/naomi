@@ -77,6 +77,25 @@ class Database extends EventEmitter {
   query(sql: string, params: ?Array, options: ?Object, callback: ?Function): Promise {
     return Promise.resolve([{}]).nodeify(callback);
   }
+
+  /**
+   * Awaits for the db to connect.
+   * @param {number} [timeout=60000] optional maximum number of milliseconds to wait for connection - 1 min by default.
+   * @return {Promise}
+   * @private
+   */
+  _awaitConnect(timeout: number): Promise {
+    timeout = timeout || 60000; // 1 min
+
+    return new Promise((resolve) => {
+      if (this.isConnected) {
+        resolve();
+      } else {
+        this.once('connect', () => resolve());
+      }
+    });
+  }
+
 }
 
 export default Database;
