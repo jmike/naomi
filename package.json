@@ -15,7 +15,6 @@
   "dependencies": {
     "bluebird": "^3.1.1",
     "customerror": "^1.0.1",
-    "generic-pool": "^2.2.0",
     "lodash": "^3.10.1",
     "type-of": "^2.0.1"
   },
