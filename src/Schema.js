@@ -1,5 +1,24 @@
 import Joi from 'joi';
 import _ from 'lodash';
+import CustomError from 'customerror';
+
+import UUIDType from './datatypes/UUID';
+import StringType from './datatypes/String';
+import EnumType from './datatypes/Enum';
+import NumberType from './datatypes/Number';
+import FloatType from './datatypes/Float';
+import IntegerType from './datatypes/Integer';
+import DateType from './datatypes/Date';
+
+const Types = {
+  uuid: UUIDType,
+  string: StringType,
+  enum: EnumType,
+  number: NumberType,
+  float: FloatType,
+  integer: IntegerType,
+  date: DateType
+};
 
 class Schema {
 
@@ -10,28 +29,28 @@ class Schema {
    * @throws {TypeError} if definition object is invalid or unspecified.
    */
   constructor(obj: Object) {
-    _.forOwn(obj, (value) => {
+    this.definition = {};
+
+    _.forOwn(obj, (value, key) => {
       // make sure value is plain object
       if (!_.isPlainObject(value)) {
         throw new TypeError(`Invalid schema definition for #{key}; expected plain object`);
       }
 
-      // switch (value.type) {
-      // case 'string':
+      if (!_.has[Types, value.type]) {
+        throw new CustomError(`Invalid schema datatype for #{key}`, 'InvalidSchema');
+      }
 
-      //   break;
-      // default:
-      //   throw new CustomError(`Invalid schema datatype for #{key}`, 'InvalidSchema');
-      // }
+      const type = new Types[value.type];
+      _.forOwn((v, k) => type[k] = v);
+
+      this.definition[key] = type;
     });
-
-    this.definition = obj;
   }
 
   toJoi(): Joi {
-    return _.mapValues(this.definition, (obj) => {
-      const joi = Joi[obj.type]();
-      return joi;
+    return _.mapValues(this.definition, (type) => {
+      return type.toJoi();
     });
   }
 
