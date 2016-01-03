@@ -1,6 +1,5 @@
 import Joi from 'joi';
 import _ from 'lodash';
-import CustomError from 'customerror';
 
 import UUIDType from './datatypes/UUID';
 import StringType from './datatypes/String';
@@ -24,34 +23,48 @@ class Schema {
 
   /**
    * Creates a new Schema based on the supplied definition object.
-   * @param {Object} obj definition object.
+   * @param {Object} definition definition object.
    * @constructor
    * @throws {TypeError} if definition object is invalid or unspecified.
    */
-  constructor(obj: Object) {
-    this.definition = {};
-
-    _.forOwn(obj, (value, key) => {
-      // make sure value is plain object
-      if (!_.isPlainObject(value)) {
-        throw new TypeError(`Invalid schema definition for #{key}; expected plain object`);
+  constructor(definition: Object) {
+    this.definition = _.mapValues(definition, (obj, key) => {
+      // make sure obj is plain object
+      if (!_.isPlainObject(obj)) {
+        throw new TypeError(`Invalid schema definition for ${key}; expected plain object`);
       }
 
-      if (!_.has[Types, value.type]) {
-        throw new CustomError(`Invalid schema datatype for #{key}`, 'InvalidSchema');
+      // make sure obj is of valid type
+      if (!Types.hasOwnProperty(obj.type)) {
+        throw new TypeError(`Invalid schema datatype for ${key}`);
       }
 
-      const type = new Types[value.type];
-      _.forOwn((v, k) => type[k] = v);
+      // create new datatype
+      const type = new Types[obj.type];
 
-      this.definition[key] = type;
+      // update datatype props
+      _.forOwn(obj, (v, k) => {
+        if (k === 'type') return;
+
+        if (typeof type[k] !== 'function') {
+          throw new TypeError(`Invalid property "${k}" for "${obj.type}" datatype in "${key}"`);
+        }
+
+        type[k](v);
+      });
+
+      return type;
     });
   }
 
-  toJoi(): Joi {
-    return _.mapValues(this.definition, (type) => {
-      return type.toJoi();
-    });
+  // validate(records: Object | Array<Object>) {
+  //   return _.mapValues(this.definition, (type) => {
+  //     return type.toJoi();
+  //   });
+  // }
+
+  toMetaData(): Object {
+    return this.definition;
   }
 
   static fromMetaData(obj: Object): Schema {

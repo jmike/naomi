@@ -6,18 +6,10 @@ class IntegerType extends NumberType {
     super();
   }
 
-  set precision(v: number): void {
-    this.props.precision = v;
-  }
-
-  get precision(): number {
-    return this.props.precision;
-  }
-
   toJoi(): Joi {
     const joi = super.toJoi();
 
-    if (this.props.precision) joi.precision(this.props.precision);
+    joi.integer();
 
     return joi;
   }
@@ -25,7 +17,7 @@ class IntegerType extends NumberType {
   toJSON(): Object {
     const json = super.toJSON();
 
-    json.type = 'float';
+    json.type = 'integer';
 
     return json;
   }

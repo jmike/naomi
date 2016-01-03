@@ -1,15 +1,20 @@
 import NumberType from './Number';
 
-class IntegerType extends NumberType {
+class FloatType extends NumberType {
 
   constructor() {
     super();
   }
 
+  precision(v: number): FloatType {
+    this.props.precision = v;
+    return this;
+  }
+
   toJoi(): Joi {
     const joi = super.toJoi();
 
-    joi.integer();
+    if (this.props.precision) joi.precision(this.props.precision);
 
     return joi;
   }
@@ -17,11 +22,11 @@ class IntegerType extends NumberType {
   toJSON(): Object {
     const json = super.toJSON();
 
-    json.type = 'integer';
+    json.type = 'float';
 
     return json;
   }
 
 }
 
-export default IntegerType;
+export default FloatType;

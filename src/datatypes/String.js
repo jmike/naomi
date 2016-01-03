@@ -7,64 +7,43 @@ class StringType {
     this.props = {};
   }
 
-  set minLength(v: number): void {
+  minLength(v: number): StringType {
     this.props.minLength = v;
+    return this;
   }
 
-  get minLength(): number {
-    return this.props.minLength;
-  }
-
-  set maxLength(v: number): void {
+  maxLength(v: number): StringType {
     this.props.maxLength = v;
+    return this;
   }
 
-  get maxLength(): number {
-    return this.props.maxLength;
-  }
-
-  set length(v: number): void {
+  length(v: number): StringType {
     this.props.length = v;
+    return this;
   }
 
-  get length(): number {
-    return this.props.length;
-  }
-
-  set regex(v: string | RegExp): void {
+  regex(v: string | RegExp): StringType {
     if (_.isString(v)) {
       v = new RegExp(v);
     }
 
     this.props.regex = v;
+    return this;
   }
 
-  get regex(): RegExp {
-    return this.props.regex;
-  }
-
-  set lowercase(v: boolean): void {
+  lowercase(v: boolean): StringType {
     this.props.lowercase = v;
+    return this;
   }
 
-  get lowercase(): boolean {
-    return this.props.lowercase;
-  }
-
-  set uppercase(v: boolean): void {
+  uppercase(v: boolean): StringType {
     this.props.uppercase = v;
+    return this;
   }
 
-  get uppercase(): boolean {
-    return this.props.uppercase;
-  }
-
-  set trim(v: boolean): void {
+  trim(v: boolean): StringType {
     this.props.trim = v;
-  }
-
-  get trim(): boolean {
-    return this.props.trim;
+    return this;
   }
 
   toJoi(): Joi {

@@ -7,12 +7,9 @@ class EnumType {
     this.props = {};
   }
 
-  set values(v: Array<string>): void {
+  values(v: Array<string>): EnumType {
     this.props.values = v;
-  }
-
-  get values(): number {
-    return this.props.values;
+    return this;
   }
 
   toJoi(): Joi {
