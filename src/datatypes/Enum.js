@@ -12,7 +12,7 @@ class EnumType {
     return this;
   }
 
-  toJoi(): Joi {
+  toJoi(): Object {
     const joi = Joi.string().strict(true);
 
     if (this.props.values) joi.valid(this.props.values);

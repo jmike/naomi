@@ -22,8 +22,8 @@ class DateType {
     return this;
   }
 
-  toJoi(): Joi {
-    const joi = Joi.date().strict(true);
+  toJoi(): Object {
+    const joi = Joi.date().strict(false); // mark strict as false to accept date strings
 
     if (this.props.max) joi.max(this.props.max);
     if (this.props.min) joi.min(this.props.min);

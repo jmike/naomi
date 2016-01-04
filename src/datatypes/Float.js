@@ -11,7 +11,7 @@ class FloatType extends NumberType {
     return this;
   }
 
-  toJoi(): Joi {
+  toJoi(): Object {
     const joi = super.toJoi();
 
     if (this.props.precision) joi.precision(this.props.precision);

@@ -7,7 +7,7 @@ class UUIDType {
     this.props = {};
   }
 
-  toJoi(): Joi {
+  toJoi(): Object {
     return Joi.string().guid().strict(true);
   }
 

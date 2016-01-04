@@ -11,11 +11,11 @@ const mocha = new Mocha({
 });
 
 // load the test files
-// mocha.addFile(path.resolve(__dirname, './naomi'));
-// mocha.addFile(path.resolve(__dirname, './queryparser'));
-// mocha.addFile(path.resolve(__dirname, './database'));
-// mocha.addFile(path.resolve(__dirname, './collection'));
 mocha.addFile(path.resolve(__dirname, './schema'));
+mocha.addFile(path.resolve(__dirname, './naomi'));
+mocha.addFile(path.resolve(__dirname, './queryparser'));
+mocha.addFile(path.resolve(__dirname, './database'));
+mocha.addFile(path.resolve(__dirname, './collection'));
 
 // run the tests
 mocha.run(function (failures) {

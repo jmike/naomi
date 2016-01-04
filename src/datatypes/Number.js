@@ -27,7 +27,7 @@ class NumberType {
     return this;
   }
 
-  toJoi(): Joi {
+  toJoi(): Object {
     const joi = Joi.number().strict(true);
 
     if (this.props.max) joi.max(this.props.max);

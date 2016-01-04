@@ -46,11 +46,11 @@ class StringType {
     return this;
   }
 
-  toJoi(): Joi {
+  toJoi(): Object {
     const joi = Joi.string().strict(true);
 
-    if (this.props.maxLength) joi.maxlength(this.props.maxLength);
-    if (this.props.minLength) joi.minlength(this.props.minLength);
+    if (this.props.maxLength) joi.max(this.props.maxLength);
+    if (this.props.minLength) joi.min(this.props.minLength);
     if (this.props.length) joi.length(this.props.length);
     if (this.props.regex) joi.regex(this.props.regex);
     if (this.props.lowercase) joi.lowercase();

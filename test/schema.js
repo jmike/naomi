@@ -25,40 +25,130 @@ describe('Schema', function () {
         number: {type: 'number', min: -10, max: 10, positive: true},
         float: {type: 'float', min: -10, max: 10, positive: true, precision: 2},
         integer: {type: 'integer', min: -10, max: 10, positive: true},
-        date: {type: 'date', min: new Date(), max: new Date(), format: 'YYYY-mm-dd'},
+        date: {type: 'date', min: new Date(), max: new Date(), format: 'YYYY-MM-DD'},
       }));
     });
   });
 
-  // describe('#connect()', function () {
-  //   it('throws error when callback is of invalid type', function () {
-  //     const db = new Database({});
+  describe('#toJSON()', function () {
+    const schema = new Schema({
+      id: {type: 'number'}
+    });
 
-  //     assert.throws(() => db.connect(123), TypeError);
-  //     assert.throws(() => db.connect(false), TypeError);
-  //     assert.throws(() => db.connect('str'), TypeError);
-  //     assert.throws(() => db.connect({}), TypeError);
-  //   });
+    it('returns plain object', function () {
+      assert.isObject(schema.toJSON());
+    });
+  });
 
-  //   it('returns bluebird promise', function () {
-  //     const db = new Database({});
+  describe('#toJoi()', function () {
+    const schema = new Schema({
+      id: {type: 'number'}
+    });
 
-  //     assert.instanceOf(db.connect(), Promise);
-  //   });
+    it('returns object with Joi functions', function () {
+      const obj = schema.toJoi();
 
-  //   it('accepts callback function', function (done) {
-  //     const db = new Database({});
+      assert.isObject(obj);
+      assert.isTrue(obj.id.isJoi);
+    });
+  });
 
-  //     db.connect(done);
-  //   });
+  describe('#validate()', function () {
+    it('returns bluebird promise', function () {
+      const schema = new Schema({
+        id: {type: 'number'}
+      });
 
-  //   it('sets @isConnected to true', function () {
-  //     const db = new Database({});
+      assert.instanceOf(schema.validate({id: 1}), Promise);
+    });
 
-  //     assert.isFalse(db.isConnected);
-  //     db.connect()
-  //       .then(() => assert.isTrue(db.isConnected));
-  //   });
-  // });
+    it('accepts callback function', function (done) {
+      const schema = new Schema({
+        id: {type: 'number'}
+      });
 
+      schema.validate({id: 1}, done);
+    });
+
+    it('successfully validates number', function () {
+      const schema = new Schema({
+        x: {type: 'number', min: 0}
+      });
+
+      schema.validate({x: 1})
+        .then((result) => assert.isUndefined(result));
+
+      schema.validate({x: '1'})
+        .catch((err) => {
+          assert.instanceOf(err, Error);
+          assert.strictEqual(err.name, 'ValidationError');
+        });
+    });
+
+    it('successfully validates string', function () {
+      const schema = new Schema({
+        x: {type: 'string', minLength: 2}
+      });
+
+      schema.validate({x: 'abc'})
+        .then((result) => assert.isUndefined(result));
+
+      schema.validate({x: 'a'})
+        .catch((err) => {
+          assert.instanceOf(err, Error);
+          assert.strictEqual(err.name, 'ValidationError');
+        });
+
+      schema.validate({x: 123})
+        .catch((err) => {
+          assert.instanceOf(err, Error);
+          assert.strictEqual(err.name, 'ValidationError');
+        });
+    });
+
+    it('successfully validates date', function () {
+      const schema = new Schema({
+        x: {type: 'date', format: 'YYYY-MM-DD'}
+      });
+
+      schema.validate({x: '2016-02-04'})
+        .then((result) => assert.isUndefined(result));
+
+      schema.validate({x: 'a'})
+        .catch((err) => {
+          assert.instanceOf(err, Error);
+          assert.strictEqual(err.name, 'ValidationError');
+        });
+    });
+
+    it('successfully validates integer', function () {
+      const schema = new Schema({
+        x: {type: 'integer'}
+      });
+
+      schema.validate({x: 123})
+        .then((result) => assert.isUndefined(result));
+
+      schema.validate({x: 123.52})
+        .catch((err) => {
+          assert.instanceOf(err, Error);
+          assert.strictEqual(err.name, 'ValidationError');
+        });
+    });
+
+    it('successfully validates float', function () {
+      const schema = new Schema({
+        x: {type: 'float', precision: 2}
+      });
+
+      schema.validate({x: 123.2})
+        .then((result) => assert.isUndefined(result));
+
+      schema.validate({x: 'abc'})
+        .catch((err) => {
+          assert.instanceOf(err, Error);
+          assert.strictEqual(err.name, 'ValidationError');
+        });
+    });
+  });
 });

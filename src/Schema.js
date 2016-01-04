@@ -1,5 +1,7 @@
-import Joi from 'joi';
 import _ from 'lodash';
+import Promise from 'bluebird';
+import Joi from 'joi';
+import CustomError from 'customerror';
 
 import UUIDType from './datatypes/UUID';
 import StringType from './datatypes/String';
@@ -22,8 +24,8 @@ const Types = {
 class Schema {
 
   /**
-   * Creates a new Schema based on the supplied definition object.
-   * @param {Object} definition definition object.
+   * Creates a new Schema based on the specified definition object.
+   * @param {Object} definition the definition object.
    * @constructor
    * @throws {TypeError} if definition object is invalid or unspecified.
    */
@@ -36,7 +38,7 @@ class Schema {
 
       // make sure obj is of valid type
       if (!Types.hasOwnProperty(obj.type)) {
-        throw new TypeError(`Invalid schema datatype for ${key}`);
+        throw new TypeError(`Invalid datatype ${obj.type} for ${key}`);
       }
 
       // create new datatype
@@ -47,7 +49,7 @@ class Schema {
         if (k === 'type') return;
 
         if (typeof type[k] !== 'function') {
-          throw new TypeError(`Invalid property "${k}" for "${obj.type}" datatype in "${key}"`);
+          throw new TypeError(`Invalid property ${k} for ${key}`);
         }
 
         type[k](v);
@@ -57,11 +59,24 @@ class Schema {
     });
   }
 
-  // validate(records: Object | Array<Object>) {
-  //   return _.mapValues(this.definition, (type) => {
-  //     return type.toJoi();
-  //   });
-  // }
+  toJSON() {
+    return _.mapValues(this.definition, (datatype) => datatype.toJSON());
+  }
+
+  toJoi() {
+    return _.mapValues(this.definition, (datatype) => datatype.toJoi());
+  }
+
+  validate(record: Object, callback: ?Function) {
+    if (!this.joi) this.joi = this.toJoi();
+
+    return new Promise((resolve, reject) => {
+      Joi.validate(record, this.joi, (err) => {
+        if (err) return reject(new CustomError(err, 'ValidationError'));
+        resolve();
+      });
+    }).nodeify(callback);
+  }
 
   toMetaData(): Object {
     return this.definition;
