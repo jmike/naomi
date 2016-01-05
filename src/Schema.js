@@ -71,7 +71,7 @@ class Schema {
     if (!this.joi) this.joi = this.toJoi();
 
     return new Promise((resolve, reject) => {
-      Joi.validate(record, this.joi, (err) => {
+      Joi.validate(record, this.joi, {convert: false}, (err) => {
         if (err) return reject(new CustomError(err, 'ValidationError'));
         resolve();
       });

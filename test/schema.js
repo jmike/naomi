@@ -1,8 +1,12 @@
 /* global describe, it */
 
-import {assert} from 'chai';
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 import Promise from 'bluebird';
 import Schema from '../src/Schema';
+
+chai.use(chaiAsPromised);
+const assert = chai.assert;
 
 describe('Schema', function () {
   describe('#constructor()', function () {
@@ -144,11 +148,8 @@ describe('Schema', function () {
       schema.validate({x: 123.2})
         .then((result) => assert.isUndefined(result));
 
-      schema.validate({x: 'abc'})
-        .catch((err) => {
-          assert.instanceOf(err, Error);
-          assert.strictEqual(err.name, 'ValidationError');
-        });
+      assert.isRejected(schema.validate({x: 'abc'}), Error);
+      assert.isRejected(schema.validate({x: 123.3342}), Error);
     });
   });
 });
