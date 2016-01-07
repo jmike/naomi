@@ -13,9 +13,9 @@ class EnumType {
   }
 
   toJoi(): Object {
-    const joi = Joi.string().strict(true);
+    let joi = Joi.string().strict(true);
 
-    if (this.props.values) joi.valid(this.props.values);
+    if (this.props.values) joi = joi.valid(this.props.values);
 
     return joi;
   }

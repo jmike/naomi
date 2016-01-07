@@ -12,9 +12,9 @@ class FloatType extends NumberType {
   }
 
   toJoi(): Object {
-    const joi = super.toJoi();
+    let joi = super.toJoi();
 
-    if (this.props.precision) joi.precision(this.props.precision);
+    if (this.props.precision) joi = joi.precision(this.props.precision);
 
     return joi;
   }

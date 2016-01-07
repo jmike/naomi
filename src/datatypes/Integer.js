@@ -7,10 +7,7 @@ class IntegerType extends NumberType {
   }
 
   toJoi(): Object {
-    const joi = super.toJoi();
-
-    joi.integer();
-
+    const joi = super.toJoi().integer();
     return joi;
   }
 

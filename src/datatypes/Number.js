@@ -28,12 +28,12 @@ class NumberType {
   }
 
   toJoi(): Object {
-    const joi = Joi.number().strict(true);
+    let joi = Joi.number().strict(true);
 
-    if (this.props.max) joi.max(this.props.max);
-    if (this.props.min) joi.min(this.props.min);
-    if (this.props.positive) joi.positive();
-    if (this.props.negative) joi.negative();
+    if (this.props.max) joi = joi.max(this.props.max);
+    if (this.props.min) joi = joi.min(this.props.min);
+    if (this.props.positive) joi = joi.positive();
+    if (this.props.negative) joi = joi.negative();
 
     return joi;
   }

@@ -64,16 +64,16 @@ class Schema {
   }
 
   toJoi() {
-    return _.mapValues(this.definition, (datatype) => datatype.toJoi());
+    return Joi.object().strict(true).keys(_.mapValues(this.definition, (datatype) => datatype.toJoi()));
   }
 
   validate(record: Object, callback: ?Function) {
     if (!this.joi) this.joi = this.toJoi();
 
     return new Promise((resolve, reject) => {
-      Joi.validate(record, this.joi, {convert: false}, (err) => {
+      Joi.validate(record, this.joi, {convert: false}, (err, value) => {
         if (err) return reject(new CustomError(err, 'ValidationError'));
-        resolve();
+        resolve(value);
       });
     }).nodeify(callback);
   }

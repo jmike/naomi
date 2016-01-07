@@ -53,7 +53,7 @@ describe('Schema', function () {
       const obj = schema.toJoi();
 
       assert.isObject(obj);
-      assert.isTrue(obj.id.isJoi);
+      assert.isTrue(obj.isJoi);
     });
   });
 
@@ -79,14 +79,8 @@ describe('Schema', function () {
         x: {type: 'number', min: 0}
       });
 
-      schema.validate({x: 1})
-        .then((result) => assert.isUndefined(result));
-
-      schema.validate({x: '1'})
-        .catch((err) => {
-          assert.instanceOf(err, Error);
-          assert.strictEqual(err.name, 'ValidationError');
-        });
+      assert.isFulfilled(schema.validate({x: 1}));
+      assert.isRejected(schema.validate({x: '1'}));
     });
 
     it('successfully validates string', function () {
@@ -94,20 +88,9 @@ describe('Schema', function () {
         x: {type: 'string', minLength: 2}
       });
 
-      schema.validate({x: 'abc'})
-        .then((result) => assert.isUndefined(result));
-
-      schema.validate({x: 'a'})
-        .catch((err) => {
-          assert.instanceOf(err, Error);
-          assert.strictEqual(err.name, 'ValidationError');
-        });
-
-      schema.validate({x: 123})
-        .catch((err) => {
-          assert.instanceOf(err, Error);
-          assert.strictEqual(err.name, 'ValidationError');
-        });
+      assert.isFulfilled(schema.validate({x: 'abc'}));
+      assert.isRejected(schema.validate({x: 'a'}));
+      assert.isRejected(schema.validate({x: 123}));
     });
 
     it('successfully validates date', function () {
@@ -115,14 +98,8 @@ describe('Schema', function () {
         x: {type: 'date', format: 'YYYY-MM-DD'}
       });
 
-      schema.validate({x: '2016-02-04'})
-        .then((result) => assert.isUndefined(result));
-
-      schema.validate({x: 'a'})
-        .catch((err) => {
-          assert.instanceOf(err, Error);
-          assert.strictEqual(err.name, 'ValidationError');
-        });
+      assert.isFulfilled(schema.validate({x: '2016-02-04'}));
+      assert.isRejected(schema.validate({x: 'a'}));
     });
 
     it('successfully validates integer', function () {
@@ -130,14 +107,8 @@ describe('Schema', function () {
         x: {type: 'integer'}
       });
 
-      schema.validate({x: 123})
-        .then((result) => assert.isUndefined(result));
-
-      schema.validate({x: 123.52})
-        .catch((err) => {
-          assert.instanceOf(err, Error);
-          assert.strictEqual(err.name, 'ValidationError');
-        });
+      assert.isFulfilled(schema.validate({x: 123}));
+      assert.isRejected(schema.validate({x: 123.52}));
     });
 
     it('successfully validates float', function () {
@@ -145,11 +116,29 @@ describe('Schema', function () {
         x: {type: 'float', precision: 2}
       });
 
-      schema.validate({x: 123.2})
-        .then((result) => assert.isUndefined(result));
-
+      assert.isFulfilled(schema.validate({x: 123.2}));
       assert.isRejected(schema.validate({x: 'abc'}), Error);
       assert.isRejected(schema.validate({x: 123.3342}), Error);
+    });
+
+    it('successfully validates uuid', function () {
+      const schema = new Schema({
+        x: {type: 'uuid'}
+      });
+
+      assert.isFulfilled(schema.validate({x: '8f06601c-5ba5-411f-bfd1-0875bdb0a3bc'}));
+      assert.isRejected(schema.validate({x: 'abc'}), Error);
+      assert.isRejected(schema.validate({x: 123}), Error);
+    });
+
+    it('successfully validates enum', function () {
+      const schema = new Schema({
+        x: {type: 'enum', values: ['a', 'b', 'c']}
+      });
+
+      assert.isFulfilled(schema.validate({x: 'b'}));
+      assert.isRejected(schema.validate({x: 'd'}), Error);
+      assert.isRejected(schema.validate({x: 123}), Error);
     });
   });
 });
