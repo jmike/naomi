@@ -7,19 +7,16 @@ class DateType {
     this.props = {};
   }
 
-  min(v: Date): DateType {
+  set min(v: Date): void {
     this.props.min = v;
-    return this;
   }
 
-  max(v: Date): DateType {
+  set max(v: Date): void {
     this.props.max = v;
-    return this;
   }
 
-  format(v: string): DateType {
+  set format(v: string): void {
     this.props.format = v;
-    return this;
   }
 
   toJoi(): Object {

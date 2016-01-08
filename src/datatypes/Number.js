@@ -7,24 +7,20 @@ class NumberType {
     this.props = {};
   }
 
-  min(v: number): NumberType {
+  set min(v: number): void {
     this.props.min = v;
-    return this;
   }
 
-  max(v: number): NumberType {
+  set max(v: number): void {
     this.props.max = v;
-    return this;
   }
 
-  positive(v: boolean): NumberType {
+  set positive(v: boolean): void {
     this.props.positive = v;
-    return this;
   }
 
-  negative(v: boolean): NumberType {
+  set negative(v: boolean): void {
     this.props.negative = v;
-    return this;
   }
 
   toJoi(): Object {

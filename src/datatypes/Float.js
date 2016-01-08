@@ -6,9 +6,8 @@ class FloatType extends NumberType {
     super();
   }
 
-  precision(v: number): FloatType {
+  set precision(v: number): void {
     this.props.precision = v;
-    return this;
   }
 
   toJoi(): Object {

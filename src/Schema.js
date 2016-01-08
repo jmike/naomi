@@ -47,12 +47,7 @@ class Schema {
       // update datatype props
       _.forOwn(obj, (v, k) => {
         if (k === 'type') return;
-
-        if (typeof type[k] !== 'function') {
-          throw new TypeError(`Invalid property ${k} for ${key}`);
-        }
-
-        type[k](v);
+        type[k] = v;
       });
 
       return type;
