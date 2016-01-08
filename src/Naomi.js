@@ -2,6 +2,7 @@ import _ from 'lodash';
 import CustomError from 'customerror';
 import Database from './Database';
 import Collection from './Collection';
+import Schema from './Schema';
 
 class Naomi {
 
@@ -51,4 +52,5 @@ class Naomi {
 
 export {Database};
 export {Collection};
+export {Schema};
 export default new Naomi(); // singleton
