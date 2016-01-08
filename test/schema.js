@@ -21,7 +21,11 @@ describe('Schema', function () {
       assert.throws(() => new Schema('str'), TypeError);
     });
 
-    it('accepts datatypes in definition schema', function () {
+    it('accepts empty definition object', function () {
+      assert.doesNotThrow(() => new Schema({}));
+    });
+
+    it('accepts datatypes in definition object', function () {
       assert.doesNotThrow(() => new Schema({
         uuid: {type: 'uuid'},
         string: {type: 'string', minLength: 1, maxLength: 10, lowercase: true},
