@@ -5,68 +5,72 @@ import Database from './Database';
 class QueryBuilder {
 
   /**
-   * Constructs a new QueryBuilder instance for the designated collection in db.
-   * @param {Database} db: Database [description]
-   * @param {Collection} collection: Collection [description]
+   * Constructs a new QueryBuilder instance for the designated collection.
+   * @param {String} collectionName the name of the collection.
    * @constructor
    */
-  constructor(collection: Collection, db: Database) {
-    this.collection = collection;
-    this.db = db;
+  constructor(collectionName: String) {
+    this.collectionName = collectionName;
   }
 
   /**
    * Builds and returns a new "find" query, based on the supplied AST.
    * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
    * @return {Object}
+   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildFind(ast: Array): Object {
-    throw new CustomError('Method not implemented', 'NotImplemented');
+  buildFind(ast: Array) {
+    throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
    * Builds and returns a new "find one" query, based on the supplied AST.
    * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
    * @return {Object}
+   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildFindOne(ast: Array): Object {
-    throw new CustomError('Method not implemented', 'NotImplemented');
+  buildFindOne(ast: Array) {
+    throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
    * Builds and returns a new "count" query, based on the supplied AST.
    * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
    * @return {Object}
+   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildCount(ast: Array): Object {
-    throw new CustomError('Method not implemented', 'NotImplemented');
+  buildCount(ast: Array) {
+    throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
    * Builds and returns a new "remove" query, based on the supplied AST.
    * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
    * @return {Object}
+   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildRemove(ast: Array): Object {
-    throw new CustomError('Method not implemented', 'NotImplemented');
+  buildRemove(ast: Array) {
+    throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
    * Builds and returns a new "insert" query, based on the supplied AST.
    * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
    * @return {Object}
+   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildInsert(ast: Array): Object {
-    throw new CustomError('Method not implemented', 'NotImplemented');
+  buildInsert(ast: Array) {
+    throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
    * Builds and returns a new "update" query, based on the supplied AST.
    * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
    * @return {Object}
+   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildUpdate(ast: Array): Object {
-    throw new CustomError('Method not implemented', 'NotImplemented');
+  buildUpdate(ast: Array) {
+    throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
 }
