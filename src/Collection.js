@@ -2,6 +2,7 @@ import {EventEmitter} from 'events';
 import Promise from 'bluebird';
 import _ from 'lodash';
 import Database from './Database';
+import Schema from './Schema';
 
 class Collection extends EventEmitter {
 
@@ -9,7 +10,7 @@ class Collection extends EventEmitter {
    * Constructs a new Collection instance.
    * @param {Database} db reference to the parent database.
    * @param {string} name the name of the collection.
-   * @param {Object} [schema] the schema of the collection.
+   * @param {Object} [schema] the schema definition of the collection.
    * @throws {TypeError} if arguments are of invalid type
    * @constructor
    */
@@ -28,7 +29,7 @@ class Collection extends EventEmitter {
 
     this.db = db;
     this.name = name;
-    this.schema = schema;
+    this.schema = new Schema(schema);
   }
 
   /**
