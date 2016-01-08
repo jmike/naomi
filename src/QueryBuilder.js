@@ -6,10 +6,10 @@ class QueryBuilder {
 
   /**
    * Constructs a new QueryBuilder instance for the designated collection.
-   * @param {String} collectionName the name of the collection.
+   * @param {string} collectionName the name of the collection.
    * @constructor
    */
-  constructor(collectionName: String) {
+  constructor(collectionName: string) {
     this.collectionName = collectionName;
   }
 
