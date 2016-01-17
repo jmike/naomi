@@ -1,16 +1,15 @@
 import CustomError from 'customerror';
 import Collection from './Collection';
-import Database from './Database';
 
 class QueryBuilder {
 
   /**
    * Constructs a new QueryBuilder instance for the designated collection.
-   * @param {string} collectionName the name of the collection.
+   * @param {Collection} collection the collection to build queries for.
    * @constructor
    */
-  constructor(collectionName: string) {
-    this.collectionName = collectionName;
+  constructor(collection: Collection) {
+    this.collection = collection;
   }
 
   /**
