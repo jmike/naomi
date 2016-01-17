@@ -3,6 +3,7 @@
 import {assert} from 'chai';
 import Promise from 'bluebird';
 import Database from '../src/Database';
+import Collection from '../src/Collection';
 
 describe('Database', function () {
   describe('#constructor()', function () {
@@ -107,10 +108,11 @@ describe('Database', function () {
     });
   });
 
-  describe('@Collection', function () {
-    it('is bound to the Database instance', function () {
+  describe('#createCollection()', function () {
+    it('returns a new Collection instance bound to this database', function () {
       const db = new Database({});
-      const employees = new db.Collection('employees');
+      const employees = db.createCollection('employees');
+      assert.instanceOf(employees, Collection);
       assert.strictEqual(employees.db, db);
     });
   });
