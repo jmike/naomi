@@ -13,12 +13,32 @@ class QueryBuilder {
   }
 
   /**
+   * Builds and returns a selection clause, based on the supplied AST.
+   * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
+   * @return {Object}
+   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
+   */
+  buildSelection(ast: Array) {
+    throw new CustomError('Method not implemented', 'NotImplementedException');
+  }
+
+  /**
+   * Builds and returns a projection clause, based on the supplied AST.
+   * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
+   * @return {Object}
+   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
+   */
+  buildProjection(ast: Array) {
+    throw new CustomError('Method not implemented', 'NotImplementedException');
+  }
+
+  /**
    * Builds and returns a new "find" query, based on the supplied AST.
    * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildFind(ast: Array) {
+  buildFindQuery(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
@@ -28,7 +48,7 @@ class QueryBuilder {
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildFindOne(ast: Array) {
+  buildFindOneQuery(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
@@ -38,7 +58,7 @@ class QueryBuilder {
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildCount(ast: Array) {
+  buildCountQuery(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
@@ -48,7 +68,7 @@ class QueryBuilder {
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildRemove(ast: Array) {
+  buildRemoveQuery(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
@@ -58,7 +78,7 @@ class QueryBuilder {
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildInsert(ast: Array) {
+  buildInsertQuery(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
@@ -68,7 +88,7 @@ class QueryBuilder {
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildUpdate(ast: Array) {
+  buildUpdateQuery(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 

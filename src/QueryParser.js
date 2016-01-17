@@ -2,18 +2,18 @@ import _ from 'lodash';
 import type from 'type-of';
 import CustomError from 'customerror';
 
-import $and from './query-operators/and';
-import $or from './query-operators/or';
-import $eq from './query-operators/eq';
-import $ne from './query-operators/ne';
-import $gt from './query-operators/gt';
-import $gte from './query-operators/gte';
-import $lt from './query-operators/lt';
-import $lte from './query-operators/lte';
-import $in from './query-operators/in';
-import $nin from './query-operators/nin';
-import $like from './query-operators/like';
-import $nlike from './query-operators/nlike';
+import {parse as $and} from './query-operators/and';
+import {parse as $or} from './query-operators/or';
+import {parse as $eq} from './query-operators/eq';
+import {parse as $ne} from './query-operators/ne';
+import {parse as $gt} from './query-operators/gt';
+import {parse as $gte} from './query-operators/gte';
+import {parse as $lt} from './query-operators/lt';
+import {parse as $lte} from './query-operators/lte';
+import {parse as $in} from './query-operators/in';
+import {parse as $nin} from './query-operators/nin';
+import {parse as $like} from './query-operators/like';
+import {parse as $nlike} from './query-operators/nlike';
 
 class QueryParser {
 

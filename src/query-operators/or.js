@@ -3,7 +3,13 @@ import CustomError from 'customerror';
 import type from 'type-of';
 import QueryParser from '../QueryParser';
 
-export default function(v) {
+/**
+ * Parses the supplied value and returns an abstract syntax tree (ast).
+ * @param {Array} v value.
+ * @return {Array}
+ * @throws {QueryParseError} if method value could not be parsed.
+ */
+export function parse(v: Array): Array {
   if (!_.isArray(v)) {
     throw new CustomError(`Invalid $or expression; expected array, received ${type(v)}`, 'QueryParseError');
   }
@@ -13,4 +19,14 @@ export default function(v) {
   }
 
   return ['OR'].concat(v.map((e) => QueryParser.parse(e)));
+}
+
+/**
+ * Builds and returns a parameterized query based on the supplied abstract syntax tree (ast).
+ * @param {Array} ast an abstract syntax tree.
+ * @return {Object}
+ * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
+ */
+export function build(ast: Array) {
+  throw new CustomError('Method not implemented', 'NotImplementedException');
 }

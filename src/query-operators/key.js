@@ -2,7 +2,7 @@ import _ from 'lodash';
 import type from 'type-of';
 import CustomError from 'customerror';
 
-export default function(k) {
+export function parse(k) {
   const ast = ['KEY'];
 
   if (k === '$id') {
