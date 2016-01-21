@@ -1,101 +1,53 @@
 import _ from 'lodash';
-import type from 'type-of';
-import CustomError from 'customerror';
+// import type from 'type-of';
+// import CustomError from 'customerror';
 
-import {parse as $and} from './query-operators/and';
-import {parse as $or} from './query-operators/or';
-import {parse as $eq} from './query-operators/eq';
-import {parse as $ne} from './query-operators/ne';
-import {parse as $gt} from './query-operators/gt';
-import {parse as $gte} from './query-operators/gte';
-import {parse as $lt} from './query-operators/lt';
-import {parse as $lte} from './query-operators/lte';
-import {parse as $in} from './query-operators/in';
-import {parse as $nin} from './query-operators/nin';
-import {parse as $like} from './query-operators/like';
-import {parse as $nlike} from './query-operators/nlike';
+import $selection from './querylang/selection';
+import $projection from './querylang/projection';
+import $orderby from './querylang/orderby';
+import $limit from './querylang/limit';
+import $offset from './querylang/offset';
 
 class QueryParser {
 
   constructor() {
-    this._comparison = new Map();
-    this._logical = new Map();
+    this.comparisonOperators = new Map();
+    this.logicalOperators = new Map();
   }
 
   /**
-   * Parses and returns an AST (Abstract Syntax Tree) representation of the given expression.
-   * @param {Number, String, Date, Buffer, Boolean, Array, Object} $expr
-   * @throws {QueryParseError} if params are invalid or unspecified
-   * @return {Array}
+   * Parses the supplied query expression and returns an abstract syntax tree (ast).
+   * @param {Number, String, Date, Buffer, Boolean, Array, Object} [$expr] optional expression.
+   * @return {Object}
+   * @throws {QueryParseError} if the supplied expression is invalid.
    */
-  parse($expr: number | string | boolean | Object | Array, _mem: ?string): Array {
-    // check if $expr is number, string, boolean, date of buffer
-    if (_.isNumber($expr) || _.isString($expr) || _.isDate($expr) || Buffer.isBuffer($expr) || _.isBoolean($expr)) {
-      return this.parse({$id: {$eq: $expr}});
+  parse(query: ?number | string | boolean | Object | Array): Object {
+    // check if query is null or undefined
+    if (_.isNull(query) || _.isUndefined(query)) {
+      query = {};
     }
 
-    // check if $expr is array
-    if (_.isArray($expr)) {
-      return this.parse({$id: {$in: $expr}});
+    // check if query is number, string, boolean, date or buffer
+    if (_.isNumber(query) || _.isString(query) || _.isDate(query) || Buffer.isBuffer(query) || _.isBoolean(query)) {
+      query = {'$id': {'$eq': query}};
     }
 
-    // check if $expr is object
-    if (_.isPlainObject($expr)) {
-      const keys = _.keys($expr);
-
-      // check if $expr has > 1 keys
-      if (keys.length > 1) {
-        return this.parse({$and: keys.map((k) => {
-          return {[k]: $expr[k]};
-        })}); // e.g. {a: 1, b: 2} => {$and: [{a: 1}, {b: 2}]}
-      }
-
-      // check if $expr has exactly 1 key
-      if (keys.length === 1) {
-        const k = keys[0];
-        const v = $expr[k];
-
-        // check if key is comparison operator
-        if (this._comparison.has(k)) {
-          return this._comparison.get(k)(_mem, v);
-        }
-
-        // check if key is logical operator
-        if (this._logical.has(k)) {
-          return this._logical.get(k)(v);
-        }
-
-        // check if value is nested object
-        if (_.isPlainObject(v)) {
-          return this.parse(v, k);
-        }
-
-        // handle simple key-value assignment
-        return this.parse({[k]: {$eq: v}});
-      }
-
-      throw new CustomError(`Invalid expression; object must have at least 1 property`, 'QueryParseError');
+    // check if query is array
+    if (_.isArray(query)) {
+      query = {'$id': {'$in': query}};
     }
 
-    throw new CustomError(`Invalid expression; expected number, string, boolean, date, buffer, array or object, received ${type($expr)}`, 'QueryParseError');
+    return {
+      selection: $selection.parse(_.omit(query, ['$projection', '$orderby', '$limit', '$offset'])),
+      projection: $projection.parse(query.$projection),
+      orderby: $orderby.parse(query.$orderby),
+      limit: $limit.parse(query.$limit),
+      offset: $offset.parse(query.$offset),
+    };
   }
 }
 
 // create parser instance
 const parser = new QueryParser();
-
-parser._logical.set('$and', $and);
-parser._logical.set('$or', $or);
-
-parser._comparison.set('$eq', $eq);
-parser._comparison.set('$ne', $ne);
-parser._comparison.set('$gt', $gt);
-parser._comparison.set('$gte', $gte);
-parser._comparison.set('$lt', $lt);
-parser._comparison.set('$lte', $lte);
-parser._comparison.set('$in', $in);
-parser._comparison.set('$nin', $nin);
-parser._comparison.set('$like', $like);
-parser._comparison.set('$nlike', $nlike);
 
 export default parser; // singleton
