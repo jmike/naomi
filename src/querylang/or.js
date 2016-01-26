@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import CustomError from 'customerror';
 import type from 'type-of';
-import selection from './selection';
+import parser from '../QueryParser';
 
 class Or {
 
@@ -21,7 +21,10 @@ class Or {
       throw new CustomError(`Invalid $or expression; array cannot be empty`, 'QueryParseError');
     }
 
-    return ['OR'].concat(v.map((e) => selection.parse(e)));
+    return ['OR'].concat(v.map((e) => {
+      const selection = parser.parseSelection(e);
+      return selection[1]; // remove the "SELECTION" part
+    }));
   }
 
   /**

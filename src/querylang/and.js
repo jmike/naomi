@@ -1,5 +1,5 @@
 import CustomError from 'customerror';
-import selection from './selection';
+import parser from '../QueryParser';
 
 class And {
 
@@ -15,7 +15,10 @@ class And {
       throw new CustomError(`Invalid $and expression; array cannot be empty`, 'QueryParseError');
     }
 
-    return ['AND'].concat(v.map((e) => selection.parse(e)));
+    return ['AND'].concat(v.map((e) => {
+      const selection = parser.parseSelection(e);
+      return selection[1]; // remove the "SELECTION" part
+    }));
   }
 
   /**

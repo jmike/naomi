@@ -72,14 +72,14 @@ class Projection {
       const v = $selection[k];
 
       // check if key is comparison operator
-      if (this.comparisonOperators.has(k)) {
-        const arr = this.comparisonOperators.get(k).parse(_mem, v);
+      if (comparisonOperators.has(k)) {
+        const arr = comparisonOperators.get(k).parse(_mem, v);
         return ['SELECTION', arr];
       }
 
       // check if key is logical operator
-      if (this.logicalOperators.has(k)) {
-        const arr = this.logicalOperators.get(k).parse(v);
+      if (logicalOperators.has(k)) {
+        const arr = logicalOperators.get(k).parse(v);
         return ['SELECTION', arr];
       }
 
