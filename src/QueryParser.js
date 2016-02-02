@@ -125,7 +125,7 @@ class QueryParser {
    * @param {string, Object, Array<string, Object>} [expression] optional orderby expression.
    * @return {Array}
    */
-  parseOrderby(expression: ?string | Object | Array<string | Object>): Array {
+  parseOrderBy(expression: ?string | Object | Array<string | Object>): Array {
     if (_.isNull(expression) || _.isUndefined(expression)) {
       return ['ORDERBY', null];
     }
@@ -201,8 +201,8 @@ class QueryParser {
   }
 
   /**
-   * Parses the supplied query expression and returns an abstract syntax tree (ast).
-   * @param {Number, String, Date, Buffer, Boolean, Array, Object} [$expr] optional expression.
+   * Parses a generic query expression and returns an abstract syntax tree (ast).
+   * @param {Number, String, Date, Buffer, Boolean, Array, Object} [expression] optional query expression.
    * @return {Object}
    */
   parse(query: ?number | string | boolean | Object | Array): Object {
@@ -224,7 +224,7 @@ class QueryParser {
     return {
       selection: this.parseSelection(_.omit(query, ['$projection', '$orderby', '$limit', '$offset'])),
       projection: this.parseProjection(query.$projection),
-      orderby: this.parseOrderby(query.$orderby),
+      orderby: this.parseOrderBy(query.$orderby),
       limit: this.parseLimit(query.$limit),
       offset: this.parseOffset(query.$offset),
     };

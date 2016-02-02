@@ -14,81 +14,81 @@ class QueryBuilder {
 
   /**
    * Builds and returns a selection clause, based on the supplied AST.
-   * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
+   * @param {Array} ast abstract syntax tree.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildSelection(ast: Array) {
+  buildSelectionClause(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
    * Builds and returns a projection clause, based on the supplied AST.
-   * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
+   * @param {Array} ast abstract syntax tree.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildProjection(ast: Array) {
+  buildProjectionClause(ast: Array) {
+    throw new CustomError('Method not implemented', 'NotImplementedException');
+  }
+
+  /**
+   * Builds and returns an orderby clause, based on the supplied AST.
+   * @param {Array} ast abstract syntax tree.
+   * @return {Object}
+   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
+   */
+  buildOrderByClause(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
    * Builds and returns a new "find" query, based on the supplied AST.
-   * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
+   * @param {Object} ast abstract syntax tree.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildFindQuery(ast: Array) {
-    throw new CustomError('Method not implemented', 'NotImplementedException');
-  }
-
-  /**
-   * Builds and returns a new "find one" query, based on the supplied AST.
-   * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
-   * @return {Object}
-   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
-   */
-  buildFindOneQuery(ast: Array) {
+  buildFindQuery(ast: Object) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
    * Builds and returns a new "count" query, based on the supplied AST.
-   * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
+   * @param {Object} ast abstract syntax tree.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildCountQuery(ast: Array) {
+  buildCountQuery(ast: Object) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
    * Builds and returns a new "remove" query, based on the supplied AST.
-   * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
+   * @param {Object} ast abstract syntax tree.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildRemoveQuery(ast: Array) {
+  buildRemoveQuery(ast: Object) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
    * Builds and returns a new "insert" query, based on the supplied AST.
-   * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
+   * @param {Object} ast abstract syntax tree.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildInsertQuery(ast: Array) {
+  buildInsertQuery(ast: Object) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
    * Builds and returns a new "update" query, based on the supplied AST.
-   * @param {Array} ast an abstract syntax tree, as provided by the QueryParser.
+   * @param {Object} ast abstract syntax tree.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  buildUpdateQuery(ast: Array) {
+  buildUpdateQuery(ast: Object) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
