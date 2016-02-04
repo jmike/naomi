@@ -3,7 +3,7 @@ import CustomError from 'customerror';
 import Database from './Database';
 import Collection from './Collection';
 import Schema from './Schema';
-import QueryBuilder from './QueryBuilder';
+import QueryCompiler from './QueryCompiler';
 
 class Naomi {
 
@@ -54,5 +54,5 @@ class Naomi {
 export {Database};
 export {Collection};
 export {Schema};
-export {QueryBuilder};
+export {QueryCompiler};
 export default new Naomi(); // singleton
