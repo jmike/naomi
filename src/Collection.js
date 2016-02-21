@@ -66,7 +66,7 @@ class Collection extends EventEmitter {
   /**
    * Retrieves an array of records from the collection based on the given selection.
    * @param {(boolean|number|string|Date|Object|Array<Object>)} [selection] a naomi selection expression.
-   * @param {Object} [options] query options.
+   * @param {Object} [options] §§§§query options.
    * @param {Function<Error, Array<Object>>} [callback] an optional callback function.
    * @returns {Promise<Array<Object>>} a bluebird promise resolving to an array of records.
    * @throws {TypeError} if arguments are of invalid type.
@@ -90,7 +90,7 @@ class Collection extends EventEmitter {
   /**
    * Retrieves a single record from the collection based on the given selection.
    * @param {(boolean|number|string|Date|Object|Array<Object>)} [selection] an optional naomi selection expression.
-   * @param {Object} [options] query options.
+   * @param {Object} [options] §§§§query options.
    * @param {Function<Error, Object>} [callback] an optional callback function
    * @returns {Promise<Object>} a bluebird promise resolving to a single record.
    * @throws {TypeError} if arguments are of invalid type.
@@ -114,12 +114,12 @@ class Collection extends EventEmitter {
   /**
    * Counts records in the collection based on the given selection.
    * @param {(boolean|number|string|Date|Object|Array<Object>)} [selection] a naomi selection expression.
-   * @param {Object} [options] query options.
+   * @param {Object} [options] §§§§query options.
    * @param {Function<Error, number>} [callback] an optional callback function.
    * @returns {Promise<number>} a bluebird promise resolving to the number of records.
    * @throws {TypeError} if arguments are of invalid type.
    */
-  count(selection: boolean | number | string | Object | ?Function, options: Object | ?Function,, callback: ?Function): Promise {
+  count(selection: boolean | number | string | Object | ?Function, options: Object | ?Function, callback: ?Function): Promise {
     // handle optional arguments
     if (_.isFunction(selection)) {
       callback = selection;
@@ -161,7 +161,7 @@ class Collection extends EventEmitter {
   /**
    * Creates the specified record(s) in the collection.
    * @param {(Object|Array<Object>)} records the record(s) to insert to the collection.
-   * @param {Object} [options] query options.
+   * @param {Object} [options] §§§§query options.
    * @param {Function<err, Object>} [callback] an optional callback function with (err, keys) argument.
    * @returns {Promise} a bluebird promise resolving to the primary key of the created record(s).
    * @throws {TypeError} if arguments are of invalid type.
@@ -184,7 +184,7 @@ class Collection extends EventEmitter {
   /**
    * Creates, or updates if they already exist, the specified record(s) in the collection.
    * @param {(Object|Array<Object>)} records the record(s) to insert to the collection.
-   * @param {Object} [options] query options.
+   * @param {Object} [options] §§§§query options.
    * @param {Function<err, Object>} [callback] an optional callback function with (err, keys) argument.
    * @returns {Promise} a bluebird promise resolving to the primary key of the created record(s).
    * @throws {TypeError} if arguments are of invalid type.
@@ -208,7 +208,7 @@ class Collection extends EventEmitter {
    * Updates (if already exist) the specified record(s) in the collection.
    * @param {(boolean|number|string|Date|Object|Array<Object>)} selection a naomi selection expression.
    * @param {(Object|Array<Object>)} records the record(s) to insert to the collection.
-   * @param {Object} [options] query options.
+   * @param {Object} [options] §§§§query options.
    * @param {Function<err, Object>} [callback] an optional callback function with (err, keys) argument.
    * @returns {Promise} a bluebird promise resolving to the primary key of the created/updated record(s).
    * @throws {TypeError} if arguments are of invalid type.
