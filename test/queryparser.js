@@ -4,423 +4,425 @@ import {assert} from 'chai';
 import QueryParser from '../src/QueryParser';
 
 describe('QueryParser', function() {
-  // limit
+  const parser = new QueryParser('employees', []);
 
-  it('accepts positive integer as $limit', function() {
-    const ast = QueryParser.parse({$limit: 1});
-    assert.deepEqual(ast.limit, ['LIMIT', 1]);
+  describe('parseLimit', function() {
+    it('accepts positive integer', function() {
+      const ast = parser.parseLimit(1);
+      assert.deepEqual(ast, ['LIMIT', 1]);
+    });
+
+    it('accepts null limit', function() {
+      const ast = parser.parseLimit(null);
+      assert.deepEqual(ast, ['LIMIT', null]);
+    });
+
+    it('accepts undefined limit', function() {
+      const ast = parser.parseLimit();
+      assert.deepEqual(ast, ['LIMIT', null]);
+    });
+
+    it('throws error when limit is zero (0) or negative', function () {
+      assert.throws(() => parser.parseLimit(0), Error);
+      assert.throws(() => parser.parseLimit(-1), Error);
+      assert.throws(() => parser.parseLimit(-99), Error);
+    });
+
+    it('throws error when limit is float', function () {
+      assert.throws(() => parser.parseLimit(0.1), Error);
+    });
   });
 
-  it('accepts null as $limit', function() {
-    const ast = QueryParser.parse({$limit: null});
-    assert.deepEqual(ast.limit, ['LIMIT', null]);
+  describe('parseOffset', function() {
+    it('accepts positive integer', function() {
+      const ast = parser.parseOffset(1);
+      assert.deepEqual(ast, ['OFFSET', 1]);
+    });
+
+    it('accepts zero (0) offset', function() {
+      const ast = parser.parseOffset(0);
+      assert.deepEqual(ast, ['OFFSET', 0]);
+    });
+
+    it('accepts null offset', function() {
+      const ast = parser.parseOffset(null);
+      assert.deepEqual(ast, ['OFFSET', null]);
+    });
+
+    it('accepts undefined offset', function() {
+      const ast = parser.parseOffset();
+      assert.deepEqual(ast, ['OFFSET', null]);
+    });
+
+    it('throws error when offset is negative', function () {
+      assert.throws(() => parser.parseOffset(-1), Error);
+      assert.throws(() => parser.parseOffset(-99), Error);
+    });
+
+    it('throws error when offset is float', function () {
+      assert.throws(() => parser.parseOffset(0.1), Error);
+    });
   });
 
-  it('accepts undefined $limit', function() {
-    const ast = QueryParser.parse({});
-    assert.deepEqual(ast.limit, ['LIMIT', null]);
+  describe('parseOrderBy', function() {
+    it('accepts string as $orderby', function() {
+      const ast = parser.parseOrderBy('foo');
+      assert.deepEqual(ast, [
+        'ORDERBY',
+        ['ASC', ['KEY', 'foo']]
+      ]);
+    });
+
+    it('accepts object as $orderby', function() {
+      const ast = parser.parseOrderBy({'foo': -1});
+      assert.deepEqual(ast, [
+        'ORDERBY',
+        ['DESC', ['KEY', 'foo']]
+      ]);
+    });
+
+    it('accepts array of strings as $orderby', function() {
+      const ast = parser.parseOrderBy(['foo', 'bar']);
+      assert.deepEqual(ast, [
+        'ORDERBY',
+        ['ASC', ['KEY', 'foo']],
+        ['ASC', ['KEY', 'bar']]
+      ]);
+    });
+
+    it('accepts array of objects as $orderby', function() {
+      const ast = parser.parseOrderBy([{'foo': -1}, {'bar': 1}]);
+      assert.deepEqual(ast, [
+        'ORDERBY',
+        ['DESC', ['KEY', 'foo']],
+        ['ASC', ['KEY', 'bar']]
+      ]);
+    });
+
+    it('accepts array of mixed strings and objects as $orderby', function() {
+      const ast = parser.parseOrderBy([{'foo': -1}, 'bar']);
+      assert.deepEqual(ast, [
+        'ORDERBY',
+        ['DESC', ['KEY', 'foo']],
+        ['ASC', ['KEY', 'bar']]
+      ]);
+    });
+
+    it('accepts null as $orderby', function() {
+      const ast = parser.parseOrderBy(null);
+      assert.deepEqual(ast, ['ORDERBY', null]);
+    });
+
+    it('accepts undefined $orderby', function() {
+      const ast = parser.parseOrderBy();
+      assert.deepEqual(ast, ['ORDERBY', null]);
+    });
+
+    it('throws error when $orderby is of invalid type', function () {
+      assert.throws(() => parser.parseOrderBy(123), TypeError);
+      assert.throws(() => parser.parseOrderBy(true), TypeError);
+      assert.throws(() => parser.parseOrderBy(new Date()), TypeError);
+      assert.throws(() => parser.parseOrderBy(function () {}), TypeError);
+    });
+
+    it('throws error when $orderby array contains invalid values', function () {
+      assert.throws(() => parser.parseOrderBy(['foo', 123]), Error);
+      assert.throws(() => parser.parseOrderBy(['foo', true]), Error);
+      assert.throws(() => parser.parseOrderBy(['foo', new Date()]), Error);
+      assert.throws(() => parser.parseOrderBy(['foo', function () {}]), Error);
+    });
+
+    it('throws error when $orderby object contains more than one properties', function () {
+      assert.throws(() => parser.parseOrderBy({a: -1, b: 1}), Error);
+    });
+
+    it('throws error when $orderby object value is not one of -1 or 1', function () {
+      assert.throws(() => parser.parseOrderBy({foo: 2}), Error);
+      assert.throws(() => parser.parseOrderBy({foo: 0}), Error);
+      assert.throws(() => parser.parseOrderBy({foo: -99}), Error);
+    });
   });
 
-  it('throws error when $limit is zero (0) or negative', function () {
-    assert.throws(() => QueryParser.parse({$limit: 0}), Error);
-    assert.throws(() => QueryParser.parse({$limit: -1}), Error);
-    assert.throws(() => QueryParser.parse({$limit: -99}), Error);
+  describe('parseProjection', function() {
+    it('accepts object as $projection', function() {
+      const ast = parser.parseProjection({foo: 1, bar: -1});
+      assert.deepEqual(ast, [
+        'PROJECTION',
+        ['INCLUDE', ['KEY', 'foo']],
+        ['EXCLUDE', ['KEY', 'bar']]
+      ]);
+    });
+
+    it('accepts null as $projection', function() {
+      const ast = parser.parseProjection(null);
+      assert.deepEqual(ast, ['PROJECTION', null]);
+    });
+
+    it('accepts undefined $projection', function() {
+      const ast = parser.parseProjection();
+      assert.deepEqual(ast, ['PROJECTION', null]);
+    });
+
+    it('throws error when $projection is of invalid type', function () {
+      assert.throws(() => parser.parseProjection(123), TypeError);
+      assert.throws(() => parser.parseProjection(true), TypeError);
+      assert.throws(() => parser.parseProjection('str'), TypeError);
+      assert.throws(() => parser.parseProjection([]), TypeError);
+      assert.throws(() => parser.parseProjection(new Date()), TypeError);
+      assert.throws(() => parser.parseProjection(function () {}), TypeError);
+    });
   });
 
-  it('throws error when $limit is float', function () {
-    assert.throws(() => QueryParser.parse({$limit: 0.1}), Error);
-  });
+  describe('parseSelection', function() {
+    it('parses plain number', function() {
+      const ast = parser.parseSelection(123);
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'EQ',
+          ['ID'],
+          ['VALUE', 123]
+        ]
+      ]);
+    });
 
-  // offset
+    it('parses plain string', function() {
+      const ast = parser.parseSelection('str');
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'EQ',
+          ['ID'],
+          ['VALUE', 'str']
+        ]
+      ]);
+    });
 
-  it('accepts positive integer as $offset', function() {
-    const ast = QueryParser.parse({$offset: 1});
-    assert.deepEqual(ast.offset, ['OFFSET', 1]);
-  });
+    it('parses plain boolean', function() {
+      const ast = parser.parseSelection(true);
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'EQ',
+          ['ID'],
+          ['VALUE', true]
+        ]
+      ]);
+    });
 
-  it('accepts zero (0) as $offset', function() {
-    const ast = QueryParser.parse({$offset: 0});
-    assert.deepEqual(ast.offset, ['OFFSET', 0]);
-  });
+    it('parses plain date', function() {
+      const d = new Date();
+      const ast = parser.parseSelection(d);
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'EQ',
+          ['ID'],
+          ['VALUE', d]
+        ]
+      ]);
+    });
 
-  it('accepts null as $offset', function() {
-    const ast = QueryParser.parse({$offset: null});
-    assert.deepEqual(ast.offset, ['OFFSET', null]);
-  });
+    it('parses plain buffer', function() {
+      const buf = new Buffer([1, 2, 3]);
+      const ast = parser.parseSelection(buf);
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'EQ',
+          ['ID'],
+          ['VALUE', buf]
+        ]
+      ]);
+    });
 
-  it('accepts undefined $offset', function() {
-    const ast = QueryParser.parse({});
-    assert.deepEqual(ast.offset, ['OFFSET', null]);
-  });
+    it('parses array or numbers', function() {
+      const ast = parser.parseSelection([1, 2, 3]);
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'IN',
+          ['ID'],
+          ['VALUES', 1, 2, 3]
+        ]
+      ]);
+    });
 
-  it('throws error when $offset is negative', function () {
-    assert.throws(() => QueryParser.parse({$offset: -1}), Error);
-    assert.throws(() => QueryParser.parse({$offset: -99}), Error);
-  });
-
-  it('throws error when $offset is float', function () {
-    assert.throws(() => QueryParser.parse({$offset: 0.1}), Error);
-  });
-
-  // orderby
-
-  it('accepts string as $orderby', function() {
-    const ast = QueryParser.parse({$orderby: 'foo'});
-    assert.deepEqual(ast.orderby, [
-      'ORDERBY',
-      ['ASC', ['KEY', 'foo']]
-    ]);
-  });
-
-  it('accepts object as $orderby', function() {
-    const ast = QueryParser.parse({$orderby: {'foo': -1}});
-    assert.deepEqual(ast.orderby, [
-      'ORDERBY',
-      ['DESC', ['KEY', 'foo']]
-    ]);
-  });
-
-  it('accepts array of strings as $orderby', function() {
-    const ast = QueryParser.parse({$orderby: ['foo', 'bar']});
-    assert.deepEqual(ast.orderby, [
-      'ORDERBY',
-      ['ASC', ['KEY', 'foo']],
-      ['ASC', ['KEY', 'bar']]
-    ]);
-  });
-
-  it('accepts array of objects as $orderby', function() {
-    const ast = QueryParser.parse({$orderby: [{'foo': -1}, {'bar': 1}]});
-    assert.deepEqual(ast.orderby, [
-      'ORDERBY',
-      ['DESC', ['KEY', 'foo']],
-      ['ASC', ['KEY', 'bar']]
-    ]);
-  });
-
-  it('accepts array of mixed strings and objects as $orderby', function() {
-    const ast = QueryParser.parse({$orderby: [{'foo': -1}, 'bar']});
-    assert.deepEqual(ast.orderby, [
-      'ORDERBY',
-      ['DESC', ['KEY', 'foo']],
-      ['ASC', ['KEY', 'bar']]
-    ]);
-  });
-
-  it('accepts null as $orderby', function() {
-    const ast = QueryParser.parse({$orderby: null});
-    assert.deepEqual(ast.orderby, ['ORDERBY', null]);
-  });
-
-  it('accepts undefined $orderby', function() {
-    const ast = QueryParser.parse({});
-    assert.deepEqual(ast.orderby, ['ORDERBY', null]);
-  });
-
-  it('throws error when $orderby is of invalid type', function () {
-    assert.throws(() => QueryParser.parse({$orderby: 123}), TypeError);
-    assert.throws(() => QueryParser.parse({$orderby: true}), TypeError);
-    assert.throws(() => QueryParser.parse({$orderby: new Date()}), TypeError);
-    assert.throws(() => QueryParser.parse({$orderby: function () {}}), TypeError);
-  });
-
-  it('throws error when $orderby array contains invalid values', function () {
-    assert.throws(() => QueryParser.parse({$orderby: ['foo', 123]}), Error);
-    assert.throws(() => QueryParser.parse({$orderby: ['foo', true]}), Error);
-    assert.throws(() => QueryParser.parse({$orderby: ['foo', new Date()]}), Error);
-    assert.throws(() => QueryParser.parse({$orderby: ['foo', function () {}]}), Error);
-  });
-
-  it('throws error when $orderby object contains more than one properties', function () {
-    assert.throws(() => QueryParser.parse({$orderby: {a: -1, b: 1}}), Error);
-  });
-
-  it('throws error when $orderby object value is not one of -1, 1', function () {
-    assert.throws(() => QueryParser.parse({$orderby: {foo: 2}}), Error);
-    assert.throws(() => QueryParser.parse({$orderby: {foo: 0}}), Error);
-    assert.throws(() => QueryParser.parse({$orderby: {foo: -99}}), Error);
-  });
-
-  // projection
-
-  it('accepts object as $projection', function() {
-    const ast = QueryParser.parse({$projection: {foo: 1, bar: -1}});
-    assert.deepEqual(ast.projection, [
-      'PROJECTION',
-      ['INCLUDE', ['KEY', 'foo']],
-      ['EXCLUDE', ['KEY', 'bar']]
-    ]);
-  });
-
-  it('accepts null as $projection', function() {
-    const ast = QueryParser.parse({$projection: null});
-    assert.deepEqual(ast.projection, ['PROJECTION', null]);
-  });
-
-  it('accepts undefined $projection', function() {
-    const ast = QueryParser.parse({});
-    assert.deepEqual(ast.projection, ['PROJECTION', null]);
-  });
-
-  it('throws error when $projection is of invalid type', function () {
-    assert.throws(() => QueryParser.parse({$projection: 123}), TypeError);
-    assert.throws(() => QueryParser.parse({$projection: true}), TypeError);
-    assert.throws(() => QueryParser.parse({$projection: 'str'}), TypeError);
-    assert.throws(() => QueryParser.parse({$projection: []}), TypeError);
-    assert.throws(() => QueryParser.parse({$projection: new Date()}), TypeError);
-    assert.throws(() => QueryParser.parse({$projection: function () {}}), TypeError);
-  });
-
-  // selection
-
-  it('parses plain number', function() {
-    const ast = QueryParser.parse(123);
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'EQ',
-        ['ID'],
-        ['VALUE', 123]
-      ]
-    ]);
-  });
-
-  it('parses plain string', function() {
-    const ast = QueryParser.parse('str');
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'EQ',
-        ['ID'],
-        ['VALUE', 'str']
-      ]
-    ]);
-  });
-
-  it('parses plain boolean', function() {
-    const ast = QueryParser.parse(true);
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'EQ',
-        ['ID'],
-        ['VALUE', true]
-      ]
-    ]);
-  });
-
-  it('parses plain date', function() {
-    const d = new Date();
-    const ast = QueryParser.parse(d);
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'EQ',
-        ['ID'],
-        ['VALUE', d]
-      ]
-    ]);
-  });
-
-  it('parses plain buffer', function() {
-    const buf = new Buffer([1, 2, 3]);
-    const ast = QueryParser.parse(buf);
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'EQ',
-        ['ID'],
-        ['VALUE', buf]
-      ]
-    ]);
-  });
-
-  it('parses array or numbers', function() {
-    const ast = QueryParser.parse([1, 2, 3]);
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'IN',
-        ['ID'],
-        ['VALUES', 1, 2, 3]
-      ]
-    ]);
-  });
-
-  it('parses object with simple key-value assignment', function() {
-    const ast = QueryParser.parse({a: 1});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'EQ',
-        ['KEY', 'a'],
-        ['VALUE', 1]
-      ]
-    ]);
-  });
-
-  it('parses object with multiple key-value assignments', function() {
-    const ast = QueryParser.parse({a: 1, b: 2, c: 3});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'AND',
-        [
+    it('parses object with simple key-value assignment', function() {
+      const ast = parser.parseSelection({a: 1});
+      assert.deepEqual(ast, [
+        'SELECTION', [
           'EQ',
           ['KEY', 'a'],
           ['VALUE', 1]
-        ],
-        [
-          'EQ',
-          ['KEY', 'b'],
-          ['VALUE', 2]
-        ],
-        [
-          'EQ',
-          ['KEY', 'c'],
-          ['VALUE', 3]
         ]
-      ]
-    ]);
-  });
+      ]);
+    });
 
-  it('parses expression with $eq operator', function() {
-    const ast = QueryParser.parse({a: {$eq: 1}});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'EQ',
-        ['KEY', 'a'],
-        ['VALUE', 1]
-      ]
-    ]);
-  });
+    it('parses object with multiple key-value assignments', function() {
+      const ast = parser.parseSelection({a: 1, b: 2, c: 3});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'AND',
+          [
+            'EQ',
+            ['KEY', 'a'],
+            ['VALUE', 1]
+          ],
+          [
+            'EQ',
+            ['KEY', 'b'],
+            ['VALUE', 2]
+          ],
+          [
+            'EQ',
+            ['KEY', 'c'],
+            ['VALUE', 3]
+          ]
+        ]
+      ]);
+    });
 
-  it('parses expression with $ne operator', function() {
-    const ast = QueryParser.parse({a: {$ne: 1}});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'NE',
-        ['KEY', 'a'],
-        ['VALUE', 1]
-      ]
-    ]);
-  });
-
-  it('parses expression with $lt operator', function() {
-    const ast = QueryParser.parse({a: {$lt: 1}});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'LT',
-        ['KEY', 'a'],
-        ['VALUE', 1]
-      ]
-    ]);
-  });
-
-  it('parses expression with $lte operator', function() {
-    const ast = QueryParser.parse({a: {$lte: 1}});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'LTE',
-        ['KEY', 'a'],
-        ['VALUE', 1]
-      ]
-    ]);
-  });
-
-  it('parses expression with $gt operator', function() {
-    const ast = QueryParser.parse({a: {$gt: 1}});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'GT',
-        ['KEY', 'a'],
-        ['VALUE', 1]
-      ]
-    ]);
-  });
-
-  it('parses expression with $gte operator', function() {
-    const ast = QueryParser.parse({a: {$gte: 1}});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'GTE',
-        ['KEY', 'a'],
-        ['VALUE', 1]
-      ]
-    ]);
-  });
-
-  it('parses expression with $in operator', function() {
-    const ast = QueryParser.parse({a: {$in: [1, 2, 3]}});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'IN',
-        ['KEY', 'a'],
-        ['VALUES', 1, 2, 3]
-      ]
-    ]);
-  });
-
-  it('parses expression with $nin operator', function() {
-    const ast = QueryParser.parse({a: {$nin: [1, 2, 3]}});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'NIN',
-        ['KEY', 'a'],
-        ['VALUES', 1, 2, 3]
-      ]
-    ]);
-  });
-
-  it('parses expression with $like operator', function() {
-    const ast = QueryParser.parse({a: {$like: 's%'}});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'LIKE',
-        ['KEY', 'a'],
-        ['VALUE', 's%']
-      ]
-    ]);
-  });
-
-  it('parses expression with $nlike operator', function() {
-    const ast = QueryParser.parse({a: {$nlike: 's%'}});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'NLIKE',
-        ['KEY', 'a'],
-        ['VALUE', 's%']
-      ]
-    ]);
-  });
-
-  it('parses expression with $and operator', function() {
-    const ast = QueryParser.parse({$and: [{a: 1}, {b: 2}]});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'AND',
-        [
+    it('parses expression with $eq operator', function() {
+      const ast = parser.parseSelection({a: {$eq: 1}});
+      assert.deepEqual(ast, [
+        'SELECTION', [
           'EQ',
           ['KEY', 'a'],
           ['VALUE', 1]
-        ],
-        [
-          'EQ',
-          ['KEY', 'b'],
-          ['VALUE', 2]
         ]
-      ]
-    ]);
-  });
+      ]);
+    });
 
-  it('parses expression with $or operator', function() {
-    const ast = QueryParser.parse({$or: [{a: 1}, {a: 2}]});
-    assert.deepEqual(ast.selection, [
-      'SELECTION', [
-        'OR',
-        [
-          'EQ',
+    it('parses expression with $ne operator', function() {
+      const ast = parser.parseSelection({a: {$ne: 1}});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'NE',
           ['KEY', 'a'],
           ['VALUE', 1]
-        ],
-        [
-          'EQ',
-          ['KEY', 'a'],
-          ['VALUE', 2]
         ]
-      ]
-    ]);
+      ]);
+    });
+
+    it('parses expression with $lt operator', function() {
+      const ast = parser.parseSelection({a: {$lt: 1}});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'LT',
+          ['KEY', 'a'],
+          ['VALUE', 1]
+        ]
+      ]);
+    });
+
+    it('parses expression with $lte operator', function() {
+      const ast = parser.parseSelection({a: {$lte: 1}});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'LTE',
+          ['KEY', 'a'],
+          ['VALUE', 1]
+        ]
+      ]);
+    });
+
+    it('parses expression with $gt operator', function() {
+      const ast = parser.parseSelection({a: {$gt: 1}});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'GT',
+          ['KEY', 'a'],
+          ['VALUE', 1]
+        ]
+      ]);
+    });
+
+    it('parses expression with $gte operator', function() {
+      const ast = parser.parseSelection({a: {$gte: 1}});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'GTE',
+          ['KEY', 'a'],
+          ['VALUE', 1]
+        ]
+      ]);
+    });
+
+    it('parses expression with $in operator', function() {
+      const ast = parser.parseSelection({a: {$in: [1, 2, 3]}});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'IN',
+          ['KEY', 'a'],
+          ['VALUES', 1, 2, 3]
+        ]
+      ]);
+    });
+
+    it('parses expression with $nin operator', function() {
+      const ast = parser.parseSelection({a: {$nin: [1, 2, 3]}});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'NIN',
+          ['KEY', 'a'],
+          ['VALUES', 1, 2, 3]
+        ]
+      ]);
+    });
+
+    it('parses expression with $like operator', function() {
+      const ast = parser.parseSelection({a: {$like: 's%'}});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'LIKE',
+          ['KEY', 'a'],
+          ['VALUE', 's%']
+        ]
+      ]);
+    });
+
+    it('parses expression with $nlike operator', function() {
+      const ast = parser.parseSelection({a: {$nlike: 's%'}});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'NLIKE',
+          ['KEY', 'a'],
+          ['VALUE', 's%']
+        ]
+      ]);
+    });
+
+    it('parses expression with $and operator', function() {
+      const ast = parser.parseSelection({$and: [{a: 1}, {b: 2}]});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'AND',
+          [
+            'EQ',
+            ['KEY', 'a'],
+            ['VALUE', 1]
+          ],
+          [
+            'EQ',
+            ['KEY', 'b'],
+            ['VALUE', 2]
+          ]
+        ]
+      ]);
+    });
+
+    it('parses expression with $or operator', function() {
+      const ast = parser.parseSelection({$or: [{a: 1}, {a: 2}]});
+      assert.deepEqual(ast, [
+        'SELECTION', [
+          'OR',
+          [
+            'EQ',
+            ['KEY', 'a'],
+            ['VALUE', 1]
+          ],
+          [
+            'EQ',
+            ['KEY', 'a'],
+            ['VALUE', 2]
+          ]
+        ]
+      ]);
+    });
   });
 });

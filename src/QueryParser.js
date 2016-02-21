@@ -7,12 +7,12 @@ class QueryParser {
   /**
    * Constructs a new QueryCompiler instance for the designated collection.
    * @param {string} name the name of the collection.
-   * @param {Array<string>} schema the schema (a.k.a. columns or fields) of the collection.
+   * @param {Array<string>} attributes the attributes (a.k.a. columns or fields) of the collection.
    * @constructor
    */
-  constructor(name: string, schema: Array<string>) {
+  constructor(name: string, attributes: Array<string>) {
     this.name = name;
-    this.schema = schema;
+    this.attributes = attributes;
   }
 
   /**
@@ -345,41 +345,41 @@ class QueryParser {
   }
 
   /**
-   * Parses the supplied limit expression and returns an abstract syntax tree (ast).
-   * @param {number} [expression] optional limit expression - must be a positive integer.
+   * Parses the supplied limit and returns an abstract syntax tree (ast).
+   * @param {number} [limit] a positive integer.
    * @return {Array}
    */
-  parseLimit(expression: ?number): Array {
-    // check if expression is null or undefined
-    if (_.isNil(expression)) {
+  parseLimit(limit: ?number): Array {
+    // check if limit is null or undefined
+    if (_.isNil(limit)) {
       return ['LIMIT', null];
     }
 
-    // make sure expression is a positive integer
-    if (expression % 1 !== 0 || expression < 1) {
-      throw new TypeError(`Invalid limit expression; expected positive integer, i.e. greater than 0`);
+    // make sure limit is a positive integer
+    if (limit % 1 !== 0 || limit < 1) {
+      throw new TypeError(`Invalid limit argument; expected positive integer (i.e. greater than 0)`);
     }
 
-    return ['LIMIT', expression];
+    return ['LIMIT', limit];
   }
 
   /**
-   * Parses the supplied offset expression and returns an abstract syntax tree (ast).
-   * @param {number} [expression] optional offset expression - must be a positive integer.
+   * Parses the supplied offset and returns an abstract syntax tree (ast).
+   * @param {number} [offset] a non-negative integer.
    * @return {Array}
    */
-  parseOffset(expression: ?number): Array {
-    // check if expression is null or undefined
-    if (_.isNil(expression)) {
+  parseOffset(offset: ?number): Array {
+    // check if offset is null or undefined
+    if (_.isNil(offset)) {
       return ['OFFSET', null];
     }
 
     // make sure value is non-negative integer
-    if (expression % 1 !== 0 || expression < 0) {
-      throw new TypeError(`Invalid offset expression; expected non-negative integer, i.e. greater than or equal to 0`);
+    if (offset % 1 !== 0 || offset < 0) {
+      throw new TypeError(`Invalid offset argument; expected non-negative integer (i.e. greater than or equal to 0)`);
     }
 
-    return ['OFFSET', expression];
+    return ['OFFSET', offset];
   }
 }
 
