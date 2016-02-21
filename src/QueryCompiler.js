@@ -1,94 +1,131 @@
+import _ from 'lodash';
+import type from 'type-of';
 import CustomError from 'customerror';
-import Collection from './Collection';
 
 class QueryCompiler {
 
   /**
    * Constructs a new QueryCompiler instance for the designated collection.
-   * @param {string} collection the collection to compile queries for.
+   * @param {string} collectionName the name of the collection.
+   * @param {Array<string>} attributes the attributes (a.k.a. columns or fields) of the collection.
    * @constructor
    */
-  constructor(collection: string) {
-    this.collection = collection;
+  constructor(collectionName: string, attributes: Array<string>) {
+    this.collectionName = collectionName;
+    this.attributes = attributes;
   }
 
   /**
-   * Compiles and returns a selection clause, based on the supplied AST.
+   * Compiles and returns a selection expression, based on the supplied AST.
    * @param {Array} ast abstract syntax tree.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileSelection(ast: Array) {
+  compileSelectionExpression(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
-   * Compiles and returns a projection clause, based on the supplied AST.
+   * Compiles and returns a projection expression, based on the supplied AST.
    * @param {Array} ast abstract syntax tree.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileProjection(ast: Array) {
+  compileProjectionExpression(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
-   * Compiles and returns an orderby clause, based on the supplied AST.
+   * Compiles and returns an orderby expression, based on the supplied AST.
    * @param {Array} ast abstract syntax tree.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileOrderBy(ast: Array) {
+  compileOrderByExpression(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
-   * Compiles and returns a new "find" query, based on the supplied AST.
-   * @param {Object} ast abstract syntax tree.
+   * Compiles and returns a "find" query, based on the supplied properties.
+   * @param {Object} props query properties.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileFind(ast: Object) {
+  compileFindQuery(props: Object) {
+    if (!_.isPlainObject(props)) {
+      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+    }
+
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
-   * Compiles and returns a new "count" query, based on the supplied AST.
-   * @param {Object} ast abstract syntax tree.
+   * Compiles and returns a "count" query, based on the supplied properties.
+   * @param {Object} props query properties.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileCount(ast: Object) {
+  compileCountQuery(props: Object) {
+    if (!_.isPlainObject(props)) {
+      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+    }
+
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
-   * Compiles and returns a new "remove" query, based on the supplied AST.
-   * @param {Object} ast abstract syntax tree.
+   * Compiles and returns a "remove" query, based on the supplied properties.
+   * @param {Object} props query properties.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileRemove(ast: Object) {
+  compileRemoveQuery(props: Object) {
+    if (!_.isPlainObject(props)) {
+      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+    }
+
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
-   * Compiles and returns a new "insert" query, based on the supplied AST.
-   * @param {Object} ast abstract syntax tree.
+   * Compiles and returns an "insert" query, based on the supplied properties.
+   * @param {Object} props query properties.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileInsert(ast: Object) {
+  compileInsertQuery(props: Object) {
+    if (!_.isPlainObject(props)) {
+      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+    }
+
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
-   * Compiles and returns a new "update" query, based on the supplied AST.
-   * @param {Object} ast abstract syntax tree.
+   * Compiles and returns an "upsert" query, based on the supplied properties.
+   * @param {Object} props query properties.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileUpdate(ast: Object) {
+  compileUpsertQuery(props: Object) {
+    if (!_.isPlainObject(props)) {
+      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+    }
+
+    throw new CustomError('Method not implemented', 'NotImplementedException');
+  }
+
+  /**
+   * Compiles and returns an "update" query, based on the supplied properties.
+   * @param {Object} props query properties.
+   * @return {Object}
+   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
+   */
+  compileUpdateQuery(props: Object) {
+    if (!_.isPlainObject(props)) {
+      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+    }
+
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
