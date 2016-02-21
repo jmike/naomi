@@ -81,11 +81,6 @@ describe('Collection', function () {
       const collection = new Collection(db, 'name');
       collection.find(done);
     });
-
-    it('throws error when $query is of invalid type', function () {
-      const collection = new Collection(db, 'name');
-      assert.throws(() => collection.find(null), TypeError);
-    });
   });
 
   describe('#findOne()', function () {
@@ -97,11 +92,6 @@ describe('Collection', function () {
     it('accepts callback function', function (done) {
       const collection = new Collection(db, 'name');
       collection.findOne(done);
-    });
-
-    it('throws error when $query is of invalid type', function () {
-      const collection = new Collection(db, 'name');
-      assert.throws(() => collection.findOne(null), TypeError);
     });
   });
 
@@ -115,11 +105,6 @@ describe('Collection', function () {
       const collection = new Collection(db, 'name');
       collection.count(done);
     });
-
-    it('throws error when $query is of invalid type', function () {
-      const collection = new Collection(db, 'name');
-      assert.throws(() => collection.count(null), TypeError);
-    });
   });
 
   describe('#remove()', function () {
@@ -131,11 +116,6 @@ describe('Collection', function () {
     it('accepts callback function', function (done) {
       const collection = new Collection(db, 'name');
       collection.remove(done);
-    });
-
-    it('throws error when $query is of invalid type', function () {
-      const collection = new Collection(db, 'name');
-      assert.throws(() => collection.remove(null), TypeError);
     });
   });
 
@@ -159,23 +139,35 @@ describe('Collection', function () {
     });
   });
 
-  describe('#update()', function () {
+  describe('#upsert()', function () {
     it('returns bluebird promise', function () {
       const collection = new Collection(db, 'name');
-      assert.instanceOf(collection.update({}), Promise);
+      assert.instanceOf(collection.upsert({}), Promise);
     });
 
     it('accepts callback function', function (done) {
       const collection = new Collection(db, 'name');
-      collection.update({}, done);
+      collection.upsert({}, done);
     });
 
     it('throws error when records is of invalid type', function () {
       const collection = new Collection(db, 'name');
-      assert.throws(() => collection.update(null), TypeError);
-      assert.throws(() => collection.update(123), TypeError);
-      assert.throws(() => collection.update('str'), TypeError);
-      assert.throws(() => collection.update(true), TypeError);
+      assert.throws(() => collection.upsert(null), TypeError);
+      assert.throws(() => collection.upsert(123), TypeError);
+      assert.throws(() => collection.upsert('str'), TypeError);
+      assert.throws(() => collection.upsert(true), TypeError);
+    });
+  });
+
+  describe('#update()', function () {
+    it('returns bluebird promise', function () {
+      const collection = new Collection(db, 'name');
+      assert.instanceOf(collection.update({id: 1}, {foo: 'bar'}), Promise);
+    });
+
+    it('accepts callback function', function (done) {
+      const collection = new Collection(db, 'name');
+      collection.update({id: 1}, {foo: 'bar'}, done);
     });
   });
 });

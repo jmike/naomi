@@ -1,6 +1,7 @@
 import {EventEmitter} from 'events';
 import Promise from 'bluebird';
 import _ from 'lodash';
+import type from 'type-of';
 import Database from './Database';
 import Schema from './Schema';
 
@@ -144,7 +145,7 @@ class Collection extends EventEmitter {
    */
   remove(selection: boolean | number | string | Object | ?Function, options: Object | ?Function, callback: ?Function): Promise {
     // handle optional arguments
-   if (_.isFunction(selection)) {
+    if (_.isFunction(selection)) {
       callback = selection;
       selection = undefined;
       options = {};
@@ -213,7 +214,7 @@ class Collection extends EventEmitter {
    * @returns {Promise} a bluebird promise resolving to the primary key of the created/updated record(s).
    * @throws {TypeError} if arguments are of invalid type.
    */
-  update(selection, records: Object | Array, options: ?Object, callback: ?Function): Promise {
+  update(selection: boolean | number | string | ?Object, records: Object | Array, options: ?Object, callback: ?Function): Promise {
     // validate arguments
     if (!_.isPlainObject(records) && !_.isArray(records)) {
       throw new TypeError(`Invalid records argument; exprected object or array, received ${type(records)}`);
