@@ -4,9 +4,15 @@ import type from 'type-of';
 
 class QueryParser {
 
-  constructor() {
-    this.comparison = new Map();
-    this.logical = new Map();
+  /**
+   * Constructs a new QueryCompiler instance for the designated collection.
+   * @param {string} name the name of the collection.
+   * @param {Array<string>} schema the schema (a.k.a. columns or fields) of the collection.
+   * @constructor
+   */
+  constructor(name: string, schema: Array<string>) {
+    this.name = name;
+    this.schema = schema;
   }
 
   /**
@@ -28,20 +34,181 @@ class QueryParser {
     return ast;
   }
 
+  parseAnd(v: Array): Array {
+    if (!_.isArray(v)) {
+      throw new TypeError(`Invalid and expression; expected array, received ${type(v)}`);
+    }
+
+    if (v.length === 0) {
+      throw new TypeError(`Invalid and expression; array cannot be empty`);
+    }
+
+    return ['AND'].concat(v.map((e) => {
+      const selection = this.parseSelection(e);
+      return selection[1]; // remove the "SELECTION" part
+    }));
+  }
+
+  parseOr(v: Array): Array {
+    if (!_.isArray(v)) {
+      throw new TypeError(`Invalid or expression; expected array, received ${type(v)}`);
+    }
+
+    if (v.length === 0) {
+      throw new TypeError(`Invalid or expression; array cannot be empty`);
+    }
+
+    return ['OR'].concat(v.map((e) => {
+      const selection = this.parseSelection(e);
+      return selection[1]; // remove the "SELECTION" part
+    }));
+  }
+
+  parseEq(k: string, v: number | string | boolean | Date | ?Buffer): Array {
+    if (
+      !_.isNumber(v) &&
+      !_.isString(v) &&
+      !_.isBoolean(v) &&
+      !_.isDate(v) &&
+      !Buffer.isBuffer(v) &&
+      !_.isNull(v)
+    ) {
+      throw new TypeError(`Invalid $eq expression; expected number, string, boolean, date, buffer or null, received ${type(v)}`);
+    }
+
+    return ['EQ', this.parseKey(k), ['VALUE', v]];
+  }
+
+  parseNe(k: string, v: number | string | boolean | Date | ?Buffer): Array {
+    if (
+      !_.isNumber(v) &&
+      !_.isString(v) &&
+      !_.isBoolean(v) &&
+      !_.isDate(v) &&
+      !Buffer.isBuffer(v) &&
+      !_.isNull(v)
+    ) {
+      throw new TypeError(`Invalid $ne expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+    }
+
+    return ['NE', this.parseKey(k), ['VALUE', v]];
+  }
+
+  parseGt(k: string, v: number | string | boolean | Date | Buffer): Array {
+    if (
+      !_.isNumber(v) &&
+      !_.isString(v) &&
+      !_.isBoolean(v) &&
+      !_.isDate(v) &&
+      !Buffer.isBuffer(v)
+    ) {
+      throw new TypeError(`Invalid $gt expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+    }
+
+    return ['GT', this.parseKey(k), ['VALUE', v]];
+  }
+
+  parseGte(k: string, v: number | string | boolean | Date | Buffer): Array {
+    if (
+      !_.isNumber(v) &&
+      !_.isString(v) &&
+      !_.isBoolean(v) &&
+      !_.isDate(v) &&
+      !Buffer.isBuffer(v)
+    ) {
+      throw new TypeError(`Invalid $gte expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+    }
+
+    return ['GTE', this.parseKey(k), ['VALUE', v]];
+  }
+
+  parseLt(k: string, v: number | string | boolean | Date | Buffer): Array {
+    if (
+      !_.isNumber(v) &&
+      !_.isString(v) &&
+      !_.isBoolean(v) &&
+      !_.isDate(v) &&
+      !Buffer.isBuffer(v)
+    ) {
+      throw new TypeError(`Invalid $lt expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+    }
+
+    return ['LT', this.parseKey(k), ['VALUE', v]];
+  }
+
+  parseLte(k: string, v: number | string | boolean | Date | Buffer): Array {
+    if (
+      !_.isNumber(v) &&
+      !_.isString(v) &&
+      !_.isBoolean(v) &&
+      !_.isDate(v) &&
+      !Buffer.isBuffer(v)
+    ) {
+      throw new TypeError(`Invalid $lte expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+    }
+
+    return ['LTE', this.parseKey(k), ['VALUE', v]];
+  }
+
+  parseIn(k: string, v: Array): Array {
+    if (!_.isArray(v)) {
+      throw new TypeError(`Invalid $in expression; expected array, received ${type(v)}`);
+    }
+
+    if (v.length === 0) {
+      throw new TypeError(`Invalid $in expression; array cannot be empty`);
+    }
+
+    return ['IN', this.parseKey(k), ['VALUES'].concat(v)];
+  }
+
+  parseNin(k: string, v: Array): Array {
+    if (!_.isArray(v)) {
+      throw new TypeError(`Invalid $nin expression; expected array, received ${type(v)}`);
+    }
+
+    if (v.length === 0) {
+      throw new TypeError(`Invalid $nin expression; array cannot be empty`);
+    }
+
+    return ['NIN', this.parseKey(k), ['VALUES'].concat(v)];
+  }
+
+  parseLike(k: string, v: string) {
+    if (!_.isString(v)) {
+      throw new TypeError(`Invalid $like expression; expected string, received ${type(v)}`);
+    }
+
+    return ['LIKE', this.parseKey(k), ['VALUE', v]];
+  }
+
+  parseNlike(k: string, v: string) {
+    if (!_.isString(v)) {
+      throw new TypeError(`Invalid $nlike expression; expected string, received ${type(v)}`);
+    }
+
+    return ['NLIKE', this.parseKey(k), ['VALUE', v]];
+  }
+
   /**
    * Parses the given selection expression and returns an abstract syntax tree (ast).
    * @param {Object} [expression] optional expression value.
    * @return {Array}
    */
-  parseSelection(expression: ?Object, _mem: ?string): Array {
-    // check if expression is null or undefined
-    if (_.isNil(expression)) {
+  parseSelection(expression: number | string | boolean | ?Object, _mem: ?string): Array {
+    if (_.isNil(expression)) { // null or undefined
       expression = {};
-    }
-
-    // check if expression is object
-    if (!_.isPlainObject(expression)) {
-      throw new TypeError(`Invalid selection expression; expected plain object, received ${type(expression)}`);
+    } else if (
+      _.isNumber(expression) ||
+      _.isString(expression) ||
+      _.isDate(expression) ||
+      _.isBoolean(expression) ||
+      Buffer.isBuffer(expression)) {
+      expression = {'$id': {'$eq': expression}};
+    } else if (_.isArray(expression)) {
+      expression = {'$id': {'$in': expression}};
+    } else if (!_.isPlainObject(expression)) {
+      throw new TypeError(`Invalid selection expression; expected number, string, date, boolean, buffer, array or plain object, received ${type(expression)}`);
     }
 
     // extract object keys
@@ -67,25 +234,40 @@ class QueryParser {
       const k = keys[0];
       const v = expression[k];
 
-      // check if key represents a comparison operator
-      if (this.comparison.has(k)) {
-        const arr = this.comparison.get(k)(_mem, v);
-        return ['SELECTION', arr];
-      }
+      switch (k) {
+      case '$eq':
+        return ['SELECTION', this.parseEq(_mem, v)];
+      case '$ne':
+        return ['SELECTION', this.parseNe(_mem, v)];
+      case '$gt':
+        return ['SELECTION', this.parseGt(_mem, v)];
+      case '$gte':
+        return ['SELECTION', this.parseGte(_mem, v)];
+      case '$lt':
+        return ['SELECTION', this.parseLt(_mem, v)];
+      case '$lte':
+        return ['SELECTION', this.parseLte(_mem, v)];
+      case '$like':
+        return ['SELECTION', this.parseLike(_mem, v)];
+      case '$nlike':
+        return ['SELECTION', this.parseNlike(_mem, v)];
+      case '$in':
+        return ['SELECTION', this.parseIn(_mem, v)];
+      case '$nin':
+        return ['SELECTION', this.parseNin(_mem, v)];
+      case '$and':
+        return ['SELECTION', this.parseAnd(v)];
+      case '$or':
+        return ['SELECTION', this.parseOr(v)];
+      default:
+        // check if value is a nested object
+        if (_.isPlainObject(v)) {
+          return this.parseSelection(v, k);
+        }
 
-      // check if key represents a logical operator
-      if (this.logical.has(k)) {
-        const arr = this.logical.get(k)(v);
-        return ['SELECTION', arr];
+        // handle simple key-value assignment
+        return this.parseSelection({[k]: {$eq: v}});
       }
-
-      // check if value is a nested object
-      if (_.isPlainObject(v)) {
-        return this.parseSelection(v, k);
-      }
-
-      // handle simple key-value assignment
-      return this.parseSelection({[k]: {$eq: v}});
     }
 
     throw new TypeError(`Invalid selection expression; object must have at least 1 property`);
@@ -199,195 +381,6 @@ class QueryParser {
 
     return ['OFFSET', expression];
   }
-
-  /**
-   * Parses a generic query expression and returns an abstract syntax tree (ast).
-   * @param {Number, String, Date, Buffer, Boolean, Array, Object} [expression] optional query expression.
-   * @return {Object}
-   */
-  parse(query: ?number | string | boolean | Object | Array): Object {
-    // check if query is null or undefined
-    if (_.isNull(query) || _.isUndefined(query)) {
-      query = {};
-    }
-
-    // check if query is number, string, boolean, date or buffer
-    if (_.isNumber(query) || _.isString(query) || _.isDate(query) || Buffer.isBuffer(query) || _.isBoolean(query)) {
-      query = {'$id': {'$eq': query}};
-    }
-
-    // check if query is array
-    if (_.isArray(query)) {
-      query = {'$id': {'$in': query}};
-    }
-
-    return {
-      selection: this.parseSelection(_.omit(query, ['$projection', '$orderby', '$limit', '$offset'])),
-      projection: this.parseProjection(query.$projection),
-      orderby: this.parseOrderBy(query.$orderby),
-      limit: this.parseLimit(query.$limit),
-      offset: this.parseOffset(query.$offset),
-    };
-  }
 }
 
-// create parser instance
-const parser = new QueryParser();
-
-parser.logical.set('$and', function (v: Array): Array {
-  if (!_.isArray(v)) {
-    throw new TypeError(`Invalid and expression; expected array, received ${type(v)}`);
-  }
-
-  if (v.length === 0) {
-    throw new TypeError(`Invalid and expression; array cannot be empty`);
-  }
-
-  return ['AND'].concat(v.map((e) => {
-    const selection = parser.parseSelection(e);
-    return selection[1]; // remove the "SELECTION" part
-  }));
-});
-
-parser.logical.set('$or', function (v: Array): Array {
-  if (!_.isArray(v)) {
-    throw new TypeError(`Invalid or expression; expected array, received ${type(v)}`);
-  }
-
-  if (v.length === 0) {
-    throw new TypeError(`Invalid or expression; array cannot be empty`);
-  }
-
-  return ['OR'].concat(v.map((e) => {
-    const selection = parser.parseSelection(e);
-    return selection[1]; // remove the "SELECTION" part
-  }));
-});
-
-parser.comparison.set('$eq', function (k: string, v: number | string | boolean | Date | ?Buffer): Array {
-  if (
-    !_.isNumber(v) &&
-    !_.isString(v) &&
-    !_.isBoolean(v) &&
-    !_.isDate(v) &&
-    !Buffer.isBuffer(v) &&
-    !_.isNull(v)
-  ) {
-    throw new TypeError(`Invalid $eq expression; expected number, string, boolean, date, buffer or null, received ${type(v)}`);
-  }
-
-  return ['EQ', parser.parseKey(k), ['VALUE', v]];
-});
-
-parser.comparison.set('$ne', function (k: string, v: number | string | boolean | Date | ?Buffer): Array {
-  if (
-    !_.isNumber(v) &&
-    !_.isString(v) &&
-    !_.isBoolean(v) &&
-    !_.isDate(v) &&
-    !Buffer.isBuffer(v) &&
-    !_.isNull(v)
-  ) {
-    throw new TypeError(`Invalid $ne expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
-  }
-
-  return ['NE', parser.parseKey(k), ['VALUE', v]];
-});
-
-parser.comparison.set('$gt', function (k: string, v: number | string | boolean | Date | Buffer): Array {
-  if (
-    !_.isNumber(v) &&
-    !_.isString(v) &&
-    !_.isBoolean(v) &&
-    !_.isDate(v) &&
-    !Buffer.isBuffer(v)
-  ) {
-    throw new TypeError(`Invalid $gt expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
-  }
-
-  return ['GT', parser.parseKey(k), ['VALUE', v]];
-});
-
-parser.comparison.set('$gte', function (k: string, v: number | string | boolean | Date | Buffer): Array {
-  if (
-    !_.isNumber(v) &&
-    !_.isString(v) &&
-    !_.isBoolean(v) &&
-    !_.isDate(v) &&
-    !Buffer.isBuffer(v)
-  ) {
-    throw new TypeError(`Invalid $gte expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
-  }
-
-  return ['GTE', parser.parseKey(k), ['VALUE', v]];
-});
-
-parser.comparison.set('$lt', function (k: string, v: number | string | boolean | Date | Buffer): Array {
-  if (
-    !_.isNumber(v) &&
-    !_.isString(v) &&
-    !_.isBoolean(v) &&
-    !_.isDate(v) &&
-    !Buffer.isBuffer(v)
-  ) {
-    throw new TypeError(`Invalid $lt expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
-  }
-
-  return ['LT', parser.parseKey(k), ['VALUE', v]];
-});
-
-parser.comparison.set('$lte', function (k: string, v: number | string | boolean | Date | Buffer): Array {
-  if (
-    !_.isNumber(v) &&
-    !_.isString(v) &&
-    !_.isBoolean(v) &&
-    !_.isDate(v) &&
-    !Buffer.isBuffer(v)
-  ) {
-    throw new TypeError(`Invalid $lte expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
-  }
-
-  return ['LTE', parser.parseKey(k), ['VALUE', v]];
-});
-
-parser.comparison.set('$in', function (k: string, v: Array): Array {
-  if (!_.isArray(v)) {
-    throw new TypeError(`Invalid $in expression; expected array, received ${type(v)}`);
-  }
-
-  if (v.length === 0) {
-    throw new TypeError(`Invalid $in expression; array cannot be empty`);
-  }
-
-  return ['IN', parser.parseKey(k), ['VALUES'].concat(v)];
-});
-
-parser.comparison.set('$nin', function (k: string, v: Array): Array {
-  if (!_.isArray(v)) {
-    throw new TypeError(`Invalid $nin expression; expected array, received ${type(v)}`);
-  }
-
-  if (v.length === 0) {
-    throw new TypeError(`Invalid $nin expression; array cannot be empty`);
-  }
-
-  return ['NIN', parser.parseKey(k), ['VALUES'].concat(v)];
-});
-
-parser.comparison.set('$like', function (k: string, v: string) {
-  if (!_.isString(v)) {
-    throw new TypeError(`Invalid $like expression; expected string, received ${type(v)}`);
-  }
-
-  return ['LIKE', parser.parseKey(k), ['VALUE', v]];
-});
-
-parser.comparison.set('$nlike', function (k: string, v: string) {
-  if (!_.isString(v)) {
-    throw new TypeError(`Invalid $nlike expression; expected string, received ${type(v)}`);
-  }
-
-  return ['NLIKE', parser.parseKey(k), ['VALUE', v]];
-});
-
-export default parser; // singleton
+export default QueryParser;

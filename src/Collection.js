@@ -89,6 +89,13 @@ class Collection extends EventEmitter {
       options = {};
     }
 
+    // return {
+    //   selection: this.parseSelection(_.omit(query, ['$projection', '$orderby', '$limit', '$offset'])),
+    //   projection: this.parseProjection(query.$projection),
+    //   orderby: this.parseOrderBy(query.$orderby),
+    //   limit: this.parseLimit(query.$limit),
+    //   offset: this.parseOffset(query.$offset),
+    // };
     return Promise.resolve().nodeify(callback);
   }
 
