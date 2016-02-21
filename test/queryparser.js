@@ -2,9 +2,10 @@
 
 import {assert} from 'chai';
 import QueryParser from '../src/QueryParser';
+import Schema from '../src/Schema';
 
 describe('QueryParser', function() {
-  const parser = new QueryParser('employees', []);
+  const parser = new QueryParser('employees', new Schema({}));
 
   describe('parseLimit', function() {
     it('accepts positive integer', function() {

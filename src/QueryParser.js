@@ -1,18 +1,18 @@
 import _ from 'lodash';
 import type from 'type-of';
-// import CustomError from 'customerror';
+import Schema from './Schema';
 
 class QueryParser {
 
   /**
    * Constructs a new QueryCompiler instance for the designated collection.
    * @param {string} name the name of the collection.
-   * @param {Array<string>} attributes the attributes (a.k.a. columns or fields) of the collection.
+   * @param {Schema} schema the schema of the collection.
    * @constructor
    */
-  constructor(name: string, attributes: Array<string>) {
+  constructor(name: string, schema: Schema) {
     this.name = name;
-    this.attributes = attributes;
+    this.schema = schema;
   }
 
   /**
