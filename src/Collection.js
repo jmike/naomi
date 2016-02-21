@@ -4,6 +4,8 @@ import _ from 'lodash';
 import type from 'type-of';
 import Database from './Database';
 import Schema from './Schema';
+import QueryParser from './QueryParser';
+import QueryCompiler from './QueryCompiler';
 
 class Collection extends EventEmitter {
 
@@ -31,6 +33,8 @@ class Collection extends EventEmitter {
     this.db = db;
     this.name = name;
     this.schema = new Schema(schema);
+    this.parser = new Collection.QueryParser(this.name, this.schema);
+    this.compiler = new Collection.QueryCompiler(this.name, this.schema);
   }
 
   /**
@@ -230,5 +234,9 @@ class Collection extends EventEmitter {
   }
 
 }
+
+// set static QueryParser + QueryCompiler
+Collection.QueryParser = QueryParser;
+Collection.QueryCompiler = QueryCompiler;
 
 export default Collection;

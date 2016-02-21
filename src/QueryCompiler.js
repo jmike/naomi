@@ -6,13 +6,13 @@ class QueryCompiler {
 
   /**
    * Constructs a new QueryCompiler instance for the designated collection.
-   * @param {string} collectionName the name of the collection.
-   * @param {Array<string>} attributes the attributes (a.k.a. columns or fields) of the collection.
+   * @param {string} name the name of the collection.
+   * @param {Array<string>} schema the schema (a.k.a. columns or fields) of the collection.
    * @constructor
    */
-  constructor(collectionName: string, attributes: Array<string>) {
-    this.collectionName = collectionName;
-    this.attributes = attributes;
+  constructor(name: string, schema: Array<string>) {
+    this.name = name;
+    this.schema = schema;
   }
 
   /**
