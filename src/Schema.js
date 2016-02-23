@@ -54,6 +54,10 @@ class Schema {
     });
   }
 
+  getColumnNames() {
+    return _.keys(this.definition);
+  }
+
   toJSON() {
     return _.mapValues(this.definition, (datatype) => datatype.toJSON());
   }
