@@ -17,36 +17,6 @@ class QueryCompiler {
   }
 
   /**
-   * Compiles and returns a selection expression, based on the supplied AST.
-   * @param {Array} ast abstract syntax tree.
-   * @return {Object}
-   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
-   */
-  compileSelectionClause(ast: Array) {
-    throw new CustomError('Method not implemented', 'NotImplementedException');
-  }
-
-  /**
-   * Compiles and returns a projection expression, based on the supplied AST.
-   * @param {Array} ast abstract syntax tree.
-   * @return {Object}
-   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
-   */
-  compileProjectionClause(ast: Array) {
-    throw new CustomError('Method not implemented', 'NotImplementedException');
-  }
-
-  /**
-   * Compiles and returns an orderby expression, based on the supplied AST.
-   * @param {Array} ast abstract syntax tree.
-   * @return {Object}
-   * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
-   */
-  compileOrderByClause(ast: Array) {
-    throw new CustomError('Method not implemented', 'NotImplementedException');
-  }
-
-  /**
    * Compiles and returns a "find" query, based on the supplied properties.
    * @param {Object} props query properties.
    * @return {Object}
