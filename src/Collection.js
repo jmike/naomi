@@ -242,8 +242,4 @@ class Collection extends EventEmitter {
 
 }
 
-// set static QueryParser + QueryCompiler
-Collection.QueryParser = QueryParser;
-Collection.QueryCompiler = QueryCompiler;
-
 export default Collection;
