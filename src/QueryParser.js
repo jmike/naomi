@@ -64,7 +64,7 @@ class QueryParser {
     }));
   }
 
-  parseEq(k: string, v: number | string | boolean | Date | ?Buffer): Array {
+  parseEqual(k: string, v: number | string | boolean | Date | ?Buffer): Array {
     if (
       !_.isNumber(v) &&
       !_.isString(v) &&
@@ -79,7 +79,7 @@ class QueryParser {
     return ['EQ', this.parseKey(k), ['VALUE', v]];
   }
 
-  parseNe(k: string, v: number | string | boolean | Date | ?Buffer): Array {
+  parseNotEqual(k: string, v: number | string | boolean | Date | ?Buffer): Array {
     if (
       !_.isNumber(v) &&
       !_.isString(v) &&
@@ -94,7 +94,7 @@ class QueryParser {
     return ['NE', this.parseKey(k), ['VALUE', v]];
   }
 
-  parseGt(k: string, v: number | string | boolean | Date | Buffer): Array {
+  parseGreaterThan(k: string, v: number | string | boolean | Date | Buffer): Array {
     if (
       !_.isNumber(v) &&
       !_.isString(v) &&
@@ -108,7 +108,7 @@ class QueryParser {
     return ['GT', this.parseKey(k), ['VALUE', v]];
   }
 
-  parseGte(k: string, v: number | string | boolean | Date | Buffer): Array {
+  parseGreaterThanOrEqual(k: string, v: number | string | boolean | Date | Buffer): Array {
     if (
       !_.isNumber(v) &&
       !_.isString(v) &&
@@ -122,7 +122,7 @@ class QueryParser {
     return ['GTE', this.parseKey(k), ['VALUE', v]];
   }
 
-  parseLt(k: string, v: number | string | boolean | Date | Buffer): Array {
+  parseLessThan(k: string, v: number | string | boolean | Date | Buffer): Array {
     if (
       !_.isNumber(v) &&
       !_.isString(v) &&
@@ -136,7 +136,7 @@ class QueryParser {
     return ['LT', this.parseKey(k), ['VALUE', v]];
   }
 
-  parseLte(k: string, v: number | string | boolean | Date | Buffer): Array {
+  parseLessThanOrEqual(k: string, v: number | string | boolean | Date | Buffer): Array {
     if (
       !_.isNumber(v) &&
       !_.isString(v) &&
@@ -162,7 +162,7 @@ class QueryParser {
     return ['IN', this.parseKey(k), ['VALUES'].concat(v)];
   }
 
-  parseNin(k: string, v: Array): Array {
+  parseNotIn(k: string, v: Array): Array {
     if (!_.isArray(v)) {
       throw new TypeError(`Invalid $nin expression; expected array, received ${type(v)}`);
     }
@@ -182,7 +182,7 @@ class QueryParser {
     return ['LIKE', this.parseKey(k), ['VALUE', v]];
   }
 
-  parseNlike(k: string, v: string) {
+  parseNotLike(k: string, v: string) {
     if (!_.isString(v)) {
       throw new TypeError(`Invalid $nlike expression; expected string, received ${type(v)}`);
     }
@@ -236,25 +236,25 @@ class QueryParser {
 
       switch (k) {
       case '$eq':
-        return ['SELECTION', this.parseEq(_mem, v)];
+        return ['SELECTION', this.parseEqual(_mem, v)];
       case '$ne':
-        return ['SELECTION', this.parseNe(_mem, v)];
+        return ['SELECTION', this.parseNotEqual(_mem, v)];
       case '$gt':
-        return ['SELECTION', this.parseGt(_mem, v)];
+        return ['SELECTION', this.parseGreaterThan(_mem, v)];
       case '$gte':
-        return ['SELECTION', this.parseGte(_mem, v)];
+        return ['SELECTION', this.parseGreaterThanOrEqual(_mem, v)];
       case '$lt':
-        return ['SELECTION', this.parseLt(_mem, v)];
+        return ['SELECTION', this.parseLessThan(_mem, v)];
       case '$lte':
-        return ['SELECTION', this.parseLte(_mem, v)];
+        return ['SELECTION', this.parseLessThanOrEqual(_mem, v)];
       case '$like':
         return ['SELECTION', this.parseLike(_mem, v)];
       case '$nlike':
-        return ['SELECTION', this.parseNlike(_mem, v)];
+        return ['SELECTION', this.parseNotLike(_mem, v)];
       case '$in':
         return ['SELECTION', this.parseIn(_mem, v)];
       case '$nin':
-        return ['SELECTION', this.parseNin(_mem, v)];
+        return ['SELECTION', this.parseNotIn(_mem, v)];
       case '$and':
         return ['SELECTION', this.parseAnd(v)];
       case '$or':

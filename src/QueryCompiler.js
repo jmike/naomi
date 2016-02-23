@@ -22,7 +22,7 @@ class QueryCompiler {
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileSelectionExpression(ast: Array) {
+  compileSelectionClause(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
@@ -32,7 +32,7 @@ class QueryCompiler {
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileProjectionExpression(ast: Array) {
+  compileProjectionClause(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
@@ -42,7 +42,7 @@ class QueryCompiler {
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileOrderByExpression(ast: Array) {
+  compileOrderByClause(ast: Array) {
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
