@@ -33,8 +33,8 @@ class Collection extends EventEmitter {
     this.db = db;
     this.name = name;
     this.schema = new Schema(schema);
-    this.parser = new Collection.QueryParser(this.name, this.schema);
-    this.compiler = new Collection.QueryCompiler(this.name, this.schema);
+    this.parser = new QueryParser(this.name, this.schema);
+    this.compiler = new QueryCompiler(this.name, this.schema);
   }
 
   /**
