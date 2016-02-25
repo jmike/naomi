@@ -17,49 +17,49 @@ class QueryCompiler {
   }
 
   /**
-   * Compiles and returns a "find" query, based on the supplied properties.
-   * @param {Object} props query properties.
+   * Compiles and returns a "find" query.
+   * @param {Object} $query a collection of ASTs, as given by the QueryParser.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileFindQuery(props: Object) {
-    if (!_.isPlainObject(props)) {
-      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+  compileFindQuery($query: Object) {
+    if (!_.isPlainObject($query)) {
+      throw new TypeError(`Invalid $query argument; expected object, received ${type($query)}`);
     }
 
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
-   * Compiles and returns a "count" query, based on the supplied properties.
-   * @param {Object} props query properties.
+   * Compiles and returns a "count" query.
+   * @param {Object} $query a collection of ASTs, as given by the QueryParser.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileCountQuery(props: Object) {
-    if (!_.isPlainObject(props)) {
-      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+  compileCountQuery($query: Object) {
+    if (!_.isPlainObject($query)) {
+      throw new TypeError(`Invalid $query argument; expected object, received ${type($query)}`);
     }
 
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
-   * Compiles and returns a "remove" query, based on the supplied properties.
-   * @param {Object} props query properties.
+   * Compiles and returns a "remove" query.
+   * @param {Object} $query a collection of ASTs, as given by the QueryParser.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileRemoveQuery(props: Object) {
-    if (!_.isPlainObject(props)) {
-      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+  compileRemoveQuery($query: Object) {
+    if (!_.isPlainObject($query)) {
+      throw new TypeError(`Invalid $query argument; expected object, received ${type($query)}`);
     }
 
     throw new CustomError('Method not implemented', 'NotImplementedException');
   }
 
   /**
-   * Compiles and returns an "insert" query, based on the supplied records.
+   * Compiles and returns an "insert" query.
    * @param {Array<Object>} records an array of records to insert.
    * @param {Object} [options] query options.
    * @return {Object}
@@ -74,8 +74,8 @@ class QueryCompiler {
   }
 
   /**
-   * Compiles and returns an "upsert" query, based on the supplied properties.
-   * @param {Array<Object>} records an array of records to insert.
+   * Compiles and returns an "upsert" query.
+   * @param {Array<Object>} records an array of records to upsert.
    * @param {Object} [options] query options.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
@@ -89,14 +89,15 @@ class QueryCompiler {
   }
 
   /**
-   * Compiles and returns an "update" query, based on the supplied properties.
-   * @param {Object} props query properties.
+   * Compiles and returns an "update" query.
+   * @param {Object} $query a collection of ASTs, as given by the QueryParser.
+   * @param {Array<Object>} records an array of records to upsert.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileUpdateQuery(props: Object) {
-    if (!_.isPlainObject(props)) {
-      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+  compileUpdateQuery($query: Object, records: Array<Object>) {
+    if (!_.isPlainObject($query)) {
+      throw new TypeError(`Invalid $query argument; expected object, received ${type($query)}`);
     }
 
     throw new CustomError('Method not implemented', 'NotImplementedException');
