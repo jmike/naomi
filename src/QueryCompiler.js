@@ -59,14 +59,15 @@ class QueryCompiler {
   }
 
   /**
-   * Compiles and returns an "insert" query, based on the supplied properties.
-   * @param {Object} props query properties.
+   * Compiles and returns an "insert" query, based on the supplied records.
+   * @param {Array<Object>} records an array of records to insert.
+   * @param {Object} [options] query options.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileInsertQuery(props: Object) {
-    if (!_.isPlainObject(props)) {
-      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+  compileInsertQuery(records: Array<Object>, options: ?Object) {
+    if (!_.isArray(records)) {
+      throw new TypeError(`Invalid records argument; expected array, received ${type(records)}`);
     }
 
     throw new CustomError('Method not implemented', 'NotImplementedException');
@@ -74,13 +75,14 @@ class QueryCompiler {
 
   /**
    * Compiles and returns an "upsert" query, based on the supplied properties.
-   * @param {Object} props query properties.
+   * @param {Array<Object>} records an array of records to insert.
+   * @param {Object} [options] query options.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileUpsertQuery(props: Object) {
-    if (!_.isPlainObject(props)) {
-      throw new TypeError(`Invalid props argument; expected object, received ${type(props)}`);
+  compileUpsertQuery(records: Array<Object>, options: ?Object) {
+    if (!_.isArray(records)) {
+      throw new TypeError(`Invalid records argument; expected array, received ${type(records)}`);
     }
 
     throw new CustomError('Method not implemented', 'NotImplementedException');
