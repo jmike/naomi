@@ -22,11 +22,6 @@ class Collection extends EventEmitter {
     super();
     this.setMaxListeners(999);
 
-    // validate arguments
-    if (_.isNull(schema)) {
-      throw new TypeError('Invalid schema argument; null is not allowed');
-    }
-
     // handle optional arguments
     schema = schema || {};
 

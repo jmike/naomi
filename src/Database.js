@@ -97,8 +97,8 @@ class Database extends EventEmitter {
   }
 
   /**
-   * Creates and returns a new Collection with the specified name and schema.
-   * @param {string} name the collection name.
+   * Creates and returns a new Collection with the specified properties.
+   * @param {string} name the name of the collection.
    * @param {Object} [schema] optional collection schema.
    * @type {Collection}
    */
