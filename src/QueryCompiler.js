@@ -18,7 +18,7 @@ class QueryCompiler {
 
   /**
    * Compiles and returns a "find" query.
-   * @param {Object} $query a collection of ASTs, as given by the QueryParser.
+   * @param {Object} $query query properties.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
@@ -32,7 +32,7 @@ class QueryCompiler {
 
   /**
    * Compiles and returns a "count" query.
-   * @param {Object} $query a collection of ASTs, as given by the QueryParser.
+   * @param {Object} $query query properties.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
@@ -46,7 +46,7 @@ class QueryCompiler {
 
   /**
    * Compiles and returns a "remove" query.
-   * @param {Object} $query a collection of ASTs, as given by the QueryParser.
+   * @param {Object} $query query properties.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
@@ -60,14 +60,13 @@ class QueryCompiler {
 
   /**
    * Compiles and returns an "insert" query.
-   * @param {Array<Object>} records an array of records to insert.
-   * @param {Object} [options] query options.
+   * @param {Object} $query query properties.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileInsertQuery(records: Array<Object>, options: ?Object) {
-    if (!_.isArray(records)) {
-      throw new TypeError(`Invalid records argument; expected array, received ${type(records)}`);
+  compileInsertQuery($query: Object) {
+    if (!_.isPlainObject($query)) {
+      throw new TypeError(`Invalid $query argument; expected object, received ${type($query)}`);
     }
 
     throw new CustomError('Method not implemented', 'NotImplementedException');
@@ -75,14 +74,13 @@ class QueryCompiler {
 
   /**
    * Compiles and returns an "upsert" query.
-   * @param {Array<Object>} records an array of records to upsert.
-   * @param {Object} [options] query options.
+   * @param {Object} $query query properties.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileUpsertQuery(records: Array<Object>, options: ?Object) {
-    if (!_.isArray(records)) {
-      throw new TypeError(`Invalid records argument; expected array, received ${type(records)}`);
+  compileUpsertQuery($query: Object) {
+    if (!_.isPlainObject($query)) {
+      throw new TypeError(`Invalid $query argument; expected object, received ${type($query)}`);
     }
 
     throw new CustomError('Method not implemented', 'NotImplementedException');
@@ -90,12 +88,11 @@ class QueryCompiler {
 
   /**
    * Compiles and returns an "update" query.
-   * @param {Object} $query a collection of ASTs, as given by the QueryParser.
-   * @param {Array<Object>} records an array of records to upsert.
+   * @param {Object} $query query properties.
    * @return {Object}
    * @throws {NotImplementedException} if method has not been implemented or does not apply to the current database engine.
    */
-  compileUpdateQuery($query: Object, records: Array<Object>) {
+  compileUpdateQuery($query: Object) {
     if (!_.isPlainObject($query)) {
       throw new TypeError(`Invalid $query argument; expected object, received ${type($query)}`);
     }
