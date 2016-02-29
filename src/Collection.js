@@ -22,6 +22,11 @@ class Collection extends EventEmitter {
     super();
     this.setMaxListeners(999);
 
+    // validate arguments
+    if (_.isPlainObject(schema)) {
+      throw new TypeError(`Invalid schema argument; expected plain object, received ${type(schema)}`);
+    }
+
     // handle optional arguments
     schema = schema || {};
 
