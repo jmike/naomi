@@ -1,38 +1,40 @@
-# Changelog
+## 2.0.0-alpha.2 - 2016-03-02
 
-## 2.0.0-alpha.1
+* Fix invalid Schema reference in Database.js.
+
+## 2.0.0-alpha.1 - 2016-03-02
 
 * Upgrade naomi to proper ORM with schema + validation.
 
-## 0.9.0 - 2015.04.06
+## 0.9.0 - 2015-04-06
 
 * Rewrite docs and README.md.
 
-## 0.9.0-beta.5 - 2015.04.01
+## 0.9.0-beta.5 - 2015-04-01
 
 * Spring cleanup of npm dependencies.
 
-## 0.9.0-beta.4 - 2015.04.01
+## 0.9.0-beta.4 - 2015-04-01
 
 * Refactor postgres engine.
 
-## 0.9.0-beta.3 - 2015.02.27
+## 0.9.0-beta.3 - 2015-02-27
 
 * Introduce Database#queryClient as low-level #query function.
 * Use #queryClient in Transaction for DRY.
 * Add Transaction#rollback method.
 * Update mysql@2.5.5 to address Amazon RDS SSL cert update.
 
-## 0.9.0-beta.2 - 2015.02.24
+## 0.9.0-beta.2 - 2015-02-24
 
 * Introduce mongo-like query language.
 * Refactor the Transaction class.
 
-## 0.9.0-beta.1 - 2015.02.06
+## 0.9.0-beta.1 - 2015-02-06
 
 * Enqueue queries until table is ready.
 
-## 0.9.0-beta - 2015.02.02
+## 0.9.0-beta - 2015-02-02
 
 * Load table metadata on Database#extend, not on Database#connect.
 * Enable mongo-like query language.
