@@ -15,7 +15,7 @@
   "dependencies": {
     "bluebird": "^3.3.3",
     "customerror": "^1.0.1",
-    "joi": "^7.0.1",
+    "joi": "^8.0.4",
     "lodash": "^4.5.1",
     "type-of": "^2.0.1"
   },
