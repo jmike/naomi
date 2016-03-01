@@ -34,7 +34,7 @@
     "gulp-babel": "^6.1.0",
     "gulp-plumber": "^1.0.1",
     "gulp-rimraf": "^0.2.0",
-    "mocha": "^2.3.4",
+    "mocha": "^2.4.5",
     "run-sequence": "^1.1.4"
   },
   "author": {
