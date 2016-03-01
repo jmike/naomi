@@ -1,6 +1,7 @@
 import {EventEmitter} from 'events';
 import Promise from 'bluebird';
 import Collection from './Collection';
+import Schema from './Schema';
 
 class Database extends EventEmitter {
 
