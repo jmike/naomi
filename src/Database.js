@@ -99,10 +99,10 @@ class Database extends EventEmitter {
   /**
    * Creates and returns a new Collection with the specified properties.
    * @param {string} name the name of the collection.
-   * @param {Object} [schema] optional collection schema.
+   * @param {(Object, Schema)} [schema] optional collection schema.
    * @type {Collection}
    */
-  createCollection(name: string, schema: ?Object): Collection {
+  createCollection(name: string, schema: Schema | ?Object): Collection {
     return new this.Collection(name, schema);
   }
 

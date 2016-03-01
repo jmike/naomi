@@ -13,26 +13,28 @@ class Collection extends EventEmitter {
    * Constructs a new Collection instance.
    * @param {Database} db reference to the parent database.
    * @param {string} name the name of the collection.
-   * @param {Object} [schema] the schema definition of the collection.
+   * @param {(Object, Schema)} [schema] the schema definition of the collection.
    * @throws {TypeError} if arguments are of invalid type
    * @constructor
    */
-  constructor(db: Database, name: string, schema: ?Object) {
+  constructor(db: Database, name: string, schema: Schema | ?Object) {
     // setup EventEmitter
     super();
     this.setMaxListeners(999);
 
-    // validate arguments
-    if (_.isPlainObject(schema)) {
-      throw new TypeError(`Invalid schema argument; expected plain object, received ${type(schema)}`);
-    }
-
-    // handle optional arguments
-    schema = schema || {};
-
     this.db = db;
     this.name = name;
-    this.schema = new Schema(schema);
+
+    if (schema instanceof Schema) {
+      this.schema = schema;
+    } else if (_.isPlainObject(schema)) {
+      this.schema = new Schema(schema);
+    } else if (_.isUndefined(schema)) {
+      this.schema = new Schema({});
+    } else {
+      throw new TypeError(`Invalid schema argument; expected plain object or instance of Schema, received ${type(schema)}`);
+    }
+
     this.parser = new QueryParser(this.name, this.schema);
     this.compiler = new QueryCompiler(this.name, this.schema);
   }
