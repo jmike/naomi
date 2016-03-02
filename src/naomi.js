@@ -3,8 +3,6 @@ import CustomError from 'customerror';
 import Database from './Database';
 import Collection from './Collection';
 import Schema from './Schema';
-import QueryCompiler from './QueryCompiler';
-import QueryParser from './QueryParser';
 
 class Naomi {
 
@@ -12,8 +10,6 @@ class Naomi {
     this.Database = Database;
     this.Collection = Collection;
     this.Schema = Schema;
-    this.QueryCompiler = QueryCompiler;
-    this.QueryParser = QueryParser;
     this._engines = [];
   }
 
