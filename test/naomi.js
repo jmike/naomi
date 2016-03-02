@@ -1,7 +1,7 @@
 /* global describe, it */
 
 import {assert} from 'chai';
-import naomi from '../src/Naomi';
+import naomi from '../src/naomi';
 import Database from '../src/Database';
 
 describe('Naomi', function () {
