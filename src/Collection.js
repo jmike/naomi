@@ -4,8 +4,11 @@ import _ from 'lodash';
 import type from 'type-of';
 import Database from './Database';
 import Schema from './Schema';
-import QueryParser from './QueryParser';
-import QueryCompiler from './QueryCompiler';
+import parseSelection from '../src/parsers/selection';
+import parseProjection from '../src/parsers/projection';
+import parseOrderBy from '../src/parsers/orderBy';
+import parseLimit from '../src/parsers/limit';
+import parseOffset from '../src/parsers/offset';
 
 class Collection extends EventEmitter {
 
@@ -35,8 +38,7 @@ class Collection extends EventEmitter {
       throw new TypeError(`Invalid schema argument; expected plain object or instance of Schema, received ${type(schema)}`);
     }
 
-    this.parser = new QueryParser(this.name, this.schema);
-    this.compiler = new QueryCompiler(this.name, this.schema);
+    this.parser = {parseSelection, parseProjection, parseOrderBy, parseLimit, parseOffset};
   }
 
   /**
