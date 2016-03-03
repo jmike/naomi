@@ -7,11 +7,11 @@ class DateType {
     this.props = {};
   }
 
-  set min(v: Date): void {
+  set min(v: string): void {
     this.props.min = v;
   }
 
-  set max(v: Date): void {
+  set max(v: string): void {
     this.props.max = v;
   }
 
