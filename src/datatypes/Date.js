@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import Joi from 'joi';
+import AnyType from './Any';
 
-class DateType {
+class DateType extends AnyType {
 
   constructor() {
     this.props = {};
@@ -30,11 +31,10 @@ class DateType {
   }
 
   toJSON(): Object {
-    const json = _.clone(this.props);
-
-    json.type = 'date';
-
-    return json;
+    return _.chain(this.props)
+      .clone()
+      .assign({type: 'date'})
+      .value();
   }
 
 }

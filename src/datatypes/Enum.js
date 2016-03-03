@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import Joi from 'joi';
+import AnyType from './Any';
 
-class EnumType {
+class EnumType extends AnyType {
 
   constructor() {
     this.props = {};
@@ -20,11 +21,10 @@ class EnumType {
   }
 
   toJSON(): Object {
-    const json = _.clone(this.props);
-
-    json.type = 'enum';
-
-    return json;
+    return _.chain(this.props)
+      .clone()
+      .assign({type: 'enum'})
+      .value();
   }
 
 }

@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import Joi from 'joi';
+import AnyType from './Any';
 
-class UUIDType {
+class UUIDType extends AnyType {
 
   constructor() {
     this.props = {};
@@ -12,11 +13,10 @@ class UUIDType {
   }
 
   toJSON(): Object {
-    const json = _.clone(this.props);
-
-    json.type = 'uuid';
-
-    return json;
+    return _.chain(this.props)
+      .clone()
+      .assign({type: 'uuid'})
+      .value();
   }
 
 }

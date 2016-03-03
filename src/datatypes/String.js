@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import Joi from 'joi';
+import AnyType from './Any';
 
-class StringType {
+class StringType extends AnyType {
 
   constructor() {
     this.props = {};
@@ -54,15 +55,15 @@ class StringType {
   }
 
   toJSON(): Object {
-    const json = _.clone(this.props);
-
-    json.type = 'string';
-
-    if (json.regex) {
-      json.regex = json.regex.toString();
-    }
-
-    return json;
+    return _.chain(this.props)
+      .clone()
+      .assign({type: 'string'})
+      .tap((json) => {
+        if (json.regex) {
+          json.regex = json.regex.toString();
+        }
+      })
+      .value();
   }
 
 }
