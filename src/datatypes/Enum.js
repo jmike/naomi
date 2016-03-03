@@ -5,7 +5,7 @@ import AnyType from './Any';
 class EnumType extends AnyType {
 
   constructor() {
-    this.props = {};
+    super();
   }
 
   set values(v: Array<string>): void {
@@ -16,6 +16,8 @@ class EnumType extends AnyType {
     let joi = Joi.string().strict(true);
 
     if (this.props.values) joi = joi.valid(this.props.values);
+    if (this.props.nullable) joi = joi.optional();
+    if (this.props.default) joi = joi.default(this.props.default);
 
     return joi;
   }

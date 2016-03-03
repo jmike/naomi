@@ -5,7 +5,7 @@ import AnyType from './Any';
 class DateType extends AnyType {
 
   constructor() {
-    this.props = {};
+    super();
   }
 
   set min(v: string): void {
@@ -26,6 +26,8 @@ class DateType extends AnyType {
     if (this.props.max) joi = joi.max(this.props.max);
     if (this.props.min) joi = joi.min(this.props.min);
     if (this.props.format) joi = joi.format(this.props.format);
+    if (this.props.nullable) joi = joi.optional();
+    if (this.props.default) joi = joi.default(this.props.default);
 
     return joi;
   }

@@ -1,6 +1,5 @@
 import _ from 'lodash';
-import Joi from 'joi';
-import IntegerType from './Integer';
+import NumberType from './Number';
 
 /**
  * Calculate the max absolute value for the given precision and scale.
@@ -19,7 +18,7 @@ function calculateMaxValue(precision: number, scale: ?number): number {
   return parseFloat(arr.join(''));
 }
 
-class FloatType extends IntegerType {
+class FloatType extends NumberType {
 
   constructor() {
     super();
@@ -47,13 +46,11 @@ class FloatType extends IntegerType {
       }
     }
 
-    let joi = Joi.number().strict(true);
+    let joi = super.toJoi();
 
-    if (this.props.max) joi = joi.max(this.props.max);
-    if (this.props.min) joi = joi.min(this.props.min);
-    if (this.props.positive) joi = joi.positive();
-    if (this.props.negative) joi = joi.negative();
-    if (this.props.scale) joi = joi.precision(this.props.scale);
+    if (this.props.scale) {
+      joi = joi.precision(this.props.scale);
+    }
 
     return joi;
   }

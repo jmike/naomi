@@ -1,36 +1,15 @@
 import _ from 'lodash';
-import Joi from 'joi';
-import AnyType from './Any';
+import NumberType from './Number';
 
-class IntegerType extends AnyType {
+class IntegerType extends NumberType {
 
   constructor() {
-    this.props = {};
-  }
-
-  set min(v: number): void {
-    this.props.min = v;
-  }
-
-  set max(v: number): void {
-    this.props.max = v;
-  }
-
-  set positive(v: boolean): void {
-    this.props.positive = v;
-  }
-
-  set negative(v: boolean): void {
-    this.props.negative = v;
+    super();
   }
 
   toJoi(): Object {
-    let joi = Joi.integer().strict(true);
-
-    if (this.props.max) joi = joi.max(this.props.max);
-    if (this.props.min) joi = joi.min(this.props.min);
-    if (this.props.positive) joi = joi.positive();
-    if (this.props.negative) joi = joi.negative();
+    let joi = super.toJoi().strict(true);
+    joi = joi.integer();
 
     return joi;
   }

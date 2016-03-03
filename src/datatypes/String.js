@@ -5,7 +5,7 @@ import AnyType from './Any';
 class StringType extends AnyType {
 
   constructor() {
-    this.props = {};
+    super();
   }
 
   set minLength(v: number): void {
@@ -50,6 +50,8 @@ class StringType extends AnyType {
     if (this.props.lowercase) joi = joi.lowercase();
     if (this.props.uppercase) joi = joi.uppercase();
     if (this.props.trim) joi = joi.trim();
+    if (this.props.nullable) joi = joi.optional();
+    if (this.props.default) joi = joi.default(this.props.default);
 
     return joi;
   }

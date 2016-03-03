@@ -5,11 +5,16 @@ import AnyType from './Any';
 class UUIDType extends AnyType {
 
   constructor() {
-    this.props = {};
+    super();
   }
 
   toJoi(): Object {
-    return Joi.string().guid().strict(true);
+    let joi = Joi.string().guid().strict(true);
+
+    if (this.props.nullable) joi = joi.optional();
+    if (this.props.default) joi = joi.default(this.props.default);
+
+    return joi;
   }
 
   toJSON(): Object {
