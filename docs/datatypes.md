@@ -5,32 +5,44 @@ A detailed description of Naomi datatypes and their relative properties.
 ## Table of Contents
 
 * [date](#date)
+  * [date.default](#datedefault)
   * [date.format](#dateformat)
   * [date.max](#datemax)
   * [date.min](#datemin)
+  * [date.nullable](#datenullable)
 * [enum](#enum)
+  * [enum.default](#enumdefault)
+  * [enum.nullable](#enumnullable)
   * [enum.values](#enumvalues)
 * [float](#float)
+  * [float.default](#floatdefault)
   * [float.max](#floatmax)
   * [float.min](#floatmin)
   * [float.negative](#floatnegative)
+  * [float.nullable](#floatnullable)
   * [float.positive](#floatpositive)
   * [float.precision](#floatprecision)
   * [float.scale](#floatscale)
 * [integer](#integer)
+  * [integer.default](#integerdefault)
   * [integer.max](#integermax)
   * [integer.min](#integermin)
   * [integer.negative](#integernegative)
+  * [integer.nullable](#integernullable)
   * [integer.positive](#integernegative)
 * [string](#string)
+  * [string.default](#stringdefault)
   * [string.length](#stringlength)
   * [string.lowercase](#stringlowercase)
   * [string.maxLength](#stringmaxlength)
   * [string.minLength](#stringminlength)
+  * [string.nullable](#stringnullable)
   * [string.regex](#stringregex)
   * [string.trim](#stringtrim)
   * [string.uppercase](#stringuppercase)
 * [uuid](#uuid)
+  * [uuid.default](#uuiddefault)
+  * [uuid.nullable](#uuidnullable)
 
 ## date
 
@@ -64,7 +76,7 @@ date.max = '2016-03-25';
 
 ##### Notes
 
-Notes: 'now' can be passed in lieu of date so as to always compare relatively to the current date, allowing to explicitly ensure a date is either in the past or in the future, e.g.
+You may use `now` instead of an actual date so as to always compare relatively to the current date, allowing to explicitly ensure a date is either in the past or in the future, e.g.
 
 ```javascript
 date.max = 'now';
@@ -84,6 +96,42 @@ Specifies the oldest date allowed.
 date.min = '1970-01-01';
 ```
 
+### <a name="datedefault" href="datedefault">#</a>date.default
+
+Sets a default value if the original value is undefined.
+
+##### Parameters
+
+* `default` _(string, Date, Function)_ the default value.
+
+##### Example
+
+```javascript
+date.default = '2016-02-29';
+```
+
+##### Notes
+
+You may also specify a function to return the default value, e.g.
+
+```javascript
+date.default = Date.now;
+```
+
+### <a name="datenullable" href="datenullable">#</a>date.nullable
+
+Marks the datatype as optional, which allows the `undefined` and `null` values.
+
+##### Parameters
+
+* `nullable` _(boolean)_ whether the datatype is nullable.
+
+##### Example
+
+```javascript
+date.nullable = true;
+```
+
 
 ## enum
 
@@ -99,6 +147,38 @@ Specifies allowed values.
 
 ```javascript
 enum.values = ['one', 'two', 'three'];
+```
+
+### <a name="enumdefault" href="enumdefault">#</a>enum.default
+
+Sets a default value if the original value is undefined.
+
+##### Parameters
+
+* `default` _(string, Function)_ the default value.
+
+##### Example
+
+```javascript
+enum.default = 'one';
+```
+
+##### Notes
+
+You may also specify a function to return the default value.
+
+### <a name="enumnullable" href="enumnullable">#</a>enum.nullable
+
+Marks the datatype as optional, which allows the `undefined` and `null` values.
+
+##### Parameters
+
+* `nullable` _(boolean)_ whether the datatype is nullable.
+
+##### Example
+
+```javascript
+enum.nullable = true;
 ```
 
 
@@ -188,6 +268,42 @@ Specifies the number of decimal digits allowed in value.
 float.scale = 2;
 ```
 
+### <a name="floatdefault" href="floatdefault">#</a>float.default
+
+Sets a default value if the original value is undefined.
+
+##### Parameters
+
+* `default` _(number, Function)_ the default value.
+
+##### Example
+
+```javascript
+float.default = 12.34;
+```
+
+##### Notes
+
+You may also specify a function to return the default value.
+
+```javascript
+float.default = Math.PI;
+```
+
+### <a name="floatnullable" href="floatnullable">#</a>float.nullable
+
+Marks the datatype as optional, which allows the `undefined` and `null` values.
+
+##### Parameters
+
+* `nullable` _(boolean)_ whether the datatype is nullable.
+
+##### Example
+
+```javascript
+float.nullable = true;
+```
+
 
 ## integer
 
@@ -245,6 +361,42 @@ If set to true requires value to be positive.
 
 ```javascript
 integer.positive = true;
+```
+
+### <a name="integerdefault" href="integerdefault">#</a>integer.default
+
+Sets a default value if the original value is undefined.
+
+##### Parameters
+
+* `default` _(number, Function)_ the default value.
+
+##### Example
+
+```javascript
+integer.default = 123;
+```
+
+##### Notes
+
+You may also specify a function to return the default value, e.g.
+
+```javascript
+integer.default = Number.MAX_SAFE_INTEGER;
+```
+
+### <a name="integernullable" href="integernullable">#</a>integer.nullable
+
+Marks the datatype as optional, which allows the `undefined` and `null` values.
+
+##### Parameters
+
+* `nullable` _(boolean)_ whether the datatype is nullable.
+
+##### Example
+
+```javascript
+integer.nullable = true;
 ```
 
 
@@ -348,6 +500,70 @@ Requires the string value to contain no whitespace before or after.
 string.trim = true;
 ```
 
+### <a name="stringdefault" href="stringdefault">#</a>string.default
+
+Sets a default value if the original value is undefined.
+
+##### Parameters
+
+* `default` _(string, Function)_ the default value.
+
+##### Example
+
+```javascript
+string.default = 'abc';
+```
+
+##### Notes
+
+You may also specify a function to return the default value.
+
+### <a name="stringnullable" href="stringnullable">#</a>string.nullable
+
+Marks the datatype as optional, which allows the `undefined` and `null` values.
+
+##### Parameters
+
+* `nullable` _(boolean)_ whether the datatype is nullable.
+
+##### Example
+
+```javascript
+string.nullable = true;
+```
+
+
 ## uuid
 
 A datatype to store [Universal Unique Identifiers](https://en.wikipedia.org/wiki/Universally_unique_identifier). Values must follow the UUID v4 format.
+
+### <a name="uuiddefault" href="uuiddefault">#</a>uuid.default
+
+Sets a default value if the original value is undefined.
+
+##### Parameters
+
+* `default` _(string, Function)_ the default value.
+
+##### Example
+
+The following example assumes use of the notorious [node-uuid](https://github.com/broofa/node-uuid) library.
+
+```javascript
+var uuidGenerator = require('uuid');
+uuid.default = uuidGenerator.v4;
+```
+
+### <a name="uuidnullable" href="uuidnullable">#</a>uuid.nullable
+
+Marks the datatype as optional, which allows the `undefined` and `null` values.
+
+##### Parameters
+
+* `nullable` _(boolean)_ whether the datatype is nullable.
+
+##### Example
+
+```javascript
+uuid.nullable = true;
+```
