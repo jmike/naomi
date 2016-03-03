@@ -11,7 +11,7 @@ class UUIDType extends AnyType {
   toJoi(): Object {
     let joi = Joi.string().guid().strict(true);
 
-    if (this.props.nullable) joi = joi.optional();
+    if (this.props.nullable) joi = joi.optional().allow(null);
     if (this.props.default) joi = joi.default(this.props.default);
 
     return joi;

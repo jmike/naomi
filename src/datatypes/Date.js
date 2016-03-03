@@ -26,7 +26,7 @@ class DateType extends AnyType {
     if (this.props.max) joi = joi.max(this.props.max);
     if (this.props.min) joi = joi.min(this.props.min);
     if (this.props.format) joi = joi.format(this.props.format);
-    if (this.props.nullable) joi = joi.optional();
+    if (this.props.nullable) joi = joi.optional().allow(null);
     if (this.props.default) joi = joi.default(this.props.default);
 
     return joi;
