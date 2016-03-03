@@ -12,7 +12,7 @@ function calculateMaxValue(precision: number, scale: ?number): number {
   const arr = _.fill(Array(precision), '9');
 
   if (scale) {
-    arr.splice(precision - scale, '.');
+    arr.splice(precision - scale, 0, '.');
   }
 
   return parseFloat(arr.join(''));
