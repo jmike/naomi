@@ -5,7 +5,7 @@ import Joi from 'joi';
 import StringType from '../../src/datatypes/String';
 
 describe('String datatype', function() {
-  it('accepts numeric values', function() {
+  it('accepts string values', function() {
     const dt = new StringType();
     const schema = dt.toJoi();
 

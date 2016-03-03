@@ -5,7 +5,7 @@ import Joi from 'joi';
 import IntegerType from '../../src/datatypes/Integer';
 
 describe('Integer datatype', function() {
-  it('accepts only integer values', function() {
+  it('accepts integer values', function() {
     const dt = new IntegerType();
     const schema = dt.toJoi();
 
@@ -26,7 +26,6 @@ describe('Integer datatype', function() {
     assert.doesNotThrow(() => Joi.assert(100, schema));
     assert.throws(() => Joi.assert(99, schema));
   });
-
 
   it('respects max property', function() {
     const dt = new IntegerType();
