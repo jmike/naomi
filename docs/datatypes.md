@@ -24,6 +24,7 @@ A detailed description of Naomi datatypes and their relative properties.
   * [float.precision](#floatprecision)
   * [float.scale](#floatscale)
 * [integer](#integer)
+  * [integer.autoinc](#integerautoinc)
   * [integer.default](#integerdefault)
   * [integer.max](#integermax)
   * [integer.min](#integermin)
@@ -306,6 +307,20 @@ float.nullable = true;
 
 
 ## integer
+
+### <a name="integerautoinc" href="integerautoinc">#</a>integer.autoinc
+
+If set to true marks value as automatically incremented. This has no effect in validation, but is essential to communicating with the database.
+
+##### Parameters
+
+* `autoinc` _(boolean)_ whether the value is automatically incremented.
+
+##### Example
+
+```javascript
+integer.autoinc = true;
+```
 
 ### <a name="integermax" href="integermax">#</a>integer.max
 
