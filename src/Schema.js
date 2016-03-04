@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import Promise from 'bluebird';
 import Joi from 'joi';
+import type from 'type-of';
 import CustomError from 'customerror';
 
 import UUIDType from './datatypes/UUID';
@@ -30,28 +31,44 @@ class Schema {
    * @throws {TypeError} if definition object is invalid or unspecified.
    */
   constructor(definition: Object) {
-    this.definition = _.mapValues(definition, (obj, key) => {
-      // make sure obj is plain object
-      if (!_.isPlainObject(obj)) {
-        throw new TypeError(`Invalid schema definition for ${key}; expected plain object`);
-      }
+    // make sure definition is plain object
+    if (!_.isPlainObject(definition)) {
+      throw new TypeError(`Invalid definition argument; expected plain object, received ${type(definition)}`);
+    }
 
-      // make sure obj is of valid type
-      if (!Types.hasOwnProperty(obj.type)) {
-        throw new TypeError(`Invalid datatype ${obj.type} for ${key}`);
-      }
+    this.columns = {};
+    this.primaryKey = [];
+    this.uniqueKeys = {};
+    this.indexKeys = {};
 
-      // create new datatype
-      const type = new Types[obj.type];
-
-      // update datatype props
-      _.forOwn(obj, (v, k) => {
-        if (k === 'type') return;
-        type[k] = v;
-      });
-
-      return type;
+    // update columns based on definition object
+    _.forOwn(definition, (props, key) => {
+      this.extend(key, props);
     });
+  }
+
+  extend(key: string, props: Object) {
+    // make sure props is plain object
+    if (!_.isPlainObject(props)) {
+      throw new TypeError(`Invalid props argument; expected plain object, received ${type(props)}`);
+    }
+
+    // make sure datatype is valid
+    if (!datatypes.hasOwnProperty(props.type)) {
+      throw new TypeError(`Unknown datatype ${props.type}`);
+    }
+
+    // create new datatype
+    const dt = new datatypes[props.type];
+
+    // set datatype properties
+    _.forOwn(props, (v, k) => {
+      if (k === 'type') return; // exclude type
+      dt[k] = v;
+    });
+
+    // update definition object
+    _.set(this.columns, key, dt);
   }
 
   getColumnNames() {
