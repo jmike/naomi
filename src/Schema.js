@@ -11,14 +11,14 @@ import FloatType from './datatypes/Float';
 import IntegerType from './datatypes/Integer';
 import DateType from './datatypes/Date';
 
-const Types = {
-  uuid: UUIDType,
-  string: StringType,
+const datatypes = {
+  date: DateType,
   enum: EnumType,
-  number: NumberType,
   float: FloatType,
   integer: IntegerType,
-  date: DateType
+  number: NumberType,
+  string: StringType,
+  uuid: UUIDType,
 };
 
 class Schema {
