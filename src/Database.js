@@ -1,7 +1,7 @@
 import {EventEmitter} from 'events';
 import Promise from 'bluebird';
 import Collection from './Collection';
-import Schema from './Schema';
+import Schema from './Schema'; // eslint-disable-line
 
 class Database extends EventEmitter {
 

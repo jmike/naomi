@@ -2,7 +2,7 @@ import {EventEmitter} from 'events';
 import Promise from 'bluebird';
 import _ from 'lodash';
 import type from 'type-of';
-import Database from './Database';
+import Database from './Database'; // eslint-disable-line
 import Schema from './Schema';
 import parseSelection from '../src/parsers/selection';
 import parseProjection from '../src/parsers/projection';
