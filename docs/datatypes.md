@@ -31,6 +31,13 @@ A detailed description of Naomi datatypes and their relative properties.
   * [integer.negative](#integernegative)
   * [integer.nullable](#integernullable)
   * [integer.positive](#integernegative)
+* [number](#number)
+  * [number.default](#numberdefault)
+  * [number.max](#numbermax)
+  * [number.min](#numbermin)
+  * [number.negative](#numbernegative)
+  * [number.nullable](#numbernullable)
+  * [number.positive](#numbernegative)
 * [string](#string)
   * [string.default](#stringdefault)
   * [string.length](#stringlength)
@@ -333,7 +340,7 @@ Specifies the maximum allowed value.
 ##### Example
 
 ```javascript
-integer.max = 999.99;
+integer.max = 999;
 ```
 
 ### <a name="integermin" href="integermin">#</a>integer.min
@@ -347,7 +354,7 @@ Specifies the minimum allowed value.
 ##### Example
 
 ```javascript
-integer.min = -1.1;
+integer.min = -100;
 ```
 
 ### <a name="integernegative" href="integernegative">#</a>integer.negative
@@ -412,6 +419,101 @@ Marks the datatype as optional, which allows the `undefined` and `null` values.
 
 ```javascript
 integer.nullable = true;
+```
+
+
+## number
+
+### <a name="numbermax" href="numbermax">#</a>number.max
+
+Specifies the maximum allowed value.
+
+##### Parameters
+
+* `max` _(number)_ the maximum value allowed.
+
+##### Example
+
+```javascript
+number.max = 999.99;
+```
+
+### <a name="numbermin" href="numbermin">#</a>number.min
+
+Specifies the minimum allowed value.
+
+##### Parameters
+
+* `min` _(number)_ the minimum value allowed.
+
+##### Example
+
+```javascript
+number.min = -1.1;
+```
+
+### <a name="numbernegative" href="numbernegative">#</a>number.negative
+
+If set to true requires value to be negative.
+
+##### Parameters
+
+* `negative` _(boolean)_ whether the value is negative.
+
+##### Example
+
+```javascript
+number.negative = true;
+```
+
+### <a name="numberpositive" href="numberpositive">#</a>number.positive
+
+If set to true requires value to be positive.
+
+##### Parameters
+
+* `positive` _(boolean)_ whether the value is positive.
+
+##### Example
+
+```javascript
+number.positive = true;
+```
+
+### <a name="numberdefault" href="numberdefault">#</a>number.default
+
+Sets a default value if the original value is undefined.
+
+##### Parameters
+
+* `default` _(number, Function)_ the default value.
+
+##### Example
+
+```javascript
+number.default = 123;
+```
+
+##### Notes
+
+You may also specify a function to return the default value, e.g.
+
+```javascript
+number.default = Number.MAX_SAFE_number;
+```
+
+### <a name="numbernullable" href="numbernullable">#</a>number.nullable
+
+Marks the datatype as optional, which allows the `undefined` and `null` values.
+
+##### Parameters
+
+* `nullable` _(boolean)_ whether the datatype is nullable.
+
+##### Example
+
+```javascript
+number.nullable = true;
 ```
 
 
