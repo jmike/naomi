@@ -7,6 +7,10 @@ class IntegerType extends NumberType {
     super();
   }
 
+  set autoinc(v: boolean): void {
+    this.props.autoinc = v;
+  }
+
   toJoi(): Object {
     let joi = super.toJoi().strict(true);
     joi = joi.integer();
