@@ -31,9 +31,9 @@ describe('Schema', function () {
         string: {type: 'string', minLength: 1, maxLength: 10, lowercase: true},
         enum: {type: 'enum', values: ['a', 'b', 'c']},
         number: {type: 'number', min: -10, max: 10, positive: true},
-        float: {type: 'float', min: -10, max: 10, positive: true, precision: 2},
+        float: {type: 'float', min: -10, max: 10, positive: true, precision: 5, scale: 2},
         integer: {type: 'integer', min: -10, max: 10, positive: true},
-        date: {type: 'date', min: new Date(), max: new Date(), format: 'YYYY-MM-DD'},
+        date: {type: 'date', min: '1970-01-01', max: '2016-03-25', format: 'YYYY-MM-DD'},
       }));
     });
   });
@@ -117,7 +117,7 @@ describe('Schema', function () {
 
     it('successfully validates float', function () {
       const schema = new Schema({
-        x: {type: 'float', precision: 2}
+        x: {type: 'float', precision: 5, scale: 2}
       });
 
       assert.isFulfilled(schema.validate({x: 123.2}));
