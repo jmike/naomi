@@ -73,6 +73,20 @@ class Schema {
     });
   }
 
+  setPrimaryKey(...columns) {
+    if (_.isEmpty(columns)) {
+      throw new TypeError('Invalid columns argument; array must not be empty');
+    }
+
+    columns.forEach((column) => {
+      if (!this.hasColumn(column)) {
+        throw new TypeError('Invalid columns argument; "${column}" does not exist in schema definition');
+      }
+    });
+
+    this.primaryKey = columns;
+  }
+
   /**
    * Indicates whether the specified column exists in schema.
    * @param {string} column the name of the column.
