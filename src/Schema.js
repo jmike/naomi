@@ -42,33 +42,30 @@ class Schema {
     this.indexKeys = {};
 
     // update columns based on definition object
-    _.forOwn(definition, (props, key) => {
-      this.extend(key, props);
-    });
+    this.extend(definition);
   }
 
-  extend(key: string, props: Object) {
-    // make sure props is plain object
-    if (!_.isPlainObject(props)) {
-      throw new TypeError(`Invalid props argument; expected plain object, received ${type(props)}`);
+  extend(definition: Object) {
+    // make sure definition is plain object
+    if (!_.isPlainObject(definition)) {
+      throw new TypeError(`Invalid definition argument; expected plain object, received ${type(definition)}`);
     }
 
-    // make sure datatype is valid
-    if (!datatypes.hasOwnProperty(props.type)) {
-      throw new TypeError(`Unknown datatype ${props.type}`);
-    }
+    _.forOwn(definition, (props, key) => {
+      // make sure datatype is valid
+      if (!datatypes.hasOwnProperty(props.type)) {
+        throw new TypeError(`Unknown datatype ${props.type}`);
+      }
 
-    // create new datatype
-    const dt = new datatypes[props.type];
+      // create new datatype
+      const dt = new datatypes[props.type];
 
-    // set datatype properties
-    _.forOwn(props, (v, k) => {
-      if (k === 'type') return; // exclude type
-      dt[k] = v;
+      // set datatype properties
+      _.chain(props).omit('type').forOwn((v, k) => dt[k] = v);
+
+      // update definition object
+      _.set(this.columns, key, dt);
     });
-
-    // update definition object
-    _.set(this.columns, key, dt);
   }
 
   /**
