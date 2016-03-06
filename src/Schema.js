@@ -45,7 +45,12 @@ class Schema {
     this.extend(definition);
   }
 
-  extend(definition: Object) {
+  /**
+   * Extends schema with the given definition object.
+   * @param {Object} definition the definition object.
+   * @throws {TypeError} if definition object is invalid or unspecified.
+   */
+  extend(definition: Object): void {
     // make sure definition is plain object
     if (!_.isPlainObject(definition)) {
       throw new TypeError(`Invalid definition argument; expected plain object, received ${type(definition)}`);
@@ -70,34 +75,34 @@ class Schema {
 
   /**
    * Indicates whether the specified column exists in schema.
-   * @param {string} key the name of the column.
+   * @param {string} column the name of the column.
    * @returns {boolean}
    */
-  hasColumn(key) {
-    return _.has(this.columns, key);
+  hasColumn(column: string): boolean {
+    return _.has(this.columns, column);
   }
 
   /**
    * Indicates whether the specified column is automatically incremented.
-   * @param {string} key the name of the column.
+   * @param {string} column the name of the column.
    * @returns {boolean}
    */
-  isAutoInc(key) {
-    const column = _.get(this.columns, key);
+  isAutoInc(column: string): boolean {
+    const dt = _.get(this.columns, column);
 
     // make sure column exists
-    if (_.isUndefined(column)) {
+    if (_.isUndefined(dt)) {
       return false;
     }
 
-    return column.props.autoinc === true;
+    return dt.props.autoinc === true;
   }
 
   /**
    * Returns an array of column names specified in schema.
    * @return {Array<string>}
    */
-  getColumnNames() {
+  getColumnNames(): Array<string> {
     return _.keys(this.columns);
   }
 
@@ -188,13 +193,13 @@ class Schema {
     return new Schema(obj);
   }
 
-  toJoi() {
+  toJoi(): Joi {
     return Joi.object()
       .strict(true)
       .keys(_.mapValues(this.columns, (datatype) => datatype.toJoi()));
   }
 
-  toJSON() {
+  toJSON(): Object {
     return _.mapValues(this.columns, (datatype) => datatype.toJSON());
   }
 
