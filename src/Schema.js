@@ -37,9 +37,9 @@ class Schema {
     }
 
     this.columns = {};
-    this.primaryKey = [];
-    this.uniqueKeys = {};
-    this.indexKeys = {};
+    this.primaryKeys = {};
+    this.indices = {};
+    this.uniqueIndices = {};
 
     // update columns based on definition object
     this.extend(definition);
@@ -73,18 +73,80 @@ class Schema {
     });
   }
 
-  setPrimaryKey(...columns) {
-    if (_.isEmpty(columns)) {
-      throw new TypeError('Invalid columns argument; array must not be empty');
+  /**
+   * Creates the supplied index in schema.
+   * @param {Object} keys a plain object that contains key-value pairs, where key is the name of the column and value describes the relative type of index, i.e. 1 for ASC, -1 for DESC.
+   * @param {Object} [options] index options.
+   * @param {string} [options.name] the name of the index.
+   * @param {string} [options.type="index"] the type of the index, i.e. "primary", "unique" or "index".
+   * @throws {TypeError} if arguments are invalid.
+   */
+  index(keys: Object, options: ?{name: ?string, type: ?string}): void {
+    // make sure keys is plain object
+    if (_.isPlainObject(keys)) {
+      throw new TypeError(`Invalid keys argument; expected plain object, received ${type(keys)}`);
     }
 
-    columns.forEach((column) => {
-      if (!this.hasColumn(column)) {
-        throw new TypeError('Invalid columns argument; "${column}" does not exist in schema definition');
+    // make sure keys is not empty
+    if (_.isEmpty(keys)) {
+      throw new TypeError(`Invalid keys argument; object must not be empty`);
+    }
+
+    // validate keys contents
+    keys.forOwn((order, key) => {
+      // make sure keys exist in schema definition
+      if (!this.hasColumn(key)) {
+        throw new TypeError(`Key "${key}" not found in schema definition`);
+      }
+
+      // make sure order is number
+      if (!_.isNumber(order)) {
+        throw new TypeError(`Invalid order for key "${key}"; expected number, received ${type(order)}`);
+      }
+
+      // make sure order is specifically one of 1 or -1
+      if (order !== 1 && order !== -1) {
+        throw new TypeError(`Invalid order for key "${key}"; expected 1 (i.e. ASC) or -1 (i.e. DESC), received ${order}`);
       }
     });
 
-    this.primaryKey = columns;
+    // handle options
+    options = _.defaults(options, {type: 'index'});
+
+    switch (options.type) {
+    case 'index':
+      if (_.isNil(options.name)) {
+        options.name = 'idx' + (_.size(this.indices) + 1);
+      }
+
+      // make sure index is not already defined in unique indices
+      if (_.has(this.uniqueIndices, options.name)) {
+        throw new Error(`Index ${options.name} is already set as unique index in schema`);
+      }
+
+      this.indices[options.name] = keys;
+      break;
+
+    case 'unique':
+      if (_.isNil(options.name)) {
+        options.name = 'uidx' + (_.size(this.uniqueIndices) + 1);
+      }
+
+      // make sure index is not already defined in plain indices
+      if (_.has(this.indices, options.name)) {
+        throw new Error(`Unique index ${options.name} is already set as plain index in schema`);
+      }
+
+      this.uniqueIndices[options.name] = keys;
+      break;
+
+    case 'primary':
+      this.primaryKeys = keys;
+      break;
+
+    default:
+      throw new TypeError(`Invalid type option; expected "index", "unique" or "primary", received "${options.type}"`);
+    }
   }
 
   /**
