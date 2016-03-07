@@ -3,7 +3,6 @@ import Promise from 'bluebird';
 import Joi from 'joi';
 import type from 'type-of';
 import CustomError from 'customerror';
-
 import UUIDType from './datatypes/UUID';
 import StringType from './datatypes/String';
 import EnumType from './datatypes/Enum';
@@ -25,7 +24,7 @@ const datatypes = {
 class Schema {
 
   /**
-   * Creates a new Schema based on the specified schema definition object.
+   * Creates a new Schema based on the supplied definition object.
    * @param {Object} definition a schema definition object.
    * @constructor
    * @throws {TypeError} if definition object is invalid or unspecified.
@@ -36,18 +35,18 @@ class Schema {
       throw new TypeError(`Invalid definition argument; expected plain object, received ${type(definition)}`);
     }
 
-    this.columns = {};
-    this.primaryKeys = {};
-    this.indices = {};
-    this.uniqueIndices = {};
+    this._keys = {};
+    this._primaryKeys = {};
+    this._indexKeys = {};
+    this._uniqueKeys = {};
 
-    // update columns based on definition object
+    // eat your own dog food
     this.extend(definition);
   }
 
   /**
-   * Extends schema with the given definition object.
-   * @param {Object} definition the definition object.
+   * Extends schema with the supplied definition object.
+   * @param {Object} definition a schema definition object.
    * @throws {TypeError} if definition object is invalid or unspecified.
    */
   extend(definition: Object): void {
@@ -69,13 +68,13 @@ class Schema {
       _.chain(props).omit('type').forOwn((v, k) => dt[k] = v);
 
       // update definition object
-      _.set(this.columns, key, dt);
+      _.set(this._keys, key, dt);
     });
   }
 
   /**
-   * Creates the supplied index in schema.
-   * @param {Object} keys a plain object that contains key-value pairs, where key is the name of the column and value describes the relative type of index, i.e. 1 for ASC, -1 for DESC.
+   * Creates the specified index in schema.
+   * @param {Object} keys an object of key-value pairs, where value describes the related type of the index, i.e. 1 for ASC, -1 for DESC.
    * @param {Object} [options] index options.
    * @param {string} [options.name] the name of the index.
    * @param {string} [options.type="index"] the type of the index, i.e. "primary", "unique" or "index".
@@ -92,10 +91,10 @@ class Schema {
       throw new TypeError(`Invalid keys argument; object must not be empty`);
     }
 
-    // validate keys contents
+    // iterate keys contents
     keys.forOwn((order, key) => {
       // make sure keys exist in schema definition
-      if (!this.hasColumn(key)) {
+      if (!this.has(key)) {
         throw new TypeError(`Key "${key}" not found in schema definition`);
       }
 
@@ -116,32 +115,32 @@ class Schema {
     switch (options.type) {
     case 'index':
       if (_.isNil(options.name)) {
-        options.name = 'idx' + (_.size(this.indices) + 1);
+        options.name = 'idx' + (_.size(this._indexKeys) + 1);
       }
 
       // make sure index is not already defined in unique indices
-      if (_.has(this.uniqueIndices, options.name)) {
+      if (_.has(this._uniqueKeys, options.name)) {
         throw new Error(`Index ${options.name} is already set as unique index in schema`);
       }
 
-      this.indices[options.name] = keys;
+      this._indexKeys[options.name] = keys;
       break;
 
     case 'unique':
       if (_.isNil(options.name)) {
-        options.name = 'uidx' + (_.size(this.uniqueIndices) + 1);
+        options.name = 'uidx' + (_.size(this._uniqueKeys) + 1);
       }
 
       // make sure index is not already defined in plain indices
-      if (_.has(this.indices, options.name)) {
+      if (_.has(this._indexKeys, options.name)) {
         throw new Error(`Unique index ${options.name} is already set as plain index in schema`);
       }
 
-      this.uniqueIndices[options.name] = keys;
+      this._uniqueKeys[options.name] = keys;
       break;
 
     case 'primary':
-      this.primaryKeys = keys;
+      this._primaryKeys = keys;
       break;
 
     default:
@@ -150,96 +149,82 @@ class Schema {
   }
 
   /**
-   * Indicates whether the specified column exists in schema.
-   * @param {string} column the name of the column.
+   * Indicates whether the specified key exists in schema.
+   * @param {string} key the name of the key.
    * @returns {boolean}
    */
-  hasColumn(column: string): boolean {
-    return _.has(this.columns, column);
+  has(key: string): boolean {
+    return _.has(this._keys, key);
   }
 
   /**
-   * Indicates whether the specified column is automatically incremented.
-   * @param {string} column the name of the column.
-   * @returns {boolean}
+   * Returns an array of keys specified in this schema.
+   * @return {Array<string>}
    */
-  isAutoInc(column: string): boolean {
-    const dt = _.get(this.columns, column);
+  keys(): Array<string> {
+    return _.keys(this._keys);
+  }
 
-    // make sure column exists
+  /**
+   * Indicates whether the specified key is automatically incremented.
+   * @param {string} key the name of the key.
+   * @returns {boolean}
+   * @throws {Error} If key does not exist in schema.
+   */
+  isAutoInc(key: string): boolean {
+    const dt = _.get(this._keys, key);
+
+    // make sure key exists
     if (_.isUndefined(dt)) {
-      return false;
+      throw new Error(`Key "${key}" not found in schema definition`);
     }
 
     return dt.props.autoinc === true;
   }
 
   /**
-   * Returns an array of column names specified in schema.
-   * @return {Array<string>}
+   * Indicates whether the specified key(s) compose the primary key of this schema.
+   * Primary keys may be compound, i.e. composed of multiple keys. Hence the acceptance of multiple params in this function.
+   * @param {...string} keys the name of the keys.
+   * @returns {boolean}
    */
-  getColumnNames(): Array<string> {
-    return _.keys(this.columns);
+  isPrimaryKey(...keys): boolean {
+    return _.chain(this._primaryKeys).keys().xor(keys).value().length === 0;
+  }
+
+  /*
+   * Indicates whether the specified keys(s) represent a unique key in this schema.
+   * Unique keys may be compound, i.e. composed of multiple keys, hence the acceptance of multiple params.
+   * @param {...string} keys the name of the keys.
+   * @returns {boolean}
+   */
+  isUniqueKey(...keys): boolean {
+    return _.some(this._uniqueKeys, (e) => {
+      return _.xor(e, keys).length === 0;
+    });
+  }
+
+  /*
+   * Indicates whether the specified key(s) represent an index key.
+   * Index keys may be compound, i.e. composed of multiple keys, hence the acceptance of multiple params.
+   * @param {...string} keys the name of the keys.
+   * @returns {boolean}
+   */
+  isIndexKey(...keys): boolean {
+    return _.some(this._indexKeys, function (e) {
+      return _.xor(e, keys).length === 0;
+    });
   }
 
   /**
-   * Indicates whether the specified column(s) represent a primary key.
-   * Primary keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params in this function.
-   * This method will always return false until database is ready.
-   * @param {...string} columns the name of the columns.
-   * @returns {boolean}
-   * @example
-   */
-  // isPrimaryKey() {
-  //   var columns = Array.prototype.slice.call(arguments, 0);
-  //   return _.xor(this.primaryKey, columns).length === 0;
-  // }
-
-  /**
-   * Indicates whether the specified column(s) represent a unique key.
-   * Unique keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params.
-   * This method will always return false until database is ready.
-   * @param {...string} columns the name of the columns.
-   * @returns {boolean}
-   * @example
-   *
-   * table.isUniqueKey('pid');
-   */
-  // isUniqueKey() {
-  //   var columns = Array.prototype.slice.call(arguments, 0);
-  //   return _.some(this.uniqueKeys, function (e) {
-  //     return _.xor(e, columns).length === 0;
-  //   });
-  // }
-
-  /**
-   * Indicates whether the specified column(s) represent an index key.
-   * Index keys may be compound, i.e. composed of multiple columns, hence the acceptance of multiple params.
-   * This method will always return false until database is ready.
-   * @param {...string} columns the name of the columns.
-   * @returns {boolean}
-   * @example
-   *
-   * table.isIndexKey('firstName', 'lastName');
-   */
-  // isIndexKey() {
-  //   var columns = Array.prototype.slice.call(arguments, 0);
-  //   return _.some(this.indexKeys, function (e) {
-  //     return _.xor(e, columns).length === 0;
-  //   });
-  // }
-
-  /**
-   * Indicates whether the table has a simple automatically incremented primary key.
+   * Indicates whether the table has an atomic auto-incremented primary key.
    * This method will always return false until database is ready.
    * @returns {boolean}
-   * @example
-   *
-   * table.hasAutoIncPrimaryKey();
    */
-  // hasAutoIncPrimaryKey() {
-  //   return this.primaryKey.length === 1 && this.isAutoInc(this.primaryKey[0]);
-  // }
+  hasAtomicAutoIncPrimaryKey() {
+    const keys = _.keys(this._primaryKey);
+    return keys.length === 1 && this.isAutoInc(keys[0]);
+  }
 
   /**
    * Validates the designated record against this schema.
@@ -262,7 +247,7 @@ class Schema {
   }
 
   toMetaData(): Object {
-    return this.columns;
+    return this._keys;
   }
 
   static fromMetaData(obj: Object): Schema {
@@ -272,11 +257,11 @@ class Schema {
   toJoi() {
     return Joi.object()
       .strict(true)
-      .keys(_.mapValues(this.columns, (datatype) => datatype.toJoi()));
+      .keys(_.mapValues(this._keys, (datatype) => datatype.toJoi()));
   }
 
   toJSON(): Object {
-    return _.mapValues(this.columns, (datatype) => datatype.toJSON());
+    return _.mapValues(this._keys, (datatype) => datatype.toJSON());
   }
 
 }
