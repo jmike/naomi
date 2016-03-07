@@ -25,8 +25,8 @@ const datatypes = {
 class Schema {
 
   /**
-   * Creates a new Schema based on the specified definition object.
-   * @param {Object} definition the definition object.
+   * Creates a new Schema based on the specified schema definition object.
+   * @param {Object} definition a schema definition object.
    * @constructor
    * @throws {TypeError} if definition object is invalid or unspecified.
    */
