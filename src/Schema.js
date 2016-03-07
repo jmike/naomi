@@ -201,8 +201,8 @@ class Schema {
    * @returns {boolean}
    */
   isUniqueKey(...keys): boolean {
-    return _.some(this._uniqueKeys, (e) => {
-      return _.xor(e, keys).length === 0;
+    return _.some(this._uniqueKeys, (obj) => {
+      return _.xor(_.keys(obj), keys).length === 0;
     });
   }
 
@@ -213,8 +213,8 @@ class Schema {
    * @returns {boolean}
    */
   isIndexKey(...keys): boolean {
-    return _.some(this._indexKeys, function (e) {
-      return _.xor(e, keys).length === 0;
+    return _.some(this._indexKeys, function (obj) {
+      return _.xor(_.keys(obj), keys).length === 0;
     });
   }
 
