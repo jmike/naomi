@@ -269,7 +269,7 @@ class Schema {
     return new Schema(obj);
   }
 
-  toJoi(): Joi {
+  toJoi() {
     return Joi.object()
       .strict(true)
       .keys(_.mapValues(this.columns, (datatype) => datatype.toJoi()));
