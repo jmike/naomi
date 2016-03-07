@@ -36,7 +36,7 @@ class Schema {
     }
 
     this._keys = {};
-    this._primaryKeys = {};
+    this._primaryKey = {};
     this._indexKeys = {};
     this._uniqueKeys = {};
 
@@ -142,7 +142,7 @@ class Schema {
       break;
 
     case 'primary':
-      this._primaryKeys = keys;
+      this._primaryKey = keys;
       break;
 
     default:
@@ -191,7 +191,7 @@ class Schema {
    * @returns {boolean}
    */
   isPrimaryKey(...keys): boolean {
-    return _.chain(this._primaryKeys).keys().xor(keys).value().length === 0;
+    return _.chain(this._primaryKey).keys().xor(keys).value().length === 0;
   }
 
   /*
