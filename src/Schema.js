@@ -94,7 +94,7 @@ class Schema {
     }
 
     // iterate keys contents
-    keys.forOwn((order, key) => {
+    _.forOwn(keys, (order, key) => {
       // make sure keys exist in schema definition
       if (!this.has(key)) {
         throw new TypeError(`Key "${key}" not found in schema definition`);
