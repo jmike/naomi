@@ -14,7 +14,7 @@ describe('Schema', function () {
       assert.throws(() => new Schema(), TypeError);
     });
 
-    it('throws error when definition is of invalid type', function () {
+    it('throws error when definition is invalid', function () {
       assert.throws(() => new Schema(123), TypeError);
       assert.throws(() => new Schema(false), TypeError);
       assert.throws(() => new Schema(null), TypeError);
@@ -25,7 +25,7 @@ describe('Schema', function () {
       assert.doesNotThrow(() => new Schema({}));
     });
 
-    it('accepts datatypes in definition object', function () {
+    it('accepts Naomi datatypes', function () {
       assert.doesNotThrow(() => new Schema({
         uuid: {type: 'uuid'},
         string: {type: 'string', minLength: 1, maxLength: 10, lowercase: true},
@@ -35,6 +35,81 @@ describe('Schema', function () {
         integer: {type: 'integer', min: -10, max: 10, positive: true},
         date: {type: 'date', min: '1970-01-01', max: '2016-03-25', format: 'YYYY-MM-DD'},
       }));
+    });
+  });
+
+  describe('#index()', function () {
+    const schema = new Schema({
+      id: {type: 'integer'},
+      firstname: {type: 'string'},
+      lastname: {type: 'string'},
+      email: {type: 'string'},
+      age: {type: 'string'},
+    });
+
+    it('throws error when keys is unspecified', function () {
+      assert.throws(() => schema.index(), TypeError);
+    });
+
+    it('throws error when keys is invalid', function () {
+      assert.throws(() => schema.index(123), TypeError);
+      assert.throws(() => schema.index(false), TypeError);
+      assert.throws(() => schema.index(null), TypeError);
+      assert.throws(() => schema.index('str'), TypeError);
+      assert.throws(() => schema.index(new Date()), TypeError);
+    });
+
+    it('handles primary key', function () {
+      schema.index({id: 1}, {type: 'primary'});
+      assert.isTrue(schema.isPrimaryKey('id'));
+    });
+
+    it('handles unique key', function () {
+      schema.index({email: 1}, {type: 'unique', name: 'uidx_email'});
+      assert.isTrue(schema.isUniqueKey('email'));
+    });
+
+    it('handles index key', function () {
+      schema.index({age: -1}, {name: 'idx_age'});
+      assert.isTrue(schema.isIndexKey('age'));
+    });
+
+    it('handles compound index key', function () {
+      schema.index({firstname: 1, lastname: 1}, {name: 'idx_name'});
+      assert.isTrue(schema.isIndexKey('firstname', 'lastname'));
+      assert.isFalse(schema.isIndexKey('foobar'));
+      assert.isFalse(schema.isIndexKey('firstname', 'foobar'));
+      assert.isFalse(schema.isIndexKey('firstname', 'lastname', 'foobar'));
+    });
+  });
+
+  describe('#hasAtomicAutoIncPrimaryKey()', function () {
+    it('returns true when primary key is composed of a single auto-incremented key', function () {
+      const schema = new Schema({
+        id: {type: 'integer', autoinc: true}
+      });
+
+      schema.index({id: 1}, {type: 'primary'});
+
+      assert.isTrue(schema.hasAtomicAutoIncPrimaryKey());
+    });
+
+    it('returns false when primary key is not auto-incremented', function () {
+      const schema = new Schema({
+        id: {type: 'integer'}
+      });
+
+      schema.index({id: 1}, {type: 'primary'});
+
+      assert.isFalse(schema.hasAtomicAutoIncPrimaryKey());
+    });
+
+    it('returns false when primary key is not defined', function () {
+      const schema = new Schema({
+        id: {type: 'integer'}
+      });
+
+      assert.isFalse(schema.hasAtomicAutoIncPrimaryKey());
     });
   });
 
