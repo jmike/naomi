@@ -65,7 +65,9 @@ class Schema {
       const dt = new datatypes[props.type];
 
       // set datatype properties
-      _.chain(props).omit('type').forOwn((v, k) => dt[k] = v);
+      _.forOwn(_.omit(props, 'type'), (v, k) => {
+        dt[k] = v;
+      });
 
       // update definition object
       _.set(this._keys, key, dt);
