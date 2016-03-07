@@ -84,7 +84,7 @@ class Schema {
    */
   index(keys: Object, options: ?{name: ?string, type: ?string}): void {
     // make sure keys is plain object
-    if (_.isPlainObject(keys)) {
+    if (!_.isPlainObject(keys)) {
       throw new TypeError(`Invalid keys argument; expected plain object, received ${type(keys)}`);
     }
 
