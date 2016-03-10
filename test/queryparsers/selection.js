@@ -1,7 +1,7 @@
 /* global describe, it */
 
 import {assert} from 'chai';
-import parseSelection from '../../src/parsers/selection';
+import parseSelection from '../../src/queryparsers/selection';
 
 describe('Selection parser', function() {
   it('parses plain number', function() {

@@ -1,7 +1,7 @@
 /* global describe, it */
 
 import {assert} from 'chai';
-import parseOrderBy from '../../src/parsers/orderBy';
+import parseOrderBy from '../../src/queryparsers/orderBy';
 
 describe('OrderBy parser', function() {
   it('accepts string as $orderby', function() {

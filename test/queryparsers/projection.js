@@ -1,7 +1,7 @@
 /* global describe, it */
 
 import {assert} from 'chai';
-import parseProjection from '../../src/parsers/projection';
+import parseProjection from '../../src/queryparsers/projection';
 
 describe('Projection parser', function() {
   it('accepts object as $projection', function() {

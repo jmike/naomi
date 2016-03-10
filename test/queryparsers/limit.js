@@ -1,7 +1,7 @@
 /* global describe, it */
 
 import {assert} from 'chai';
-import parseLimit from '../../src/parsers/limit';
+import parseLimit from '../../src/queryparsers/limit';
 
 describe('Limit parser', function() {
   it('accepts positive integer', function() {

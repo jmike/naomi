@@ -1,7 +1,7 @@
 /* global describe, it */
 
 import {assert} from 'chai';
-import parseOffset from '../../src/parsers/offset';
+import parseOffset from '../../src/queryparsers/offset';
 
 describe('Offset parser', function() {
   it('accepts positive integer', function() {

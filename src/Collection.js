@@ -4,11 +4,11 @@ import _ from 'lodash';
 import type from 'type-of';
 import Database from './Database'; // eslint-disable-line
 import Schema from './Schema';
-import parseSelection from '../src/parsers/selection';
-import parseProjection from '../src/parsers/projection';
-import parseOrderBy from '../src/parsers/orderBy';
-import parseLimit from '../src/parsers/limit';
-import parseOffset from '../src/parsers/offset';
+import parseSelection from '../src/queryparsers/selection';
+import parseProjection from '../src/queryparsers/projection';
+import parseOrderBy from '../src/queryparsers/orderBy';
+import parseLimit from '../src/queryparsers/limit';
+import parseOffset from '../src/queryparsers/offset';
 
 class Collection extends EventEmitter {
 
