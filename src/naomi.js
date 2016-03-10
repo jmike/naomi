@@ -1,15 +1,9 @@
 import _ from 'lodash';
 import CustomError from 'customerror';
-import Database from './Database';
-import Collection from './Collection';
-import Schema from './Schema';
 
 class Naomi {
 
   constructor() {
-    this.Database = Database;
-    this.Collection = Collection;
-    this.Schema = Schema;
     this._engines = [];
   }
 
