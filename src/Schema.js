@@ -173,6 +173,44 @@ class Schema {
   }
 
   /**
+   * Returns an array of keys that compose the primary key.
+   * @return {Array<string>}
+   */
+  primaryKey(): Array<string> {
+    return _.keys(this._primaryKey);
+  }
+
+  /**
+   * Returns an array of keys that compose the designate unique key.
+   * @param {string} name: the name of the unique key index.
+   * @return {Array<string>}
+   */
+  uniqueKey(name: string): Array<string> {
+    const obj = this._uniqueKeys[name];
+
+    if (obj === undefined) {
+      throw new Error(`Unknow unique key "${name}"; does not exist in schema`);
+    }
+
+    return _.keys(obj);
+  }
+
+  /**
+   * Returns an array of keys that compose the designate index key.
+   * @param {string} name: the name of the index key index.
+   * @return {Array<string>}
+   */
+  indexKey(name: string): Array<string> {
+    const obj = this._indexKeys[name];
+
+    if (obj === undefined) {
+      throw new Error(`Unknow index key "${name}"; does not exist in schema`);
+    }
+
+    return _.keys(obj);
+  }
+
+  /**
    * Indicates whether the specified key is automatically incremented.
    * @param {string} key the name of the key.
    * @returns {boolean}
