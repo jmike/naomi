@@ -176,7 +176,7 @@ class Schema {
    * Returns an array of keys that compose the primary key.
    * @return {Array<string>}
    */
-  primaryKey(): Array<string> {
+  primaryKeys(): Array<string> {
     return _.keys(this._primaryKey);
   }
 
@@ -185,7 +185,7 @@ class Schema {
    * @param {string} name: the name of the unique key index.
    * @return {Array<string>}
    */
-  uniqueKey(name: string): Array<string> {
+  uniqueKeys(name: string): Array<string> {
     const obj = this._uniqueKeys[name];
 
     if (obj === undefined) {
@@ -200,7 +200,7 @@ class Schema {
    * @param {string} name: the name of the index key index.
    * @return {Array<string>}
    */
-  indexKey(name: string): Array<string> {
+  indexKeys(name: string): Array<string> {
     const obj = this._indexKeys[name];
 
     if (obj === undefined) {
