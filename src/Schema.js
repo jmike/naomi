@@ -39,6 +39,7 @@ class Schema {
     this._primaryKey = {};
     this._indexKeys = {};
     this._uniqueKeys = {};
+    this._joi = null;
 
     // eat your own dog food
     this.extend(definition);
@@ -55,6 +56,7 @@ class Schema {
       throw new TypeError(`Invalid definition argument; expected plain object, received ${type(definition)}`);
     }
 
+    // update _keys object
     _.forOwn(definition, (props, key) => {
       // make sure datatype is valid
       if (!datatypes.hasOwnProperty(props.type)) {
@@ -72,6 +74,9 @@ class Schema {
       // update definition object
       _.set(this._keys, key, dt);
     });
+
+    // invalidate joi cache
+    this._joi = null;
   }
 
   /**
@@ -236,12 +241,12 @@ class Schema {
    */
   validate(record: Object, callback: ?Function): Promise {
     // make sure joi exists
-    if (!this.joi) {
-      this.joi = this.toJoi(); // cache to instance property
+    if (!this._joi) {
+      this._joi = this.toJoi(); // cache to instance property
     }
 
     return new Promise((resolve, reject) => {
-      Joi.validate(record, this.joi, {convert: false}, (err, value) => {
+      Joi.validate(record, this._joi, {convert: false}, (err, value) => {
         if (err) return reject(new CustomError(err, 'ValidationError'));
         resolve(value);
       });
