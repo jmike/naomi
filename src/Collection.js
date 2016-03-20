@@ -42,6 +42,20 @@ class Collection extends EventEmitter {
   }
 
   /**
+   * Creates the specified index in the collection.
+   * @param {Object} keys an object of key-value pairs, where value describes the related type of the index, i.e. 1 for ASC, -1 for DESC.
+   * @param {Object} [options] index options.
+   * @param {string} [options.name] the name of the index.
+   * @param {string} [options.type="index"] the type of the index, i.e. "primary", "unique" or "index".
+   * @throws {TypeError} if arguments are invalid.
+   * @returns {Collection} this collection to allow method chaining.
+   */
+  index(keys: Object, options: ?{name: ?string, type: ?string}): Collection {
+    this.schema.index(keys, options);
+    return this;
+  }
+
+  /**
    * Reverse engineers the collection's schema from metadata retrieved from the database.
    * This function will update the collection's schema.
    * @param {Function<Error>} [callback] an optional callback function.
