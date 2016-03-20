@@ -49,6 +49,7 @@ class Schema {
    * Extends schema with the supplied definition object.
    * @param {Object} definition a schema definition object.
    * @throws {TypeError} if definition object is invalid or unspecified.
+   * @returns {Schema} this schema to allow method chaining.
    */
   extend(definition: Object): void {
     // make sure definition is plain object
@@ -77,6 +78,9 @@ class Schema {
 
     // invalidate joi cache
     this._joi = null;
+
+    // allow method chaining
+    return this;
   }
 
   /**
@@ -86,6 +90,7 @@ class Schema {
    * @param {string} [options.name] the name of the index.
    * @param {string} [options.type="index"] the type of the index, i.e. "primary", "unique" or "index".
    * @throws {TypeError} if arguments are invalid.
+   * @returns {Schema} this schema to allow method chaining.
    */
   index(keys: Object, options: ?{name: ?string, type: ?string}): void {
     // make sure keys is plain object
@@ -153,6 +158,9 @@ class Schema {
     default:
       throw new TypeError(`Invalid type option; expected "index", "unique" or "primary", received "${options.type}"`);
     }
+
+    // allow method chaining
+    return this;
   }
 
   /**
