@@ -51,7 +51,7 @@ class Schema {
    * @throws {TypeError} if definition object is invalid or unspecified.
    * @returns {Schema} this schema to allow method chaining.
    */
-  extend(definition: Object): void {
+  extend(definition: Object): Schema {
     // make sure definition is plain object
     if (!_.isPlainObject(definition)) {
       throw new TypeError(`Invalid definition argument; expected plain object, received ${type(definition)}`);
@@ -92,7 +92,7 @@ class Schema {
    * @throws {TypeError} if arguments are invalid.
    * @returns {Schema} this schema to allow method chaining.
    */
-  index(keys: Object, options: ?{name: ?string, type: ?string}): void {
+  index(keys: Object, options: ?{name: ?string, type: ?string}): Schema {
     // make sure keys is plain object
     if (!_.isPlainObject(keys)) {
       throw new TypeError(`Invalid keys argument; expected plain object, received ${type(keys)}`);
