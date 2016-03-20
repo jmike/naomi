@@ -83,7 +83,7 @@ describe('Schema', function () {
     });
   });
 
-  describe('#hasAtomicAutoIncPrimaryKey()', function () {
+  describe('#hasAutoIncPrimaryKey()', function () {
     it('returns true when primary key is composed of a single auto-incremented key', function () {
       const schema = new Schema({
         id: {type: 'integer', autoinc: true}
@@ -91,7 +91,7 @@ describe('Schema', function () {
 
       schema.index({id: 1}, {type: 'primary'});
 
-      assert.isTrue(schema.hasAtomicAutoIncPrimaryKey());
+      assert.isTrue(schema.hasAutoIncPrimaryKey());
     });
 
     it('returns false when primary key is not auto-incremented', function () {
@@ -101,7 +101,7 @@ describe('Schema', function () {
 
       schema.index({id: 1}, {type: 'primary'});
 
-      assert.isFalse(schema.hasAtomicAutoIncPrimaryKey());
+      assert.isFalse(schema.hasAutoIncPrimaryKey());
     });
 
     it('returns false when primary key is not defined', function () {
@@ -109,7 +109,7 @@ describe('Schema', function () {
         id: {type: 'integer'}
       });
 
-      assert.isFalse(schema.hasAtomicAutoIncPrimaryKey());
+      assert.isFalse(schema.hasAutoIncPrimaryKey());
     });
   });
 
