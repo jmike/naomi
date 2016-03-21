@@ -1,24 +1,169 @@
 import _ from 'lodash';
 import type from 'type-of';
-import parseEqual from './equal';
-import parseNotEqual from './notEqual';
-import parseGreaterThan from './greaterThan';
-import parseGreaterThanOrEqual from './greaterThanOrEqual';
-import parseLessThan from './lessThan';
-import parseLessThanOrEqual from './lessThanOrEqual';
-import parseLike from './like';
-import parseNotLike from './notLike';
-import parseIn from './in';
-import parseNotIn from './notIn';
-import parseAnd from './and';
-import parseOr from './or';
+import parseKey from './key';
+
+function parseEqual(k, v) {
+  if (
+    !_.isNumber(v) &&
+    !_.isString(v) &&
+    !_.isBoolean(v) &&
+    !_.isDate(v) &&
+    !Buffer.isBuffer(v) &&
+    !_.isNull(v)
+  ) {
+    throw new TypeError(`Invalid $eq expression; expected number, string, boolean, date, buffer or null, received ${type(v)}`);
+  }
+
+  return ['EQ', parseKey(k), ['VALUE', v]];
+}
+
+function parseNotEqual(k, v) {
+  if (
+    !_.isNumber(v) &&
+    !_.isString(v) &&
+    !_.isBoolean(v) &&
+    !_.isDate(v) &&
+    !Buffer.isBuffer(v) &&
+    !_.isNull(v)
+  ) {
+    throw new TypeError(`Invalid $ne expression; expected number, string, boolean, date, buffer or null, received ${type(v)}`);
+  }
+
+  return ['NE', parseKey(k), ['VALUE', v]];
+}
+
+function parseGreaterThan(k, v): Array {
+  if (
+    !_.isNumber(v) &&
+    !_.isString(v) &&
+    !_.isBoolean(v) &&
+    !_.isDate(v) &&
+    !Buffer.isBuffer(v)
+  ) {
+    throw new TypeError(`Invalid $gt expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+  }
+
+  return ['GT', parseKey(k), ['VALUE', v]];
+}
+
+function parseGreaterThanOrEqual(k, v) {
+  if (
+    !_.isNumber(v) &&
+    !_.isString(v) &&
+    !_.isBoolean(v) &&
+    !_.isDate(v) &&
+    !Buffer.isBuffer(v)
+  ) {
+    throw new TypeError(`Invalid $gte expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+  }
+
+  return ['GTE', parseKey(k), ['VALUE', v]];
+}
+
+function parseLessThan(k, v) {
+  if (
+    !_.isNumber(v) &&
+    !_.isString(v) &&
+    !_.isBoolean(v) &&
+    !_.isDate(v) &&
+    !Buffer.isBuffer(v)
+  ) {
+    throw new TypeError(`Invalid $lt expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+  }
+
+  return ['LT', parseKey(k), ['VALUE', v]];
+}
+
+function parseLessThanOrEqual(k, v) {
+  if (
+    !_.isNumber(v) &&
+    !_.isString(v) &&
+    !_.isBoolean(v) &&
+    !_.isDate(v) &&
+    !Buffer.isBuffer(v)
+  ) {
+    throw new TypeError(`Invalid $lte expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+  }
+
+  return ['LTE', parseKey(k), ['VALUE', v]];
+}
+
+function parseLike(k, v) {
+  if (!_.isString(v)) {
+    throw new TypeError(`Invalid $like expression; expected string, received ${type(v)}`);
+  }
+
+  return ['LIKE', parseKey(k), ['VALUE', v]];
+}
+
+function parseNotLike(k, v) {
+  if (!_.isString(v)) {
+    throw new TypeError(`Invalid $nlike expression; expected string, received ${type(v)}`);
+  }
+
+  return ['NLIKE', parseKey(k), ['VALUE', v]];
+}
+
+function parseIn(k, v) {
+  if (!_.isArray(v)) {
+    throw new TypeError(`Invalid $in expression; expected array, received ${type(v)}`);
+  }
+
+  if (v.length === 0) {
+    throw new TypeError(`Invalid $in expression; array cannot be empty`);
+  }
+
+  return ['IN', parseKey(k), ['VALUES'].concat(v)];
+}
+
+function parseNotIn(k, v) {
+  if (!_.isArray(v)) {
+    throw new TypeError(`Invalid $nin expression; expected array, received ${type(v)}`);
+  }
+
+  if (v.length === 0) {
+    throw new TypeError(`Invalid $nin expression; array cannot be empty`);
+  }
+
+  return ['NIN', parseKey(k), ['VALUES'].concat(v)];
+}
+
+function parseAnd(v) {
+  if (!_.isArray(v)) {
+    throw new TypeError(`Invalid $and expression; expected array, received ${type(v)}`);
+  }
+
+  if (v.length === 0) {
+    throw new TypeError(`Invalid $and expression; array cannot be empty`);
+  }
+
+  return ['AND'].concat(v.map((e) => {
+    const selection = parse(e); // eslint-disable-line no-use-before-define
+    return selection[1]; // remove the "SELECTION" part
+  }));
+}
+
+function parseOr(v) {
+  if (!_.isArray(v)) {
+    throw new TypeError(`Invalid $or expression; expected array, received ${type(v)}`);
+  }
+
+  if (v.length === 0) {
+    throw new TypeError(`Invalid $or expression; array cannot be empty`);
+  }
+
+  return ['OR'].concat(v.map((e) => {
+    const selection = parse(e); // eslint-disable-line no-use-before-define
+    return selection[1]; // remove the "SELECTION" part
+  }));
+}
 
 /**
  * Parses the given selection expression and returns an abstract syntax tree (ast).
  * @param {Object} [expression] optional expression value.
  * @return {Array}
  */
-function parse(expression: number | string | boolean | ?Object, _mem: ?string): Array {
+function parse(expression, _mem) {
   if (_.isNil(expression)) { // null or undefined
     expression = {};
   } else if (
