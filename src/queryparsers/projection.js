@@ -7,28 +7,37 @@ import parseKey from './key';
  * @param {Object} [expression] optional expression value, e.g. {'foo': 1, 'bar': 1} or {'foo': -1}.
  * @return {Array}
  */
-function parse(expression: ?Object): Array {
+function parse(expression) {
   if (_.isNull(expression) || _.isUndefined(expression)) {
-    return ['PROJECTION', null];
-  }
-
-  if (!_.isPlainObject(expression)) {
+    expression = {};
+  } else if (!_.isPlainObject(expression)) {
     throw new TypeError(`Invalid projection expression; expected plain object, received ${type(expression)}`);
   }
 
-  const arr = Object.keys(expression).map((k) => {
+  if (_.isEmpty(expression)) {
+    return ['PROJECT', null]; // null signifies "*" (i.e. "all columns")
+  }
+
+  const incl = [];
+  const excl = [];
+
+  Object.keys(expression).forEach((k) => {
     if (expression[k] === 1) {
-      return ['INCLUDE', parseKey(k)];
+      incl.push(parseKey(k));
+    } else if (expression[k] === 0 || expression[k] === -1) {
+      excl.push(parseKey(k));
+    } else {
+      throw new TypeError(`Invalid projection expression for key "${k}"; expected -1 or 1`);
     }
-
-    if (expression[k] === 0 || expression[k] === -1) {
-      return ['EXCLUDE', parseKey(k)];
-    }
-
-    throw new TypeError(`Invalid projection expression for key "${k}"; expected -1 or 1`);
   });
 
-  return ['PROJECTION'].concat(arr);
+  if (incl.length !== 0) { // include always has precedence
+    return ['PROJECT'].concat(incl);
+  }
+
+  if (excl.length !== 0) {
+    return ['NPROJECT'].concat(excl);
+  }
 }
 
 export default parse;
