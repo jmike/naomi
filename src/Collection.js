@@ -38,7 +38,11 @@ class Collection extends EventEmitter {
       throw new TypeError(`Invalid schema argument; expected plain object or instance of Schema, received ${type(schema)}`);
     }
 
-    this.parser = {parseSelection, parseProjection, parseOrderBy, parseLimit, parseOffset};
+    this.parseSelection = parseSelection;
+    this.parseProjection = parseProjection;
+    this.parseOrderBy = parseOrderBy;
+    this.parseLimit = parseLimit;
+    this.parseOffset = parseOffset;
   }
 
   /**
