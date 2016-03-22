@@ -103,7 +103,7 @@ class Database extends EventEmitter {
    * @param {(Object, Schema)} [schema] optional collection schema.
    * @type {Collection}
    */
-  createCollection(name: string, schema: Schema | ?Object): Collection {
+  collection(name: string, schema: Schema | ?Object): Collection {
     return new this.Collection(name, schema);
   }
 

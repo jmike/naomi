@@ -108,10 +108,10 @@ describe('Database', function () {
     });
   });
 
-  describe('#createCollection()', function () {
+  describe('#collection()', function () {
     it('returns a new Collection instance bound to this database', function () {
       const db = new Database({});
-      const employees = db.createCollection('employees');
+      const employees = db.collection('employees');
       assert.instanceOf(employees, Collection);
       assert.strictEqual(employees.db, db);
     });
