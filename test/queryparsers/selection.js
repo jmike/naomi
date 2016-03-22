@@ -65,9 +65,46 @@ describe('Selection parser', function() {
     const ast = parseSelection([1, 2, 3]);
     assert.deepEqual(ast, [
       'SELECTION', [
-        'IN',
-        ['ID'],
-        ['VALUES', 1, 2, 3]
+        'OR',
+        [
+          'EQ',
+          ['ID'],
+          ['VALUE', 1]
+        ],
+        [
+          'EQ',
+          ['ID'],
+          ['VALUE', 2]
+        ],
+        [
+          'EQ',
+          ['ID'],
+          ['VALUE', 3]
+        ],
+      ]
+    ]);
+  });
+
+  it('parses array or objects', function() {
+    const ast = parseSelection([{a: 1}, {a: 2}, {a: 3}]);
+    assert.deepEqual(ast, [
+      'SELECTION', [
+        'OR',
+        [
+          'EQ',
+          ['KEY', 'a'],
+          ['VALUE', 1]
+        ],
+        [
+          'EQ',
+          ['KEY', 'a'],
+          ['VALUE', 2]
+        ],
+        [
+          'EQ',
+          ['KEY', 'a'],
+          ['VALUE', 3]
+        ],
       ]
     ]);
   });

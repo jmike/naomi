@@ -174,7 +174,7 @@ function parse(expression, _mem) {
     Buffer.isBuffer(expression)) {
     expression = {'$id': {'$eq': expression}};
   } else if (_.isArray(expression)) {
-    expression = {'$id': {'$in': expression}};
+    expression = {'$or': expression};
   } else if (!_.isPlainObject(expression)) {
     throw new TypeError(`Invalid selection expression; expected number, string, date, boolean, buffer, array or plain object, received ${type(expression)}`);
   }
