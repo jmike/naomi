@@ -184,7 +184,7 @@ function parse(expression, _mem) {
 
   // check if expression is empty
   if (keys.length === 0) {
-    return ['SELECT', null];
+    return ['SELECTION', null];
   }
 
   // check if expression has more than 1 keys
@@ -204,29 +204,29 @@ function parse(expression, _mem) {
 
     switch (k) {
     case '$eq':
-      return ['SELECT', parseEqual(_mem, v)];
+      return ['SELECTION', parseEqual(_mem, v)];
     case '$ne':
-      return ['SELECT', parseNotEqual(_mem, v)];
+      return ['SELECTION', parseNotEqual(_mem, v)];
     case '$gt':
-      return ['SELECT', parseGreaterThan(_mem, v)];
+      return ['SELECTION', parseGreaterThan(_mem, v)];
     case '$gte':
-      return ['SELECT', parseGreaterThanOrEqual(_mem, v)];
+      return ['SELECTION', parseGreaterThanOrEqual(_mem, v)];
     case '$lt':
-      return ['SELECT', parseLessThan(_mem, v)];
+      return ['SELECTION', parseLessThan(_mem, v)];
     case '$lte':
-      return ['SELECT', parseLessThanOrEqual(_mem, v)];
+      return ['SELECTION', parseLessThanOrEqual(_mem, v)];
     case '$like':
-      return ['SELECT', parseLike(_mem, v)];
+      return ['SELECTION', parseLike(_mem, v)];
     case '$nlike':
-      return ['SELECT', parseNotLike(_mem, v)];
+      return ['SELECTION', parseNotLike(_mem, v)];
     case '$in':
-      return ['SELECT', parseIn(_mem, v)];
+      return ['SELECTION', parseIn(_mem, v)];
     case '$nin':
-      return ['SELECT', parseNotIn(_mem, v)];
+      return ['SELECTION', parseNotIn(_mem, v)];
     case '$and':
-      return ['SELECT', parseAnd(v)];
+      return ['SELECTION', parseAnd(v)];
     case '$or':
-      return ['SELECT', parseOr(v)];
+      return ['SELECTION', parseOr(v)];
     default:
       // check if value is a nested object
       if (_.isPlainObject(v)) {

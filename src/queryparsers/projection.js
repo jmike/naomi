@@ -15,7 +15,7 @@ function parse(expression) {
   }
 
   if (_.isEmpty(expression)) {
-    return ['PROJECT', null]; // null signifies "*" (i.e. "all columns")
+    return ['PROJECTION', null]; // null signifies "*" (i.e. "all columns")
   }
 
   const incl = [];
@@ -32,11 +32,11 @@ function parse(expression) {
   });
 
   if (incl.length !== 0) { // include always has precedence
-    return ['PROJECT'].concat(incl);
+    return ['PROJECTION'].concat(incl);
   }
 
   if (excl.length !== 0) {
-    return ['NPROJECT'].concat(excl);
+    return ['NPROJECTION'].concat(excl);
   }
 }
 

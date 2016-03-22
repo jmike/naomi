@@ -7,32 +7,32 @@ describe('Projection parser', function() {
   it('accepts object with value 1', function() {
     const ast = parseProjection({foo: 1});
     assert.deepEqual(ast, [
-      'PROJECT', ['KEY', 'foo']
+      'PROJECTION', ['KEY', 'foo']
     ]);
   });
 
   it('accepts object with value -1', function() {
     const ast = parseProjection({bar: -1});
     assert.deepEqual(ast, [
-      'NPROJECT', ['KEY', 'bar']
+      'NPROJECTION', ['KEY', 'bar']
     ]);
   });
 
   it('always gives precedence to value 1', function() {
     const ast = parseProjection({foo: 1, bar: -1});
     assert.deepEqual(ast, [
-      'PROJECT', ['KEY', 'foo']
+      'PROJECTION', ['KEY', 'foo']
     ]);
   });
 
   it('accepts null as $projection', function() {
     const ast = parseProjection(null);
-    assert.deepEqual(ast, ['PROJECT', null]);
+    assert.deepEqual(ast, ['PROJECTION', null]);
   });
 
   it('accepts undefined $projection', function() {
     const ast = parseProjection();
-    assert.deepEqual(ast, ['PROJECT', null]);
+    assert.deepEqual(ast, ['PROJECTION', null]);
   });
 
   it('throws error when $projection is of invalid type', function () {
