@@ -13,9 +13,9 @@
     "test": "node test/index.js"
   },
   "dependencies": {
-    "bluebird": "^3.3.3",
+    "bluebird": "^3.3.4",
     "customerror": "^1.0.1",
-    "joi": "^8.0.4",
+    "joi": "^8.0.5",
     "lodash": "^4.5.1",
     "type-of": "^2.0.1"
   },
