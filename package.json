@@ -12,6 +12,9 @@
     "prepublish": "npm run build",
     "test": "node test/index.js"
   },
+  "engines": {
+    "node": ">=5.0.0"
+  },
   "dependencies": {
     "bluebird": "^3.3.4",
     "customerror": "^1.0.1",
