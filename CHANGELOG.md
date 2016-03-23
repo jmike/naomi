@@ -1,10 +1,7 @@
-## 2.0.0-alpha.2 - 2016-03-02
+## 2.0.0-beta.1 - 2016-03-23
 
-* Fix invalid Schema reference in Database.js.
-
-## 2.0.0-alpha.1 - 2016-03-02
-
-* Upgrade naomi to proper ORM with schema + validation.
+* Refactor method names to make more sense.
+* Add proper schema + validation functionality.
 
 ## 0.9.0 - 2015-04-06
 
