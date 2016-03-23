@@ -1,3 +1,8 @@
+## 2.0.0-beta.2 - 2016-03-24
+
+* Bugfix: invalid parser reference in Collection.js.
+* Compile to ./lib instead of ./dist.
+
 ## 2.0.0-beta.1 - 2016-03-23
 
 * Refactor method names to make more sense.
