@@ -6,7 +6,7 @@
     "type": "git",
     "url": "git://github.com/jmike/naomi.git"
   },
-  "main": "dist/naomi.js",
+  "main": "lib/naomi.js",
   "scripts": {
     "build": "gulp rebuild",
     "prepublish": "npm run build",
