@@ -1,3 +1,8 @@
+## 2.0.0-beta.3 - 2016-03-24
+
+* Expose method to extractKeys and validate AST keys.
+* Ignore the lib folder from git repo.
+
 ## 2.0.0-beta.2 - 2016-03-24
 
 * Bugfix: invalid parser reference in Collection.js.
