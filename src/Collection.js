@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import type from 'type-of';
+import CustomError from 'customerror';
 import Database from './Database'; // eslint-disable-line
 import Schema from './Schema';
 import parseSelection from './queryparsers/selection';
@@ -51,6 +52,50 @@ class Collection {
   index(payload: Object, options: ?{name: ?string, type: ?string}): Collection {
     this.schema.index(payload, options);
     return this;
+  }
+
+  /**
+   * Extracts and returns keys from the supplied AST.
+   * @param {Array} ast
+   * @returns {Array<string>}
+   */
+  extractKeysFromAST(ast: Array): Array<string> {
+    let keys = [];
+
+    if (ast[0] === 'KEY') {
+      keys.push(ast[1]);
+    } else {
+      ast.forEach((e) => {
+        if (_.isArray(e)) {
+          const arr = this.extractKeysFromAST(e);
+
+          if (arr.length !== 0) {
+            keys = keys.concat(arr);
+          }
+        }
+      });
+    }
+
+    return keys;
+  }
+
+  /**
+   * Checks if keys in the supplied AST exist in the collection schema.
+   * @param {Array} ast
+   * @return {Array}
+   * @throws {UnknownKey} if key does not exist in the collection schema.
+   */
+  validateKeysInAST(ast: Array): Array {
+    const keys = this.extractKeysFromAST(ast);
+
+    // make sure selection keys exist in schema
+    keys.forEach((k) => {
+      if (!this.schema.hasKey(k)) {
+        throw new CustomError(`Unknown key "${k}" not found in ${this.name} collection`, 'UnknownKey');
+      }
+    });
+
+    return ast;
   }
 }
 
