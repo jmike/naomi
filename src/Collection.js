@@ -2,11 +2,11 @@ import _ from 'lodash';
 import type from 'type-of';
 import Database from './Database'; // eslint-disable-line
 import Schema from './Schema';
-import parseSelection from '../src/queryparsers/selection';
-import parseProjection from '../src/queryparsers/projection';
-import parseOrderBy from '../src/queryparsers/orderBy';
-import parseLimit from '../src/queryparsers/limit';
-import parseOffset from '../src/queryparsers/offset';
+import parseSelection from './queryparsers/selection';
+import parseProjection from './queryparsers/projection';
+import parseOrderBy from './queryparsers/orderBy';
+import parseLimit from './queryparsers/limit';
+import parseOffset from './queryparsers/offset';
 
 class Collection {
 
