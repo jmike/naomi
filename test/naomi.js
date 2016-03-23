@@ -5,36 +5,36 @@ import naomi from '../src/naomi';
 import Database from '../src/Database';
 
 describe('Naomi', function () {
-  describe('#registerEngine()', function () {
+  describe('#registerDatabaseEngine()', function () {
     it('throws error when id is of invalid type', function () {
-      assert.throws(() => naomi.create(123), TypeError);
-      assert.throws(() => naomi.create(false), TypeError);
-      assert.throws(() => naomi.create(null), TypeError);
-      assert.throws(() => naomi.create({}), TypeError);
-      assert.throws(() => naomi.create(new Date()), TypeError);
+      assert.throws(() => naomi.registerDatabaseEngine(123), TypeError);
+      assert.throws(() => naomi.registerDatabaseEngine(false), TypeError);
+      assert.throws(() => naomi.registerDatabaseEngine(null), TypeError);
+      assert.throws(() => naomi.registerDatabaseEngine({}), TypeError);
+      assert.throws(() => naomi.registerDatabaseEngine(new Date()), TypeError);
     });
   });
 
-  describe('#create()', function () {
-    naomi.registerEngine('mysql', Database);
+  describe('#database()', function () {
+    naomi.registerDatabaseEngine('mysql', Database);
 
     it('throws error when id is of invalid type', function () {
-      assert.throws(() => naomi.create(123), TypeError);
-      assert.throws(() => naomi.create(false), TypeError);
-      assert.throws(() => naomi.create(null), TypeError);
-      assert.throws(() => naomi.create({}), TypeError);
-      assert.throws(() => naomi.create(new Date()), TypeError);
+      assert.throws(() => naomi.database(123), TypeError);
+      assert.throws(() => naomi.database(false), TypeError);
+      assert.throws(() => naomi.database(null), TypeError);
+      assert.throws(() => naomi.database({}), TypeError);
+      assert.throws(() => naomi.database(new Date()), TypeError);
     });
 
     it('throws error when engine is unknown', function () {
-      assert.throws(() => naomi.create('unknown'), 'UnknownDatabaseEngine');
+      assert.throws(() => naomi.database('unknown'), TypeError);
     });
 
     // it('throws error when props is invalid', function () {
-    //   assert.throws(() => naomi.create('mysql', 123), TypeError);
-    //   assert.throws(() => naomi.create('mysql', false), TypeError);
-    //   assert.throws(() => naomi.create('mysql', null), TypeError);
-    //   assert.throws(() => naomi.create('mysql', 'string'), TypeError);
+    //   assert.throws(() => naomi.database('mysql', 123), TypeError);
+    //   assert.throws(() => naomi.database('mysql', false), TypeError);
+    //   assert.throws(() => naomi.database('mysql', null), TypeError);
+    //   assert.throws(() => naomi.database('mysql', 'string'), TypeError);
     // });
   });
 });

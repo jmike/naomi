@@ -30,11 +30,6 @@ class Schema {
    * @throws {TypeError} if definition object is invalid or unspecified.
    */
   constructor(definition: Object) {
-    // make sure definition is plain object
-    if (!_.isPlainObject(definition)) {
-      throw new TypeError(`Invalid definition argument; expected plain object, received ${type(definition)}`);
-    }
-
     this._keys = {};
     this._primaryKey = {};
     this._indexKeys = {};
@@ -85,29 +80,29 @@ class Schema {
 
   /**
    * Creates the specified index in schema.
-   * @param {Object} keys an object of key-value pairs, where value describes the related type of the index, i.e. 1 for ASC, -1 for DESC.
+   * @param {Object} payload key-value pairs, where key represent some keys of this schema and value describes the type of the index, i.e. 1 for ASC, -1 for DESC.
    * @param {Object} [options] index options.
    * @param {string} [options.name] the name of the index.
    * @param {string} [options.type="index"] the type of the index, i.e. "primary", "unique" or "index".
    * @throws {TypeError} if arguments are invalid.
    * @returns {Schema} this schema to allow method chaining.
    */
-  index(keys: Object, options: ?{name: ?string, type: ?string}): Schema {
-    // make sure keys is plain object
-    if (!_.isPlainObject(keys)) {
-      throw new TypeError(`Invalid keys argument; expected plain object, received ${type(keys)}`);
+  index(payload: Object, options: ?{name: ?string, type: ?string}): Schema {
+    // make sure payload is plain object
+    if (!_.isPlainObject(payload)) {
+      throw new TypeError(`Invalid index payload; expected plain object, received ${type(payload)}`);
     }
 
-    // make sure keys is not empty
-    if (_.isEmpty(keys)) {
-      throw new TypeError(`Invalid keys argument; object must not be empty`);
+    // make sure payload is not empty
+    if (_.isEmpty(payload)) {
+      throw new TypeError(`Invalid index payload; object must not be empty`);
     }
 
-    // iterate keys contents
-    _.forOwn(keys, (order, key) => {
+    // validate payload
+    _.forOwn(payload, (order, key) => {
       // make sure keys exist in schema definition
-      if (!this.has(key)) {
-        throw new TypeError(`Key "${key}" not found in schema definition`);
+      if (!this.hasKey(key)) {
+        throw new TypeError(`Unknown key "${key}" not found in schema`);
       }
 
       // make sure order is number
@@ -121,7 +116,7 @@ class Schema {
       }
     });
 
-    // handle options
+    // handle optional arguments
     options = _.defaults(options, {type: 'index'});
 
     switch (options.type) {
@@ -135,7 +130,7 @@ class Schema {
         throw new Error(`Index ${options.name} is already set as unique index in schema`);
       }
 
-      this._indexKeys[options.name] = keys;
+      this._indexKeys[options.name] = payload;
       break;
 
     case 'unique':
@@ -148,11 +143,11 @@ class Schema {
         throw new Error(`Unique index ${options.name} is already set as plain index in schema`);
       }
 
-      this._uniqueKeys[options.name] = keys;
+      this._uniqueKeys[options.name] = payload;
       break;
 
     case 'primary':
-      this._primaryKey = keys;
+      this._primaryKey = payload;
       break;
 
     default:
@@ -168,7 +163,7 @@ class Schema {
    * @param {string} key the name of the key.
    * @returns {boolean}
    */
-  has(key: string): boolean {
+  hasKey(key: string): boolean {
     return _.has(this._keys, key);
   }
 
@@ -176,7 +171,7 @@ class Schema {
    * Returns an array of keys specified in this schema.
    * @return {Array<string>}
    */
-  keys(): Array<string> {
+  getKeys(): Array<string> {
     return _.keys(this._keys);
   }
 
@@ -184,7 +179,7 @@ class Schema {
    * Returns an array of keys that compose the primary key.
    * @return {Array<string>}
    */
-  primaryKey(): Array<string> {
+  getPrimaryKey(): Array<string> {
     return _.keys(this._primaryKey);
   }
 
@@ -193,11 +188,11 @@ class Schema {
    * @param {string} name: the name of the unique key index.
    * @return {Array<string>}
    */
-  uniqueKey(name: string): Array<string> {
+  getUniqueKey(name: string): Array<string> {
     const obj = this._uniqueKeys[name];
 
     if (obj === undefined) {
-      throw new Error(`Unknow unique key "${name}"; does not exist in schema`);
+      throw new Error(`Unknown unique-key "${name}" does not exist in schema`);
     }
 
     return _.keys(obj);
@@ -208,11 +203,11 @@ class Schema {
    * @param {string} name: the name of the index key index.
    * @return {Array<string>}
    */
-  indexKey(name: string): Array<string> {
+  getIndexKey(name: string): Array<string> {
     const obj = this._indexKeys[name];
 
     if (obj === undefined) {
-      throw new Error(`Unknow index key "${name}"; does not exist in schema`);
+      throw new Error(`Unknown index-key "${name}" does not exist in schema`);
     }
 
     return _.keys(obj);
@@ -224,15 +219,12 @@ class Schema {
    * @returns {boolean}
    * @throws {Error} If key does not exist in schema.
    */
-  isAutoInc(key: string): boolean {
-    const dt = _.get(this._keys, key);
-
-    // make sure key exists
-    if (_.isUndefined(dt)) {
-      throw new Error(`Key "${key}" not found in schema definition`);
+  isKeyAutoInc(key: string): boolean {
+    if (!this.hasKey(key)) {
+      throw new Error(`Unknown key "${key}" not found in schema`);
     }
 
-    return dt.props.autoinc === true;
+    return _.get(this._keys, [key, 'props', 'autoinc']) === true;
   }
 
   /**
@@ -242,7 +234,7 @@ class Schema {
    * @returns {boolean}
    */
   isPrimaryKey(...keys): boolean {
-    return _.chain(this._primaryKey).keys().xor(keys).value().length === 0;
+    return _.chain(this._primaryKey).keys().xor(keys).size().value() === 0;
   }
 
   /*
@@ -275,8 +267,8 @@ class Schema {
    * @returns {boolean}
    */
   hasAutoIncPrimaryKey() {
-    const keys = _.keys(this._primaryKey);
-    return keys.length === 1 && this.isAutoInc(keys[0]);
+    const keys = this.getPrimaryKey();
+    return keys.length === 1 && this.isKeyAutoInc(keys[0]);
   }
 
   /**
@@ -286,9 +278,9 @@ class Schema {
    * @return {Promise<Object>}
    */
   validate(record: Object, callback: ?Function): Promise {
-    // make sure joi exists
+    // cache joi
     if (!this._joi) {
-      this._joi = this.toJoi(); // cache to instance property
+      this._joi = this.toJoi();
     }
 
     return new Promise((resolve, reject) => {
@@ -297,14 +289,6 @@ class Schema {
         resolve(value);
       });
     }).nodeify(callback);
-  }
-
-  toMetaData(): Object {
-    return this._keys;
-  }
-
-  static fromMetaData(obj: Object): Schema {
-    return new Schema(obj);
   }
 
   toJoi() {

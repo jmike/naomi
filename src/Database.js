@@ -12,13 +12,12 @@ class Database extends EventEmitter {
    * @constructor
    */
   constructor(connectionProperties: Object) {
-    // setup EventEmitter
+    // setup event emitter
     super();
     this.setMaxListeners(999);
 
     this.connectionProperties = connectionProperties;
     this.isConnected = false;
-    this.Collection = Collection.bind(null, this);
   }
 
   /**
@@ -104,7 +103,7 @@ class Database extends EventEmitter {
    * @type {Collection}
    */
   collection(name: string, schema: Schema | ?Object): Collection {
-    return new this.Collection(name, schema);
+    return new Collection(this, name, schema);
   }
 
 }

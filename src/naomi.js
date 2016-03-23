@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import CustomError from 'customerror';
 
 class Naomi {
 
@@ -8,17 +7,20 @@ class Naomi {
   }
 
   /**
-   * Registers the given naomi-compatible database engine under the designated identifier.
+   * Registers the given database engine under the designated identifier.
    * @param {String} id database engine identifier, e.g. "mysql", "postgres"
-   * @param {Database} engine the database engine itself
-   * @throws {TypeError} if params are invalid or unspecified
+   * @param {Database} engine the database engine itself.
+   * @throws {TypeError} if params are invalid or unspecified.
+   * @returns {Naomi}
    */
-  registerEngine(id: string, engine: Class<Database>) {
+  registerDatabaseEngine(id: string, engine: Class<Database>): Naomi {
     this._engines.push({
       id: id,
       re: new RegExp(id, 'i'),
       Database: engine
     });
+
+    return this;
   }
 
   /**
@@ -30,7 +32,7 @@ class Naomi {
    * @throws {UnknownDatabaseEngine} if the specified engine identifier is unknown to Naomi.
    * @returns {Database}
    */
-  create(id: string, connectionProperties: ?Object): Database {
+  database(id: string, connectionProperties: ?Object): Database {
     // handle optional params
     connectionProperties = connectionProperties || {};
 
@@ -42,7 +44,7 @@ class Naomi {
       return new engine.Database(connectionProperties);
     }
 
-    throw new CustomError(`Unknown engine argument; please specify one of ${this._engines.map((e) => e.id).join(', ')}`, 'UnknownDatabaseEngine');
+    throw new TypeError(`Unknown database engine; please specify one of ${this._engines.map((e) => e.id).join(', ')}`);
   }
 
 }
