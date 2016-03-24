@@ -246,8 +246,16 @@ class Schema {
   }
 
   /**
+   * Indicates whether the table has an atomic (i.e. consisted of a single key) primary key.
+   * @returns {boolean}
+   */
+  hasAtomicPrimaryKey() {
+    const keys = this.getPrimaryKey();
+    return keys.length === 1;
+  }
+
+  /**
    * Indicates whether the table has an atomic (i.e. consisted of a single key) auto-incremented primary key.
-   * This method will always return false until database is ready.
    * @returns {boolean}
    */
   hasAutoIncPrimaryKey() {
