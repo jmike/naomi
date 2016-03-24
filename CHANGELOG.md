@@ -1,3 +1,7 @@
+## 2.0.0 - 2016-03-24
+
+* Accept function as default value in "Any" datatype.
+
 ## 2.0.0-beta.6 - 2016-03-24
 
 * Get Joi validator for a specific key by passing the key name to schema#toJoi().
