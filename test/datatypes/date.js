@@ -65,4 +65,13 @@ describe('Date datatype', function() {
 
     assert.strictEqual(Joi.attempt(undefined, schema), '2015-03-25');
   });
+
+  it('accepts function as default value', function() {
+    const dt = new DateType();
+    dt.default = Date.now;
+    const schema = dt.toJoi();
+
+    assert.isNumber(Joi.attempt(undefined, schema));
+    assert.approximately(Joi.attempt(undefined, schema), Date.now(), 10); // Date.now() +/- 10 ms
+  });
 });

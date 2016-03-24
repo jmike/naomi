@@ -12,6 +12,10 @@ class AnyType {
   }
 
   set default(v): void {
+    if (_.isFunction(v) && _.isUndefined(v.description)) {
+      v.description = v.name; // name of the function
+    }
+
     this.props.default = v;
   }
 
