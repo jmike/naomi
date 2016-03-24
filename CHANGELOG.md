@@ -1,3 +1,10 @@
+## 2.0.1 - 2016-03-24
+
+* Augment validate method with optional keys array.
+* Rename #toJoi() to #createJoi in schema; pass keys to validate as arguments.
+* Introduce hasAtomicPrimaryKey() method in schema.
+* Bugfix: Respect default datatype property even when it's falsy
+
 ## 2.0.0 - 2016-03-24
 
 * Accept function as default value in "Any" datatype.
