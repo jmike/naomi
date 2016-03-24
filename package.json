@@ -20,6 +20,7 @@
     "customerror": "^1.0.1",
     "joi": "^8.0.5",
     "lodash": "^4.6.1",
+    "require-directory": "^2.1.1",
     "type-of": "^2.0.1"
   },
   "devDependencies": {
