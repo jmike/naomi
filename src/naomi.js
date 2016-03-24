@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import Database from './Database';
 
 class Naomi {
 
