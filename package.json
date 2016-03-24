@@ -1,7 +1,7 @@
 {
   "name": "naomi",
   "version": "2.0.0-beta.4",
-  "description": "Simple, productive, relational db client for MySQL and Postgres.",
+  "description": "Simple, productive ORM for Node.js that makes sense.",
   "repository": {
     "type": "git",
     "url": "git://github.com/jmike/naomi.git"
