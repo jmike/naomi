@@ -11,8 +11,8 @@ class BooleanType extends AnyType {
   toJoi(): Object {
     let joi = Joi.boolean().strict(true);
 
+    if (!_.isUndefined(this.props.default)) joi = joi.default(this.props.default);
     if (this.props.nullable) joi = joi.optional().allow(null);
-    if (this.props.default) joi = joi.default(this.props.default);
 
     return joi;
   }

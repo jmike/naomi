@@ -27,12 +27,12 @@ class NumberType extends AnyType {
   toJoi(): Object {
     let joi = Joi.number().strict(true);
 
+    if (!_.isUndefined(this.props.default)) joi = joi.default(this.props.default);
     if (this.props.max) joi = joi.max(this.props.max);
     if (this.props.min) joi = joi.min(this.props.min);
     if (this.props.positive) joi = joi.positive();
     if (this.props.negative) joi = joi.negative();
     if (this.props.nullable) joi = joi.optional().allow(null);
-    if (this.props.default) joi = joi.default(this.props.default);
 
     return joi;
   }

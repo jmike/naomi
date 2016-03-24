@@ -15,9 +15,9 @@ class EnumType extends AnyType {
   toJoi(): Object {
     let joi = Joi.string().strict(true);
 
+    if (!_.isUndefined(this.props.default)) joi = joi.default(this.props.default);
     if (this.props.values) joi = joi.valid(this.props.values);
     if (this.props.nullable) joi = joi.optional().allow(null);
-    if (this.props.default) joi = joi.default(this.props.default);
 
     return joi;
   }

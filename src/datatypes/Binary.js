@@ -31,8 +31,8 @@ class BinaryType extends AnyType {
     if (!_.isUndefined(this.props.minLength)) joi = joi.min(this.props.minLength);
     if (!_.isUndefined(this.props.length)) joi = joi.length(this.props.length);
     if (!_.isUndefined(this.props.encoding)) joi = joi.encoding(this.props.encoding);
+    if (!_.isUndefined(this.props.default)) joi = joi.default(this.props.default);
     if (this.props.nullable) joi = joi.optional().allow(null);
-    if (this.props.default) joi = joi.default(this.props.default);
 
     return joi;
   }

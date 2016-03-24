@@ -47,4 +47,12 @@ describe('Boolean datatype', function() {
 
     assert.strictEqual(Joi.attempt(undefined, schema), true);
   });
+
+  it('respects default property even when it\'s falsy', function() {
+    const dt = new BooleanType();
+    dt.default = false;
+    const schema = dt.toJoi();
+
+    assert.strictEqual(Joi.attempt(undefined, schema), false);
+  });
 });
