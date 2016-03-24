@@ -1,3 +1,7 @@
+## 2.0.0-beta.5 - 2016-03-24
+
+* Bugfix: Database is not defined in flowtype
+
 ## 2.0.0-beta.4 - 2016-03-24
 
 * Expose email datatype.
