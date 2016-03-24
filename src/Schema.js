@@ -275,10 +275,18 @@ class Schema {
     }).nodeify(callback);
   }
 
-  toJoi() {
-    return Joi.object()
-      .strict(true)
-      .keys(_.mapValues(this._keys, (datatype) => datatype.toJoi()));
+  toJoi(key: ?string) {
+    if (_.isNil(key)) {
+      return Joi.object()
+        .strict(true)
+        .keys(_.mapValues(this._keys, (datatype) => datatype.toJoi()));
+    }
+
+    if (!this.hasKey(key)) {
+      throw new Error(`Unknown key "${key}" not found in schema`);
+    }
+
+    return _.get(this._keys, key).toJoi();
   }
 
   toJSON(): Object {
