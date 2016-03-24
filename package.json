@@ -1,6 +1,6 @@
 {
   "name": "naomi",
-  "version": "2.0.0-beta.5",
+  "version": "2.0.0-beta.6",
   "description": "Simple, productive ORM for Node.js that makes sense.",
   "repository": {
     "type": "git",
