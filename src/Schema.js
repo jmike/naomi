@@ -272,7 +272,7 @@ class Schema {
   validate(record: Object, callback: ?Function): Promise {
     // cache joi
     if (!this._joi) {
-      this._joi = this.toJoi();
+      this._joi = this.createJoi();
     }
 
     return new Promise((resolve, reject) => {
@@ -283,18 +283,14 @@ class Schema {
     }).nodeify(callback);
   }
 
-  toJoi(key: ?string) {
-    if (_.isNil(key)) {
-      return Joi.object()
-        .strict(true)
-        .keys(_.mapValues(this._keys, (datatype) => datatype.toJoi()));
-    }
+  createJoi(...keys) {
+    const obj = _.isEmpty(keys) ? this._keys : _.pick(this._keys, keys);
 
-    if (!this.hasKey(key)) {
-      throw new Error(`Unknown key "${key}" not found in schema`);
-    }
-
-    return _.get(this._keys, key).toJoi();
+    return Joi.object()
+      .strict(true)
+      .keys(_.mapValues(obj, (datatype) => {
+        return datatype.toJoi();
+      }));
   }
 
   toJSON(): Object {
