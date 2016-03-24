@@ -3,23 +3,7 @@ import Promise from 'bluebird';
 import Joi from 'joi';
 import type from 'type-of';
 import CustomError from 'customerror';
-import UUIDType from './datatypes/UUID';
-import StringType from './datatypes/String';
-import EnumType from './datatypes/Enum';
-import NumberType from './datatypes/Number';
-import FloatType from './datatypes/Float';
-import IntegerType from './datatypes/Integer';
-import DateType from './datatypes/Date';
-
-const datatypes = {
-  date: DateType,
-  enum: EnumType,
-  float: FloatType,
-  integer: IntegerType,
-  number: NumberType,
-  string: StringType,
-  uuid: UUIDType,
-};
+import datatypes from './datatypes';
 
 class Schema {
 

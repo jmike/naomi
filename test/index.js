@@ -29,6 +29,7 @@ mocha.addFile(path.resolve(__dirname, './datatypes/enum'));
 mocha.addFile(path.resolve(__dirname, './datatypes/date'));
 mocha.addFile(path.resolve(__dirname, './datatypes/boolean'));
 mocha.addFile(path.resolve(__dirname, './datatypes/binary'));
+mocha.addFile(path.resolve(__dirname, './datatypes/email'));
 
 // run the tests
 mocha.run(function (failures) {
