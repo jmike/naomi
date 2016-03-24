@@ -266,17 +266,26 @@ class Schema {
   /**
    * Validates the designated record against this schema.
    * @param {Object} record the record to validate.
-   * @param {Function<Error, Object>} callback an optional callback function.
+   * @param {Array<string>} [keys] optional array of keys to include in validation.
+   * @param {Function<Error, Object>} [callback] an optional callback function.
    * @return {Promise<Object>}
    */
-  validate(record: Object, callback: ?Function): Promise {
-    // cache joi
-    if (!this._joi) {
-      this._joi = this.createJoi();
+  validate(record: Object, keys: ?Array<string> | ?Function, callback: ?Function): Promise {
+    if (_.isFunction(keys)) {
+      callback = keys;
+      keys = [];
+    } else if (_.isUndefined(keys)) {
+      keys = [];
     }
 
+    if (!_.isArray(keys)) {
+      throw new TypeError(`Invalid keys variable; expected array, received ${type(keys)}`);
+    }
+
+    const joi = this.createJoi.apply(this, keys);
+
     return new Promise((resolve, reject) => {
-      Joi.validate(record, this._joi, {convert: false}, (err, value) => {
+      Joi.validate(record, joi, {convert: false}, (err, value) => {
         if (err) return reject(new CustomError(err, 'ValidationError'));
         resolve(value);
       });
