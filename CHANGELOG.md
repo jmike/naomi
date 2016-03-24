@@ -1,3 +1,7 @@
+## 2.0.0-beta.4 - 2016-03-24
+
+* Expose email datatype.
+
 ## 2.0.0-beta.3 - 2016-03-24
 
 * Expose method to extractKeys and validate AST keys.
