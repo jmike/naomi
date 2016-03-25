@@ -44,11 +44,11 @@ class Schema {
       }
 
       // create new datatype
-      const dt = new datatypes[props.type];
+      const dt = datatypes[props.type]();
 
       // set datatype properties
       _.forOwn(_.omit(props, 'type'), (v, k) => {
-        dt[k] = v;
+        dt[k](v);
       });
 
       // update definition object
@@ -208,7 +208,7 @@ class Schema {
       throw new Error(`Unknown key "${key}" not found in schema`);
     }
 
-    return _.get(this._keys, [key, 'props', 'autoinc']) === true;
+    return _.get(this._keys, key).toJSON().autoinc === true;
   }
 
   /**

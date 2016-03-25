@@ -2,11 +2,11 @@
 
 import {assert} from 'chai';
 import Joi from 'joi';
-import UUIDType from '../../src/datatypes/UUID';
+import uuid from '../../src/datatypes/uuid';
 
-describe('UUID datatype', function() {
-  it('accepts UUID values', function() {
-    const dt = new UUIDType();
+describe('uuid datatype', function() {
+  it('asserts UUID value', function() {
+    const dt = uuid();
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert('78c332a8-5c2a-458c-a1a7-33fb7af84e1a', schema));
@@ -20,8 +20,8 @@ describe('UUID datatype', function() {
   });
 
   it('respects nullable property', function() {
-    const dt = new UUIDType();
-    dt.nullable = true;
+    const dt = uuid();
+    dt.nullable(true);
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert(null, schema));
@@ -29,10 +29,22 @@ describe('UUID datatype', function() {
   });
 
   it('respects default property', function() {
-    const dt = new UUIDType();
-    dt.default = '78c332a8-5c2a-458c-a1a7-33fb7af84e1a';
+    const dt = uuid();
+    dt.default('78c332a8-5c2a-458c-a1a7-33fb7af84e1a');
     const schema = dt.toJoi();
 
     assert.strictEqual(Joi.attempt(undefined, schema), '78c332a8-5c2a-458c-a1a7-33fb7af84e1a');
+  });
+
+  describe('#nullable()', function() {
+    it('accepts boolean value', function() {
+      assert.doesNotThrow(() => uuid().nullable(true));
+      assert.doesNotThrow(() => uuid().nullable(false));
+      assert.throws(() => uuid().nullable('abc'));
+      assert.throws(() => uuid().nullable(123));
+      assert.throws(() => uuid().nullable(null));
+      assert.throws(() => uuid().nullable({}));
+      assert.throws(() => uuid().nullable());
+    });
   });
 });

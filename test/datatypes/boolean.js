@@ -2,11 +2,11 @@
 
 import {assert} from 'chai';
 import Joi from 'joi';
-import BooleanType from '../../src/datatypes/Boolean';
+import boolean from '../../src/datatypes/boolean';
 
-describe('Boolean datatype', function() {
-  it('accepts boolean', function() {
-    const dt = new BooleanType();
+describe('boolean datatype', function() {
+  it('asserts boolean value', function() {
+    const dt = boolean();
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert(true, schema));
@@ -19,8 +19,33 @@ describe('Boolean datatype', function() {
     assert.throws(() => Joi.assert('abc', schema));
   });
 
+  it('respects nullable property', function() {
+    const dt = boolean();
+    dt.nullable(true);
+    const schema = dt.toJoi();
+
+    assert.doesNotThrow(() => Joi.assert(null, schema));
+    assert.doesNotThrow(() => Joi.assert(undefined, schema));
+  });
+
+  it('respects default property', function() {
+    const dt = boolean();
+    dt.default(true);
+    const schema = dt.toJoi();
+
+    assert.strictEqual(Joi.attempt(undefined, schema), true);
+  });
+
+  it('respects default property even when it\'s falsy', function() {
+    const dt = boolean();
+    dt.default(false);
+    const schema = dt.toJoi();
+
+    assert.strictEqual(Joi.attempt(undefined, schema), false);
+  });
+
   // it('accepts strings "true", "false", "yes", "no", "on" or "off"', function() {
-  //   const dt = new BooleanType();
+  //   const dt = boolean();
   //   const schema = dt.toJoi();
 
   //   assert.doesNotThrow(() => Joi.assert('true', schema));
@@ -31,28 +56,15 @@ describe('Boolean datatype', function() {
   //   assert.doesNotThrow(() => Joi.assert('off', schema));
   // });
 
-  it('respects nullable property', function() {
-    const dt = new BooleanType();
-    dt.nullable = true;
-    const schema = dt.toJoi();
-
-    assert.doesNotThrow(() => Joi.assert(null, schema));
-    assert.doesNotThrow(() => Joi.assert(undefined, schema));
-  });
-
-  it('respects default property', function() {
-    const dt = new BooleanType();
-    dt.default = true;
-    const schema = dt.toJoi();
-
-    assert.strictEqual(Joi.attempt(undefined, schema), true);
-  });
-
-  it('respects default property even when it\'s falsy', function() {
-    const dt = new BooleanType();
-    dt.default = false;
-    const schema = dt.toJoi();
-
-    assert.strictEqual(Joi.attempt(undefined, schema), false);
+  describe('#nullable()', function() {
+    it('accepts boolean value', function() {
+      assert.doesNotThrow(() => boolean().nullable(true));
+      assert.doesNotThrow(() => boolean().nullable(false));
+      assert.throws(() => boolean().nullable('abc'));
+      assert.throws(() => boolean().nullable(123));
+      assert.throws(() => boolean().nullable(null));
+      assert.throws(() => boolean().nullable({}));
+      assert.throws(() => boolean().nullable());
+    });
   });
 });

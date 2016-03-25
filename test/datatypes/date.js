@@ -2,11 +2,11 @@
 
 import {assert} from 'chai';
 import Joi from 'joi';
-import DateType from '../../src/datatypes/Date';
+import date from '../../src/datatypes/date';
 
-describe('Date datatype', function() {
-  it('accepts date, string and numeric values', function() {
-    const dt = new DateType();
+describe('date datatype', function() {
+  it('asserts date, string and numeric values', function() {
+    const dt = date();
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert(new Date(), schema));
@@ -19,8 +19,8 @@ describe('Date datatype', function() {
   });
 
   it('respects format property', function() {
-    const dt = new DateType();
-    dt.format = 'YYYY.MM.DD';
+    const dt = date();
+    dt.format('YYYY.MM.DD');
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert('2016.03.25', schema));
@@ -30,8 +30,8 @@ describe('Date datatype', function() {
   });
 
   it('respects min property', function() {
-    const dt = new DateType();
-    dt.min = '2016-03-01';
+    const dt = date();
+    dt.min('2016-03-01');
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert('2016-03-01', schema));
@@ -40,8 +40,8 @@ describe('Date datatype', function() {
   });
 
   it('respects max property', function() {
-    const dt = new DateType();
-    dt.max = '2016-03-25';
+    const dt = date();
+    dt.max('2016-03-25');
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert('2016-03-25', schema));
@@ -50,8 +50,8 @@ describe('Date datatype', function() {
   });
 
   it('respects nullable property', function() {
-    const dt = new DateType();
-    dt.nullable = true;
+    const dt = date();
+    dt.nullable(true);
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert(null, schema));
@@ -59,16 +59,16 @@ describe('Date datatype', function() {
   });
 
   it('respects default property', function() {
-    const dt = new DateType();
-    dt.default = '2015-03-25';
+    const dt = date();
+    dt.default('2015-03-25');
     const schema = dt.toJoi();
 
     assert.strictEqual(Joi.attempt(undefined, schema), '2015-03-25');
   });
 
   it('accepts function as default value', function() {
-    const dt = new DateType();
-    dt.default = Date.now;
+    const dt = date();
+    dt.default(Date.now);
     const schema = dt.toJoi();
 
     assert.isNumber(Joi.attempt(undefined, schema));

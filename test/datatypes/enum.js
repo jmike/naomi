@@ -2,11 +2,11 @@
 
 import {assert} from 'chai';
 import Joi from 'joi';
-import EnumType from '../../src/datatypes/Enum';
+import enumType from '../../src/datatypes/enum';
 
-describe('Enum datatype', function() {
-  it('accepts string values until values is actually set', function() {
-    const dt = new EnumType();
+describe('enum datatype', function() {
+  it('asserts string value until values prop is defined', function() {
+    const dt = enumType();
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert('abc', schema));
@@ -19,8 +19,8 @@ describe('Enum datatype', function() {
   });
 
   it('respects values property', function() {
-    const dt = new EnumType();
-    dt.values = ['a', 'b', 'c'];
+    const dt = enumType();
+    dt.values('a', 'b', 'c');
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert('a', schema));
@@ -30,9 +30,9 @@ describe('Enum datatype', function() {
   });
 
   it('respects nullable property', function() {
-    const dt = new EnumType();
-    dt.nullable = true;
-    dt.values = ['a', 'b', 'c'];
+    const dt = enumType();
+    dt.nullable(true);
+    dt.values(['a', 'b', 'c']);
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert(null, schema));
@@ -40,11 +40,36 @@ describe('Enum datatype', function() {
   });
 
   it('respects default property', function() {
-    const dt = new EnumType();
-    dt.default = 'a';
-    dt.values = ['a', 'b', 'c'];
+    const dt = enumType();
+    dt.default('a');
+    dt.values(['a', 'b', 'c']);
     const schema = dt.toJoi();
 
     assert.strictEqual(Joi.attempt(undefined, schema), 'a');
+  });
+
+  describe('#values', function () {
+    it('accepts Array<string> or multiple string arguments', function() {
+      assert.doesNotThrow(() => enumType().values('a'));
+      assert.doesNotThrow(() => enumType().values('a', 'b', 'c'));
+      assert.doesNotThrow(() => enumType().values(['a', 'b', 'c']));
+      assert.throws(() => enumType().values(false));
+      assert.throws(() => enumType().values(123));
+      assert.throws(() => enumType().values(null));
+      assert.throws(() => enumType().values({}));
+      assert.throws(() => enumType().values());
+    });
+  });
+
+  describe('#nullable', function () {
+    it('accepts boolean value', function() {
+      assert.doesNotThrow(() => enumType().nullable(true));
+      assert.doesNotThrow(() => enumType().nullable(false));
+      assert.throws(() => enumType().nullable('abc'));
+      assert.throws(() => enumType().nullable(123));
+      assert.throws(() => enumType().nullable(null));
+      assert.throws(() => enumType().nullable({}));
+      assert.throws(() => enumType().nullable());
+    });
   });
 });
