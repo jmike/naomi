@@ -1,27 +1,26 @@
 import _ from 'lodash';
+import type from 'type-of';
 import Database from './Database';
 
-class Naomi {
-
-  constructor() {
-    this._engines = [];
-  }
+function constructNaomi() {
+  let engines = [];
 
   /**
    * Registers the given database engine under the designated identifier.
    * @param {String} id database engine identifier, e.g. "mysql", "postgres"
    * @param {Database} engine the database engine itself.
    * @throws {TypeError} if params are invalid or unspecified.
-   * @returns {Naomi}
    */
-  registerDatabaseEngine(id: string, engine: Class<Database>): Naomi {
-    this._engines.push({
+  function registerDatabaseEngine(id, engine) {
+    if (!_.isString(id)) {
+      throw new TypeError(`Invalid id variable; expected string, received ${type(id)}`);
+    }
+
+    engines.push({
       id: id,
       re: new RegExp(id, 'i'),
       Database: engine
     });
-
-    return this;
   }
 
   /**
@@ -33,21 +32,31 @@ class Naomi {
    * @throws {UnknownDatabaseEngine} if the specified engine identifier is unknown to Naomi.
    * @returns {Database}
    */
-  database(id: string, connectionProperties: ?Object): Database {
+  function createDatabase(id: string, connectionProperties: ?Object): Database {
+    if (!_.isString(id)) {
+      throw new TypeError(`Invalid id variable; expected string, received ${type(id)}`);
+    }
+
     // handle optional params
     connectionProperties = connectionProperties || {};
 
     // find engine by id
-    const engine = _.find(this._engines, (e) => e.re.test(id));
+    const engine = _.find(engines, (e) => e.re.test(id));
 
     // create + return new db
     if (engine) {
       return new engine.Database(connectionProperties);
     }
 
-    throw new TypeError(`Unknown database engine; please specify one of ${this._engines.map((e) => e.id).join(', ')}`);
+    throw new TypeError(`Unknown database engine; please specify one of ${engines.map((e) => e.id).join(', ')}`);
   }
 
+  // expose public API
+  return Object.freeze({
+    registerDatabaseEngine,
+    database: createDatabase,
+    create: createDatabase,
+  });
 }
 
-export default new Naomi(); // singleton
+export default constructNaomi(); // singleton

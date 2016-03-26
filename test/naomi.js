@@ -4,7 +4,7 @@ import {assert} from 'chai';
 import naomi from '../src/naomi';
 import Database from '../src/Database';
 
-describe('Naomi', function () {
+describe('naomi', function () {
   describe('#registerDatabaseEngine()', function () {
     it('throws error when id is of invalid type', function () {
       assert.throws(() => naomi.registerDatabaseEngine(123), TypeError);
