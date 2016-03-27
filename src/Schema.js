@@ -8,57 +8,61 @@ import datatypes from './datatypes';
 class Schema {
 
   /**
-   * Creates a new Schema based on the supplied definition object.
-   * @param {Object} definition a schema definition object.
+   * Creates a new Schema based on the supplied spec object.
+   * @param {Object} spec a schema spec object.
    * @constructor
-   * @throws {TypeError} if definition object is invalid or unspecified.
+   * @throws {TypeError} if spec object is invalid or unspecified.
    */
-  constructor(definition: Object) {
+  constructor(spec) {
+    // make sure spec is plain object
+    if (!_.isPlainObject(spec)) {
+      throw new TypeError(`Invalid spec variable; expected plain object, received ${type(spec)}`);
+    }
+
     this._keys = {};
     this._primaryKey = {};
     this._indexKeys = {};
     this._uniqueKeys = {};
-    this._joi = null;
 
     // eat your own dog food
-    this.extend(definition);
+    this.extend(spec);
   }
 
   /**
-   * Extends schema with the supplied definition object.
-   * @param {Object} definition a schema definition object.
-   * @throws {TypeError} if definition object is invalid or unspecified.
+   * Extends schema with the supplied spec object.
+   * @param {Object} spec a schema spec object.
+   * @throws {TypeError} if spec object is invalid or unspecified.
    * @returns {Schema} this schema to allow method chaining.
    */
-  extend(definition: Object): Schema {
-    // make sure definition is plain object
-    if (!_.isPlainObject(definition)) {
-      throw new TypeError(`Invalid definition argument; expected plain object, received ${type(definition)}`);
+  extend(spec) {
+    if (!_.isPlainObject(spec)) {
+      throw new TypeError(`Invalid schema spec; expected plain object, received ${type(spec)}`);
     }
 
-    // update _keys object
-    _.forOwn(definition, (props, key) => {
-      // make sure datatype is valid
-      if (!datatypes.hasOwnProperty(props.type)) {
-        throw new TypeError(`Unknown datatype ${props.type}`);
+    _.forOwn(spec, (value, key) => {
+      // make sure value is object
+      if (!_.isPlainObject(value)) {
+        throw new TypeError(`Invalid value for key "${key}" in schema spec; expected plain object, received ${type(value)}`);
       }
 
-      // create new datatype
-      const dt = datatypes[props.type]();
+      // make sure value type is valid
+      if (!datatypes.hasOwnProperty(value.type)) {
+        throw new TypeError(`Unknown datatype "${value.type}" for key "${key}" in schema spec`);
+      }
+
+      // create datatype
+      const datatype = datatypes[value.type]();
 
       // set datatype properties
-      _.forOwn(_.omit(props, 'type'), (v, k) => {
-        dt[k](v);
+      _.forOwn(value, (v, k) => {
+        if (k === 'type') return; // exclude type
+        datatype[k](v);
       });
 
-      // update definition object
-      _.set(this._keys, key, dt);
+      // push datatype to keys
+      _.set(this._keys, key, datatype);
     });
 
-    // invalidate joi cache
-    this._joi = null;
-
-    // allow method chaining
     return this;
   }
 
@@ -71,7 +75,7 @@ class Schema {
    * @throws {TypeError} if arguments are invalid.
    * @returns {Schema} this schema to allow method chaining.
    */
-  index(payload: Object, options: ?{name: ?string, type: ?string}): Schema {
+  index(payload, options) {
     // make sure payload is plain object
     if (!_.isPlainObject(payload)) {
       throw new TypeError(`Invalid index payload; expected plain object, received ${type(payload)}`);
@@ -84,7 +88,7 @@ class Schema {
 
     // validate payload
     _.forOwn(payload, (order, key) => {
-      // make sure keys exist in schema definition
+      // make sure keys exist in schema
       if (!this.hasKey(key)) {
         throw new TypeError(`Unknown key "${key}" not found in schema`);
       }
@@ -147,7 +151,11 @@ class Schema {
    * @param {string} key the name of the key.
    * @returns {boolean}
    */
-  hasKey(key: string): boolean {
+  hasKey(key) {
+    if (!_.isString(key)) {
+      throw new TypeError(`Invalid key variable; expected string, received ${type(key)}`);
+    }
+
     return _.has(this._keys, key);
   }
 
@@ -155,7 +163,7 @@ class Schema {
    * Returns an array of keys specified in this schema.
    * @return {Array<string>}
    */
-  getKeys(): Array<string> {
+  getKeys() {
     return _.keys(this._keys);
   }
 
@@ -163,7 +171,7 @@ class Schema {
    * Returns an array of keys that compose the primary key.
    * @return {Array<string>}
    */
-  getPrimaryKey(): Array<string> {
+  getPrimaryKey() {
     return _.keys(this._primaryKey);
   }
 
@@ -172,11 +180,15 @@ class Schema {
    * @param {string} name: the name of the unique key index.
    * @return {Array<string>}
    */
-  getUniqueKey(name: string): Array<string> {
+  getUniqueKey(name) {
+    if (!_.isString(name)) {
+      throw new TypeError(`Invalid name variable; expected string, received ${type(name)}`);
+    }
+
     const obj = this._uniqueKeys[name];
 
     if (obj === undefined) {
-      throw new Error(`Unknown unique-key "${name}" does not exist in schema`);
+      throw new Error(`Unknown unique key "${name}" not found in schema`);
     }
 
     return _.keys(obj);
@@ -187,11 +199,15 @@ class Schema {
    * @param {string} name: the name of the index key index.
    * @return {Array<string>}
    */
-  getIndexKey(name: string): Array<string> {
+  getIndexKey(name: string) {
+    if (!_.isString(name)) {
+      throw new TypeError(`Invalid name variable; expected string, received ${type(name)}`);
+    }
+
     const obj = this._indexKeys[name];
 
     if (obj === undefined) {
-      throw new Error(`Unknown index-key "${name}" does not exist in schema`);
+      throw new Error(`Unknown index key "${name}" not found in schema`);
     }
 
     return _.keys(obj);
@@ -203,7 +219,11 @@ class Schema {
    * @returns {boolean}
    * @throws {Error} If key does not exist in schema.
    */
-  isKeyAutoInc(key: string): boolean {
+  isKeyAutoInc(key) {
+    if (!_.isString(key)) {
+      throw new TypeError(`Invalid key variable; expected string, received ${type(key)}`);
+    }
+
     if (!this.hasKey(key)) {
       throw new Error(`Unknown key "${key}" not found in schema`);
     }
@@ -217,7 +237,11 @@ class Schema {
    * @param {...string} keys the name of the keys.
    * @returns {boolean}
    */
-  isPrimaryKey(...keys): boolean {
+  isPrimaryKey(...keys) {
+    if (keys.length === 0) {
+      throw new TypeError('You must specify at least 1 key argument');
+    }
+
     return _.chain(this._primaryKey).keys().xor(keys).size().value() === 0;
   }
 
@@ -227,7 +251,11 @@ class Schema {
    * @param {...string} keys the name of the keys.
    * @returns {boolean}
    */
-  isUniqueKey(...keys): boolean {
+  isUniqueKey(...keys) {
+    if (keys.length === 0) {
+      throw new TypeError('You must specify at least 1 key argument');
+    }
+
     return _.some(this._uniqueKeys, (obj) => {
       return _.xor(_.keys(obj), keys).length === 0;
     });
@@ -239,7 +267,11 @@ class Schema {
    * @param {...string} keys the name of the keys.
    * @returns {boolean}
    */
-  isIndexKey(...keys): boolean {
+  isIndexKey(...keys) {
+    if (keys.length === 0) {
+      throw new TypeError('You must specify at least 1 key argument');
+    }
+
     return _.some(this._indexKeys, function (obj) {
       return _.xor(_.keys(obj), keys).length === 0;
     });
@@ -263,6 +295,16 @@ class Schema {
     return keys.length === 1 && this.isKeyAutoInc(keys[0]);
   }
 
+  createJoi(...keys) {
+    const obj = _.pick(this._keys, keys);
+
+    return Joi.object()
+      .strict(true)
+      .keys(_.mapValues(obj, (datatype) => {
+        return datatype.toJoi();
+      }));
+  }
+
   /**
    * Validates the designated record against this schema.
    * @param {Object} record the record to validate.
@@ -270,19 +312,23 @@ class Schema {
    * @param {Function<Error, Object>} [callback] an optional callback function.
    * @return {Promise<Object>}
    */
-  validate(record: Object, keys: ?Array<string> | ?Function, callback: ?Function): Promise {
+  validate(record, keys, callback) {
+    if (!_.isObject(record)) {
+      throw new TypeError(`Invalid record variable; expected object, received ${type(record)}`);
+    }
+
     if (_.isFunction(keys)) {
       callback = keys;
-      keys = [];
+      keys = this.getKeys();
     } else if (_.isUndefined(keys)) {
-      keys = [];
+      keys = this.getKeys();
     }
 
     if (!_.isArray(keys)) {
       throw new TypeError(`Invalid keys variable; expected array, received ${type(keys)}`);
     }
 
-    const joi = this.createJoi.apply(this, keys);
+    const joi = this.createJoi(keys);
 
     return new Promise((resolve, reject) => {
       Joi.validate(record, joi, {convert: false}, (err, value) => {
@@ -292,20 +338,13 @@ class Schema {
     }).nodeify(callback);
   }
 
-  createJoi(...keys) {
-    const obj = _.isEmpty(keys) ? this._keys : _.pick(this._keys, keys);
-
-    return Joi.object()
-      .strict(true)
-      .keys(_.mapValues(obj, (datatype) => {
-        return datatype.toJoi();
-      }));
+  toJoi() {
+    return this.createJoi(this._keys);
   }
 
   toJSON(): Object {
     return _.mapValues(this._keys, (datatype) => datatype.toJSON());
   }
-
 }
 
 export default Schema;
