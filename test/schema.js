@@ -123,13 +123,13 @@ describe('Schema', function () {
     });
   });
 
-  describe('#createJoi()', function () {
+  describe('#toJoi()', function () {
     const schema = new Schema({
       id: {type: 'number'}
     });
 
     it('returns Joi object', function () {
-      const obj = schema.createJoi();
+      const obj = schema.toJoi();
 
       assert.isObject(obj);
       assert.isTrue(obj.isJoi);

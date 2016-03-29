@@ -295,7 +295,7 @@ class Schema {
     return keys.length === 1 && this.isKeyAutoInc(keys[0]);
   }
 
-  createJoi(...keys) {
+  _createJoi(...keys) {
     const obj = _.pick(this._keys, keys);
 
     return Joi.object()
@@ -328,7 +328,7 @@ class Schema {
       throw new TypeError(`Invalid keys variable; expected array, received ${type(keys)}`);
     }
 
-    const joi = this.createJoi(keys);
+    const joi = this._createJoi(keys);
 
     return new Promise((resolve, reject) => {
       Joi.validate(record, joi, {convert: false}, (err, value) => {
@@ -339,7 +339,7 @@ class Schema {
   }
 
   toJoi() {
-    return this.createJoi(this._keys);
+    return this._createJoi(this._keys);
   }
 
   toJSON(): Object {
