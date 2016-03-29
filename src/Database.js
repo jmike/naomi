@@ -1,5 +1,7 @@
 import {EventEmitter} from 'events';
 import Promise from 'bluebird';
+import _ from 'lodash';
+import type from 'type-of';
 import Collection from './Collection';
 import Schema from './Schema'; // eslint-disable-line
 
@@ -27,7 +29,12 @@ class Database extends EventEmitter {
    * @throws {TypeError} if arguments are of invalid type
    * @emits Database#connect
    */
-  connect(callback: ?Function): Promise {
+  connect(callback) {
+    // make sure callback is valid
+    if (!_.isFunction(callback) && !_.isUndefined(callback)) {
+      throw new TypeError(`Invalid callback argument; expected Function, received ${type(callback)}`);
+    }
+
     // check if already connected
     if (this.isConnected) {
       return Promise.resolve().nodeify(callback);
@@ -50,7 +57,12 @@ class Database extends EventEmitter {
    * @throws {TypeError} if arguments are of invalid type
    * @emits Database#disconnect
    */
-  disconnect(callback: ?Function): Promise {
+  disconnect(callback) {
+    // make sure callback is valid
+    if (!_.isFunction(callback) && !_.isUndefined(callback)) {
+      throw new TypeError(`Invalid callback argument; expected Function, received ${type(callback)}`);
+    }
+
     // check if already disconnected
     if (!this.isConnected) {
       return Promise.resolve().nodeify(callback);
@@ -63,19 +75,6 @@ class Database extends EventEmitter {
         this.emit('disconnect');
       })
       .nodeify(callback);
-  }
-
-  /**
-   * Runs the given parameterized SQL statement.
-   * @param {string} sql the SQL statement.
-   * @param {Array} [params] an array of parameter values.
-   * @param {Object} [options] query options.
-   * @param {Function} [callback] a callback function with (err, records) arguments.
-   * @returns {Promise} a bluebird promise resolving to the query results.
-   * @throws {TypeError} if arguments are of invalid type
-   */
-  query(sql: string, params: ?Array, options: ?Object, callback: ?Function): Promise {
-    return Promise.resolve([{}]).nodeify(callback);
   }
 
   /**
