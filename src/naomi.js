@@ -32,13 +32,14 @@ function constructNaomi() {
    * @throws {UnknownDatabaseEngine} if the specified engine identifier is unknown to Naomi.
    * @returns {Database}
    */
-  function createDatabase(id: string, connectionProperties: ?Object): Database {
+  function create(id, connectionProperties = {}) {
     if (!_.isString(id)) {
       throw new TypeError(`Invalid id variable; expected string, received ${type(id)}`);
     }
 
-    // handle optional params
-    connectionProperties = connectionProperties || {};
+    if (!_.isPlainObject(connectionProperties)) {
+      throw new TypeError(`Invalid connectionProperties variable; expected plain Object, received ${type(id)}`);
+    }
 
     // find engine by id
     const engine = _.find(engines, (e) => e.re.test(id));
@@ -48,7 +49,7 @@ function constructNaomi() {
       return new engine.Database(connectionProperties);
     }
 
-    throw new TypeError(`Unknown database engine; please specify one of ${engines.map((e) => e.id).join(', ')}`);
+    throw new Error(`Unknown database engine "${id}"`);
   }
 
   // expose public API
