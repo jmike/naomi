@@ -6,12 +6,12 @@ function constructNaomi() {
   let engines = [];
 
   /**
-   * Registers the given database engine under the designated identifier.
+   * Registers the supplied database engine under the designated identifier.
    * @param {String} id database engine identifier, e.g. "mysql", "postgres"
    * @param {Database} engine the database engine itself.
    * @throws {TypeError} if params are invalid or unspecified.
    */
-  function registerDatabaseEngine(id, engine) {
+  function register(id, engine) {
     if (!_.isString(id)) {
       throw new TypeError(`Invalid id variable; expected string, received ${type(id)}`);
     }
@@ -53,9 +53,9 @@ function constructNaomi() {
 
   // expose public API
   return Object.freeze({
-    registerDatabaseEngine,
-    database: createDatabase,
-    create: createDatabase,
+    register,
+    create,
+    database: create,
   });
 }
 
