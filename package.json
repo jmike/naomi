@@ -8,9 +8,9 @@
   },
   "main": "lib/naomi.js",
   "scripts": {
-    "build": "gulp rebuild",
-    "prepublish": "npm run build",
-    "test": "node test/index.js"
+    "start": "node src/index.js",
+    "test": "mocha --reporter=spec --timeout=10000 test/index.js",
+    "lint": "eslint src/; exit 0"
   },
   "engines": {
     "node": ">=4.0.0"
@@ -19,7 +19,7 @@
     "bluebird": "^3.3.4",
     "customerror": "^1.0.1",
     "joi": "^8.0.5",
-    "lodash": "^4.6.1",
+    "lodash": "^4.11.1",
     "require-directory": "^2.1.1",
     "type-of": "^2.0.1"
   },
