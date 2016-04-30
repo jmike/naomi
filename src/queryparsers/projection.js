@@ -23,9 +23,9 @@ function parse(projection) {
   const excl = [];
 
   Object.keys(projection).forEach((k) => {
-    if (projection[k] === 1) {
+    if (projection[k] === 1 || projection[k] === true) {
       incl.push(parseKey(k));
-    } else if (projection[k] === -1) {
+    } else if (projection[k] === -1 || projection[k] === false) {
       excl.push(parseKey(k));
     } else {
       throw new TypeError(`Invalid "projection" argument; expected "${k}" to have a value of -1 or 1`);

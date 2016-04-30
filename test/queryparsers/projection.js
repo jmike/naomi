@@ -18,6 +18,20 @@ describe('Projection parser', () => {
     ]);
   });
 
+  it('accepts object with value true', () => {
+    const ast = parseProjection({ foo: true });
+    assert.deepEqual(ast, [
+      'PROJECTION', ['KEY', 'foo']
+    ]);
+  });
+
+  it('accepts object with value false', () => {
+    const ast = parseProjection({ bar: false });
+    assert.deepEqual(ast, [
+      'NPROJECTION', ['KEY', 'bar']
+    ]);
+  });
+
   it('always gives precedence to value 1', () => {
     const ast = parseProjection({ foo: 1, bar: -1 });
     assert.deepEqual(ast, [
