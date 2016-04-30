@@ -8,6 +8,11 @@ import Schema from './Schema'; // eslint-disable-line
 class Database extends EventEmitter {
 
   constructor(connectionProperties) {
+    if (!_.isPlainObject(connectionProperties)) {
+      throw new TypeError('Invalid "connectionProperties" argument; ' +
+        `expected plain object, received ${type(connectionProperties)}`);
+    }
+
     // setup event emitter
     super();
     this.setMaxListeners(999);
@@ -70,13 +75,10 @@ class Database extends EventEmitter {
     });
   }
 
-  collection(name, schema) {
+  collection(name, schema = {}) {
+    // make sure name is string
     if (!_.isString(name)) {
       throw new TypeError(`Invalid "name" argument; expected string, received ${type(name)}`);
-    }
-
-    if (!(schema instanceof Schema || _.isObject(schema))) {
-      throw new TypeError(`Invalid "schema" argument; expected Object or Schema, received ${type(schema)}`);
     }
 
     return new Collection(this, name, schema);

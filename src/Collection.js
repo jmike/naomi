@@ -12,7 +12,16 @@ import parseOffset from './queryparsers/offset';
 class Collection {
 
   constructor(db, name, schema) {
+    if (!(db instanceof Database)) {
+      throw new TypeError(`Invalid "db" argument; expected Database instance, received ${type(db)}`);
+    }
+
     this.db = db;
+
+    if (!_.isString(name)) {
+      throw new TypeError(`Invalid "name" argument; expected string, received ${type(name)}`);
+    }
+
     this.name = name;
 
     if (schema instanceof Schema) {
@@ -22,7 +31,7 @@ class Collection {
     } else if (_.isUndefined(schema)) {
       this.schema = new Schema({});
     } else {
-      throw new TypeError(`Invalid schema argument; expected Object or Schema, received ${type(schema)}`);
+      throw new TypeError(`Invalid "schema" argument; expected Object or Schema, received ${type(schema)}`);
     }
 
     this.parseSelection = parseSelection;
