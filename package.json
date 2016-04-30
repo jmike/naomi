@@ -8,7 +8,10 @@
   },
   "main": "lib/naomi.js",
   "scripts": {
-    "start": "node src/index.js",
+    "clean": "rimraf lib",
+    "prebuild": "npm run clean",
+    "build": "babel src --out-dir lib",
+    "prepublish": "npm run build",
     "test": "mocha --reporter=spec --timeout=10000 test/index.js",
     "lint": "eslint src/; exit 0"
   },
@@ -36,12 +39,8 @@
     "eslint": "^2.8.0",
     "eslint-config-airbnb": "^8.0.0",
     "eslint-plugin-import": "^1.5.0",
-    "gulp": "^3.9.1",
-    "gulp-babel": "^6.1.2",
-    "gulp-plumber": "^1.1.0",
-    "gulp-rimraf": "^0.2.0",
     "mocha": "^2.4.5",
-    "run-sequence": "^1.1.4"
+    "rimraf": "^2.5.2"
   },
   "author": {
     "name": "Dimitrios C. Michalakos",
