@@ -1,11 +1,11 @@
-/* global describe, it */
+/* eslint-env node, mocha */
 
-import {assert} from 'chai';
+import { assert } from 'chai';
 import Joi from 'joi';
 import date from '../../src/datatypes/date';
 
-describe('date datatype', function() {
-  it('asserts date, string and numeric values', function() {
+describe('date datatype', () => {
+  it('asserts date, string and numeric values', () => {
     const dt = date();
     const schema = dt.toJoi();
 
@@ -18,7 +18,7 @@ describe('date datatype', function() {
     assert.throws(() => Joi.assert('abc', schema));
   });
 
-  it('respects format property', function() {
+  it('respects format property', () => {
     const dt = date();
     dt.format('YYYY.MM.DD');
     const schema = dt.toJoi();
@@ -29,7 +29,7 @@ describe('date datatype', function() {
     assert.throws(() => Joi.assert('abc', schema));
   });
 
-  it('respects min property', function() {
+  it('respects min property', () => {
     const dt = date();
     dt.min('2016-03-01');
     const schema = dt.toJoi();
@@ -39,7 +39,7 @@ describe('date datatype', function() {
     assert.throws(() => Joi.assert('2016-02-29', schema));
   });
 
-  it('respects max property', function() {
+  it('respects max property', () => {
     const dt = date();
     dt.max('2016-03-25');
     const schema = dt.toJoi();
@@ -49,7 +49,7 @@ describe('date datatype', function() {
     assert.throws(() => Joi.assert('2016-03-26', schema));
   });
 
-  it('respects nullable property', function() {
+  it('respects nullable property', () => {
     const dt = date();
     dt.nullable(true);
     const schema = dt.toJoi();
@@ -58,7 +58,7 @@ describe('date datatype', function() {
     assert.doesNotThrow(() => Joi.assert(undefined, schema));
   });
 
-  it('respects default property', function() {
+  it('respects default property', () => {
     const dt = date();
     dt.default('2015-03-25');
     const schema = dt.toJoi();
@@ -66,7 +66,7 @@ describe('date datatype', function() {
     assert.strictEqual(Joi.attempt(undefined, schema), '2015-03-25');
   });
 
-  it('accepts function as default value', function() {
+  it('accepts function as default value', () => {
     const dt = date();
     dt.default(Date.now);
     const schema = dt.toJoi();

@@ -1,10 +1,10 @@
-/* global describe, it */
+/* eslint-env node, mocha */
 
-import {assert} from 'chai';
+import { assert } from 'chai';
 import parseSelection from '../../src/queryparsers/selection';
 
-describe('Selection parser', function() {
-  it('parses plain number', function() {
+describe('Selection parser', () => {
+  it('parses plain number', () => {
     const ast = parseSelection(123);
     assert.deepEqual(ast, [
       'SELECTION', [
@@ -15,7 +15,7 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses plain string', function() {
+  it('parses plain string', () => {
     const ast = parseSelection('str');
     assert.deepEqual(ast, [
       'SELECTION', [
@@ -26,7 +26,7 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses plain boolean', function() {
+  it('parses plain boolean', () => {
     const ast = parseSelection(true);
     assert.deepEqual(ast, [
       'SELECTION', [
@@ -37,7 +37,7 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses plain date', function() {
+  it('parses plain date', () => {
     const d = new Date();
     const ast = parseSelection(d);
     assert.deepEqual(ast, [
@@ -49,7 +49,7 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses plain buffer', function() {
+  it('parses plain buffer', () => {
     const buf = new Buffer([1, 2, 3]);
     const ast = parseSelection(buf);
     assert.deepEqual(ast, [
@@ -61,7 +61,7 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses array or numbers', function() {
+  it('parses array or numbers', () => {
     const ast = parseSelection([1, 2, 3]);
     assert.deepEqual(ast, [
       'SELECTION', [
@@ -85,8 +85,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses array or objects', function() {
-    const ast = parseSelection([{a: 1}, {a: 2}, {a: 3}]);
+  it('parses array or objects', () => {
+    const ast = parseSelection([{ a: 1 }, { a: 2 }, { a: 3 }]);
     assert.deepEqual(ast, [
       'SELECTION', [
         'OR',
@@ -109,8 +109,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses object with simple key-value assignment', function() {
-    const ast = parseSelection({a: 1});
+  it('parses object with simple key-value assignment', () => {
+    const ast = parseSelection({ a: 1 });
     assert.deepEqual(ast, [
       'SELECTION', [
         'EQ',
@@ -120,8 +120,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses object with multiple key-value assignments', function() {
-    const ast = parseSelection({a: 1, b: 2, c: 3});
+  it('parses object with multiple key-value assignments', () => {
+    const ast = parseSelection({ a: 1, b: 2, c: 3 });
     assert.deepEqual(ast, [
       'SELECTION', [
         'AND',
@@ -144,8 +144,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $eq operator', function() {
-    const ast = parseSelection({a: {$eq: 1}});
+  it('parses expression with $eq operator', () => {
+    const ast = parseSelection({ a: { $eq: 1 } });
     assert.deepEqual(ast, [
       'SELECTION', [
         'EQ',
@@ -155,8 +155,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $ne operator', function() {
-    const ast = parseSelection({a: {$ne: 1}});
+  it('parses expression with $ne operator', () => {
+    const ast = parseSelection({ a: { $ne: 1 } });
     assert.deepEqual(ast, [
       'SELECTION', [
         'NE',
@@ -166,8 +166,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $lt operator', function() {
-    const ast = parseSelection({a: {$lt: 1}});
+  it('parses expression with $lt operator', () => {
+    const ast = parseSelection({ a: { $lt: 1 } });
     assert.deepEqual(ast, [
       'SELECTION', [
         'LT',
@@ -177,8 +177,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $lte operator', function() {
-    const ast = parseSelection({a: {$lte: 1}});
+  it('parses expression with $lte operator', () => {
+    const ast = parseSelection({ a: { $lte: 1 } });
     assert.deepEqual(ast, [
       'SELECTION', [
         'LTE',
@@ -188,8 +188,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $gt operator', function() {
-    const ast = parseSelection({a: {$gt: 1}});
+  it('parses expression with $gt operator', () => {
+    const ast = parseSelection({ a: { $gt: 1 } });
     assert.deepEqual(ast, [
       'SELECTION', [
         'GT',
@@ -199,8 +199,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $gte operator', function() {
-    const ast = parseSelection({a: {$gte: 1}});
+  it('parses expression with $gte operator', () => {
+    const ast = parseSelection({ a: { $gte: 1 } });
     assert.deepEqual(ast, [
       'SELECTION', [
         'GTE',
@@ -210,8 +210,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $in operator', function() {
-    const ast = parseSelection({a: {$in: [1, 2, 3]}});
+  it('parses expression with $in operator', () => {
+    const ast = parseSelection({ a: { $in: [1, 2, 3] } });
     assert.deepEqual(ast, [
       'SELECTION', [
         'IN',
@@ -221,8 +221,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $nin operator', function() {
-    const ast = parseSelection({a: {$nin: [1, 2, 3]}});
+  it('parses expression with $nin operator', () => {
+    const ast = parseSelection({ a: { $nin: [1, 2, 3] } });
     assert.deepEqual(ast, [
       'SELECTION', [
         'NIN',
@@ -232,8 +232,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $like operator', function() {
-    const ast = parseSelection({a: {$like: 's%'}});
+  it('parses expression with $like operator', () => {
+    const ast = parseSelection({ a: { $like: 's%' } });
     assert.deepEqual(ast, [
       'SELECTION', [
         'LIKE',
@@ -243,8 +243,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $nlike operator', function() {
-    const ast = parseSelection({a: {$nlike: 's%'}});
+  it('parses expression with $nlike operator', () => {
+    const ast = parseSelection({ a: { $nlike: 's%' } });
     assert.deepEqual(ast, [
       'SELECTION', [
         'NLIKE',
@@ -254,8 +254,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $and operator', function() {
-    const ast = parseSelection({$and: [{a: 1}, {b: 2}]});
+  it('parses expression with $and operator', () => {
+    const ast = parseSelection({ $and: [{ a: 1 }, { b: 2 }] });
     assert.deepEqual(ast, [
       'SELECTION', [
         'AND',
@@ -273,8 +273,8 @@ describe('Selection parser', function() {
     ]);
   });
 
-  it('parses expression with $or operator', function() {
-    const ast = parseSelection({$or: [{a: 1}, {a: 2}]});
+  it('parses expression with $or operator', () => {
+    const ast = parseSelection({ $or: [{ a: 1 }, { a: 2 }] });
     assert.deepEqual(ast, [
       'SELECTION', [
         'OR',

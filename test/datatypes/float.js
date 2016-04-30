@@ -1,11 +1,11 @@
-/* global describe, it */
+/* eslint-env node, mocha */
 
-import {assert} from 'chai';
+import { assert } from 'chai';
 import Joi from 'joi';
 import float from '../../src/datatypes/float';
 
-describe('float datatype', function() {
-  it('accepts numeric values', function() {
+describe('float datatype', () => {
+  it('accepts numeric values', () => {
     const dt = float();
     const schema = dt.toJoi();
 
@@ -18,7 +18,7 @@ describe('float datatype', function() {
     assert.throws(() => Joi.assert(new Date(), schema));
   });
 
-  it('respects min property', function() {
+  it('respects min property', () => {
     const dt = float();
     dt.min(100);
     const schema = dt.toJoi();
@@ -27,7 +27,7 @@ describe('float datatype', function() {
     assert.throws(() => Joi.assert(99, schema));
   });
 
-  it('respects max property', function() {
+  it('respects max property', () => {
     const dt = float();
     dt.max(100);
     const schema = dt.toJoi();
@@ -36,7 +36,7 @@ describe('float datatype', function() {
     assert.throws(() => Joi.assert(101, schema));
   });
 
-  it('respects negative property', function() {
+  it('respects negative property', () => {
     const dt = float();
     dt.negative(true);
     const schema = dt.toJoi();
@@ -46,7 +46,7 @@ describe('float datatype', function() {
     assert.throws(() => Joi.assert(0, schema));
   });
 
-  it('respects positive property', function() {
+  it('respects positive property', () => {
     const dt = float();
     dt.positive(true);
     const schema = dt.toJoi();
@@ -56,7 +56,7 @@ describe('float datatype', function() {
     assert.throws(() => Joi.assert(-1, schema));
   });
 
-  it('respects nullable property', function() {
+  it('respects nullable property', () => {
     const dt = float();
     dt.nullable(true);
     const schema = dt.toJoi();
@@ -65,7 +65,7 @@ describe('float datatype', function() {
     assert.doesNotThrow(() => Joi.assert(undefined, schema));
   });
 
-  it('respects default property', function() {
+  it('respects default property', () => {
     const dt = float();
     dt.default(10);
     const schema = dt.toJoi();
@@ -73,7 +73,7 @@ describe('float datatype', function() {
     assert.strictEqual(Joi.attempt(undefined, schema), 10);
   });
 
-  it('respects precision property', function() {
+  it('respects precision property', () => {
     const dt = float();
     dt.precision(3);
     const schema = dt.toJoi();
@@ -84,7 +84,7 @@ describe('float datatype', function() {
     assert.throws(() => Joi.assert(9999.9, schema));
   });
 
-  it('respects scale property', function() {
+  it('respects scale property', () => {
     const dt = float();
     dt.scale(2);
     const schema = dt.toJoi();
@@ -95,7 +95,7 @@ describe('float datatype', function() {
     assert.throws(() => Joi.assert(9.999, schema));
   });
 
-  it('respects precision + scale properties', function() {
+  it('respects precision + scale properties', () => {
     const dt = float();
     dt.precision(5);
     dt.scale(2);

@@ -1,11 +1,11 @@
-/* global describe, it */
+/* eslint-env node, mocha */
 
-import {assert} from 'chai';
+import { assert } from 'chai';
 import Joi from 'joi';
 import enumType from '../../src/datatypes/enum';
 
-describe('enum datatype', function() {
-  it('asserts string value until values prop is defined', function() {
+describe('enum datatype', () => {
+  it('asserts string value until values prop is defined', () => {
     const dt = enumType();
     const schema = dt.toJoi();
 
@@ -18,7 +18,7 @@ describe('enum datatype', function() {
     assert.throws(() => Joi.assert(new Date(), schema));
   });
 
-  it('respects values property', function() {
+  it('respects values property', () => {
     const dt = enumType();
     dt.values('a', 'b', 'c');
     const schema = dt.toJoi();
@@ -29,7 +29,7 @@ describe('enum datatype', function() {
     assert.throws(() => Joi.assert('d', schema));
   });
 
-  it('respects nullable property', function() {
+  it('respects nullable property', () => {
     const dt = enumType();
     dt.nullable(true);
     dt.values(['a', 'b', 'c']);
@@ -39,7 +39,7 @@ describe('enum datatype', function() {
     assert.doesNotThrow(() => Joi.assert(undefined, schema));
   });
 
-  it('respects default property', function() {
+  it('respects default property', () => {
     const dt = enumType();
     dt.default('a');
     dt.values(['a', 'b', 'c']);
@@ -48,8 +48,8 @@ describe('enum datatype', function() {
     assert.strictEqual(Joi.attempt(undefined, schema), 'a');
   });
 
-  describe('#values', function () {
-    it('accepts Array<string> or multiple string arguments', function() {
+  describe('#values', () => {
+    it('accepts Array<string> or multiple string arguments', () => {
       assert.doesNotThrow(() => enumType().values('a'));
       assert.doesNotThrow(() => enumType().values('a', 'b', 'c'));
       assert.doesNotThrow(() => enumType().values(['a', 'b', 'c']));
@@ -61,8 +61,8 @@ describe('enum datatype', function() {
     });
   });
 
-  describe('#nullable', function () {
-    it('accepts boolean value', function() {
+  describe('#nullable', () => {
+    it('accepts boolean value', () => {
       assert.doesNotThrow(() => enumType().nullable(true));
       assert.doesNotThrow(() => enumType().nullable(false));
       assert.throws(() => enumType().nullable('abc'));

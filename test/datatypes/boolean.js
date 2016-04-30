@@ -1,11 +1,11 @@
-/* global describe, it */
+/* eslint-env node, mocha */
 
-import {assert} from 'chai';
+import { assert } from 'chai';
 import Joi from 'joi';
 import boolean from '../../src/datatypes/boolean';
 
-describe('boolean datatype', function() {
-  it('asserts boolean value', function() {
+describe('boolean datatype', () => {
+  it('asserts boolean value', () => {
     const dt = boolean();
     const schema = dt.toJoi();
 
@@ -19,7 +19,7 @@ describe('boolean datatype', function() {
     assert.throws(() => Joi.assert('abc', schema));
   });
 
-  it('respects nullable property', function() {
+  it('respects nullable property', () => {
     const dt = boolean();
     dt.nullable(true);
     const schema = dt.toJoi();
@@ -28,7 +28,7 @@ describe('boolean datatype', function() {
     assert.doesNotThrow(() => Joi.assert(undefined, schema));
   });
 
-  it('respects default property', function() {
+  it('respects default property', () => {
     const dt = boolean();
     dt.default(true);
     const schema = dt.toJoi();
@@ -36,7 +36,7 @@ describe('boolean datatype', function() {
     assert.strictEqual(Joi.attempt(undefined, schema), true);
   });
 
-  it('respects default property even when it\'s falsy', function() {
+  it('respects default property even when it\'s falsy', () => {
     const dt = boolean();
     dt.default(false);
     const schema = dt.toJoi();
@@ -44,7 +44,7 @@ describe('boolean datatype', function() {
     assert.strictEqual(Joi.attempt(undefined, schema), false);
   });
 
-  // it('accepts strings "true", "false", "yes", "no", "on" or "off"', function() {
+  // it('accepts strings "true", "false", "yes", "no", "on" or "off"', () => {
   //   const dt = boolean();
   //   const schema = dt.toJoi();
 
@@ -56,8 +56,8 @@ describe('boolean datatype', function() {
   //   assert.doesNotThrow(() => Joi.assert('off', schema));
   // });
 
-  describe('#nullable()', function() {
-    it('accepts boolean value', function() {
+  describe('#nullable()', () => {
+    it('accepts boolean value', () => {
       assert.doesNotThrow(() => boolean().nullable(true));
       assert.doesNotThrow(() => boolean().nullable(false));
       assert.throws(() => boolean().nullable('abc'));

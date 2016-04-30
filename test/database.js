@@ -1,17 +1,17 @@
-/* global describe, it */
+/* eslint-env node, mocha */
 
-import {assert} from 'chai';
+import { assert } from 'chai';
 import Promise from 'bluebird';
 import Database from '../src/Database';
 import Collection from '../src/Collection';
 
-describe('Database', function () {
-  describe('#constructor()', function () {
-    it('throws error when connectionProperties is unspecified', function () {
+describe('Database', () => {
+  describe('#constructor()', () => {
+    it('throws error when connectionProperties is unspecified', () => {
       assert.throws(() => new Database(), TypeError);
     });
 
-    it('throws error when connectionProperties is of invalid type', function () {
+    it('throws error when connectionProperties is of invalid type', () => {
       assert.throws(() => new Database(123), TypeError);
       assert.throws(() => new Database(false), TypeError);
       assert.throws(() => new Database(null), TypeError);
@@ -19,8 +19,8 @@ describe('Database', function () {
     });
   });
 
-  describe('#connect()', function () {
-    it('throws error when callback is of invalid type', function () {
+  describe('#connect()', () => {
+    it('throws error when callback is of invalid type', () => {
       const db = new Database({});
 
       assert.throws(() => db.connect(123), TypeError);
@@ -29,19 +29,19 @@ describe('Database', function () {
       assert.throws(() => db.connect({}), TypeError);
     });
 
-    it('returns bluebird promise', function () {
+    it('returns bluebird promise', () => {
       const db = new Database({});
 
       assert.instanceOf(db.connect(), Promise);
     });
 
-    it('accepts callback function', function (done) {
+    it('accepts callback function', (done) => {
       const db = new Database({});
 
       db.connect(done);
     });
 
-    it('sets @isConnected to true', function () {
+    it('sets @isConnected to true', () => {
       const db = new Database({});
 
       assert.isFalse(db.isConnected);
@@ -50,8 +50,8 @@ describe('Database', function () {
     });
   });
 
-  describe('#disconnect()', function () {
-    it('throws error when callback is of invalid type', function () {
+  describe('#disconnect()', () => {
+    it('throws error when callback is of invalid type', () => {
       const db = new Database({});
 
       assert.throws(() => db.disconnect(123), TypeError);
@@ -60,19 +60,19 @@ describe('Database', function () {
       assert.throws(() => db.disconnect({}), TypeError);
     });
 
-    it('returns bluebird promise', function () {
+    it('returns bluebird promise', () => {
       const db = new Database({});
 
       assert.instanceOf(db.disconnect(), Promise);
     });
 
-    it('accepts callback function', function (done) {
+    it('accepts callback function', (done) => {
       const db = new Database({});
 
       db.disconnect(done);
     });
 
-    it('sets @isConnected to false', function () {
+    it('sets @isConnected to false', () => {
       const db = new Database({});
 
       db.connect()
@@ -82,34 +82,8 @@ describe('Database', function () {
     });
   });
 
-  describe('#query()', function () {
-    it('throws error when sql is unspecified', function () {
-      const db = new Database({});
-
-      db.connect()
-        .then(() => assert.throws(() => db.query(), TypeError));
-    });
-
-    it('throws error when sql is of invalid type', function () {
-      const db = new Database({});
-
-      db.connect()
-        .then(() => assert.throws(() => db.query(123), TypeError))
-        .then(() => assert.throws(() => db.query({}), TypeError))
-        .then(() => assert.throws(() => db.query(null), TypeError))
-        .then(() => assert.throws(() => db.query(true), TypeError));
-    });
-
-    it('returns bluebird promise', function () {
-      const db = new Database({});
-
-      db.connect()
-        .then(() => assert.instanceOf(db.query('SELECT 123;'), Promise));
-    });
-  });
-
-  describe('#collection()', function () {
-    it('returns a new Collection instance bound to this database', function () {
+  describe('#collection()', () => {
+    it('returns a new Collection instance bound to this database', () => {
       const db = new Database({});
       const employees = db.collection('employees');
       assert.instanceOf(employees, Collection);

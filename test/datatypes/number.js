@@ -1,11 +1,11 @@
-/* global describe, it */
+/* eslint-env node, mocha */
 
-import {assert} from 'chai';
+import { assert } from 'chai';
 import Joi from 'joi';
 import number from '../../src/datatypes/number';
 
-describe('number datatype', function() {
-  it('asserts numeric value', function() {
+describe('number datatype', () => {
+  it('asserts numeric value', () => {
     const dt = number();
     const schema = dt.toJoi();
 
@@ -18,7 +18,7 @@ describe('number datatype', function() {
     assert.throws(() => Joi.assert(new Date(), schema));
   });
 
-  it('respects min property', function() {
+  it('respects min property', () => {
     const dt = number();
     dt.min(100);
     const schema = dt.toJoi();
@@ -27,7 +27,7 @@ describe('number datatype', function() {
     assert.throws(() => Joi.assert(99, schema));
   });
 
-  it('respects max property', function() {
+  it('respects max property', () => {
     const dt = number();
     dt.max(100);
     const schema = dt.toJoi();
@@ -36,7 +36,7 @@ describe('number datatype', function() {
     assert.throws(() => Joi.assert(101, schema));
   });
 
-  it('respects negative property', function() {
+  it('respects negative property', () => {
     const dt = number();
     dt.negative(true);
     const schema = dt.toJoi();
@@ -46,7 +46,7 @@ describe('number datatype', function() {
     assert.throws(() => Joi.assert(0, schema));
   });
 
-  it('respects positive property', function() {
+  it('respects positive property', () => {
     const dt = number();
     dt.positive(true);
     const schema = dt.toJoi();
@@ -56,7 +56,7 @@ describe('number datatype', function() {
     assert.throws(() => Joi.assert(-1, schema));
   });
 
-  it('respects nullable property', function() {
+  it('respects nullable property', () => {
     const dt = number();
     dt.nullable(true);
     const schema = dt.toJoi();
@@ -65,7 +65,7 @@ describe('number datatype', function() {
     assert.doesNotThrow(() => Joi.assert(undefined, schema));
   });
 
-  it('respects default property', function() {
+  it('respects default property', () => {
     const dt = number();
     dt.default(10);
     const schema = dt.toJoi();

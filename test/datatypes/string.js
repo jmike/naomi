@@ -1,11 +1,11 @@
-/* global describe, it */
+/* eslint-env node, mocha */
 
-import {assert} from 'chai';
+import { assert } from 'chai';
 import Joi from 'joi';
 import string from '../../src/datatypes/string';
 
-describe('string datatype', function() {
-  it('asserts string value', function() {
+describe('string datatype', () => {
+  it('asserts string value', () => {
     const dt = string();
     const schema = dt.toJoi();
 
@@ -18,7 +18,7 @@ describe('string datatype', function() {
     assert.throws(() => Joi.assert(new Date(), schema));
   });
 
-  it('respects length property', function() {
+  it('respects length property', () => {
     const dt = string();
     dt.length(3);
     const schema = dt.toJoi();
@@ -28,7 +28,7 @@ describe('string datatype', function() {
     assert.throws(() => Joi.assert('ab', schema));
   });
 
-  it('respects maxLength property', function() {
+  it('respects maxLength property', () => {
     const dt = string();
     dt.maxLength(3);
     const schema = dt.toJoi();
@@ -38,7 +38,7 @@ describe('string datatype', function() {
     assert.throws(() => Joi.assert('abcd', schema));
   });
 
-  it('respects minLength property', function() {
+  it('respects minLength property', () => {
     const dt = string();
     dt.minLength(3);
     const schema = dt.toJoi();
@@ -48,7 +48,7 @@ describe('string datatype', function() {
     assert.throws(() => Joi.assert('ab', schema));
   });
 
-  it('respects lowercase property', function() {
+  it('respects lowercase property', () => {
     const dt = string();
     dt.lowercase(true);
     const schema = dt.toJoi();
@@ -57,7 +57,7 @@ describe('string datatype', function() {
     assert.throws(() => Joi.assert('aBc', schema));
   });
 
-  it('respects uppercase property', function() {
+  it('respects uppercase property', () => {
     const dt = string();
     dt.uppercase(true);
     const schema = dt.toJoi();
@@ -66,7 +66,7 @@ describe('string datatype', function() {
     assert.throws(() => Joi.assert('aBc', schema));
   });
 
-  it('respects trim property', function() {
+  it('respects trim property', () => {
     const dt = string();
     dt.trim(true);
     const schema = dt.toJoi();
@@ -76,7 +76,7 @@ describe('string datatype', function() {
     assert.throws(() => Joi.assert('abc ', schema));
   });
 
-  it('respects regex property', function() {
+  it('respects regex property', () => {
     const dt = string();
     dt.regex(/^\d+$/);
     const schema = dt.toJoi();
@@ -85,7 +85,7 @@ describe('string datatype', function() {
     assert.throws(() => Joi.assert('123a', schema));
   });
 
-  it('respects nullable property', function() {
+  it('respects nullable property', () => {
     const dt = string();
     dt.nullable(true);
     const schema = dt.toJoi();
@@ -94,7 +94,7 @@ describe('string datatype', function() {
     assert.doesNotThrow(() => Joi.assert(undefined, schema));
   });
 
-  it('respects default property', function() {
+  it('respects default property', () => {
     const dt = string();
     dt.default('abc');
     const schema = dt.toJoi();
@@ -102,8 +102,8 @@ describe('string datatype', function() {
     assert.strictEqual(Joi.attempt(undefined, schema), 'abc');
   });
 
-  describe('#length()', function() {
-    it('accepts integer value', function() {
+  describe('#length()', () => {
+    it('accepts integer value', () => {
       assert.doesNotThrow(() => string().length(10));
       assert.throws(() => string().length('abc'));
       assert.throws(() => string().length(1.1));
@@ -114,8 +114,8 @@ describe('string datatype', function() {
     });
   });
 
-  describe('#maxLength()', function() {
-    it('accepts integer value', function() {
+  describe('#maxLength()', () => {
+    it('accepts integer value', () => {
       assert.doesNotThrow(() => string().maxLength(10));
       assert.throws(() => string().maxLength('abc'));
       assert.throws(() => string().maxLength(1.1));
@@ -126,8 +126,8 @@ describe('string datatype', function() {
     });
   });
 
-  describe('#minLength()', function() {
-    it('accepts integer value', function() {
+  describe('#minLength()', () => {
+    it('accepts integer value', () => {
       assert.doesNotThrow(() => string().minLength(10));
       assert.throws(() => string().minLength('abc'));
       assert.throws(() => string().minLength(1.1));
@@ -138,8 +138,8 @@ describe('string datatype', function() {
     });
   });
 
-  describe('#lowercase()', function() {
-    it('accepts boolean value', function() {
+  describe('#lowercase()', () => {
+    it('accepts boolean value', () => {
       assert.doesNotThrow(() => string().lowercase(true));
       assert.doesNotThrow(() => string().lowercase(false));
       assert.throws(() => string().lowercase('abc'));
@@ -150,8 +150,8 @@ describe('string datatype', function() {
     });
   });
 
-  describe('#uppercase()', function() {
-    it('accepts boolean value', function() {
+  describe('#uppercase()', () => {
+    it('accepts boolean value', () => {
       assert.doesNotThrow(() => string().uppercase(true));
       assert.doesNotThrow(() => string().uppercase(false));
       assert.throws(() => string().uppercase('abc'));
@@ -162,8 +162,8 @@ describe('string datatype', function() {
     });
   });
 
-  describe('#trim()', function() {
-    it('accepts boolean value', function() {
+  describe('#trim()', () => {
+    it('accepts boolean value', () => {
       assert.doesNotThrow(() => string().trim(true));
       assert.doesNotThrow(() => string().trim(false));
       assert.throws(() => string().trim('abc'));
@@ -174,8 +174,8 @@ describe('string datatype', function() {
     });
   });
 
-  describe('#regex()', function() {
-    it('accepts string and regex value', function() {
+  describe('#regex()', () => {
+    it('accepts string and regex value', () => {
       assert.doesNotThrow(() => string().regex('abc'));
       assert.doesNotThrow(() => string().regex(/abc/i));
       assert.throws(() => string().regex(true));
@@ -186,8 +186,8 @@ describe('string datatype', function() {
     });
   });
 
-  describe('#nullable()', function() {
-    it('accepts boolean value', function() {
+  describe('#nullable()', () => {
+    it('accepts boolean value', () => {
       assert.doesNotThrow(() => string().nullable(true));
       assert.doesNotThrow(() => string().nullable(false));
       assert.throws(() => string().nullable('abc'));

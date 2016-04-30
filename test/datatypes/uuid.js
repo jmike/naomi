@@ -1,11 +1,11 @@
-/* global describe, it */
+/* eslint-env node, mocha */
 
-import {assert} from 'chai';
+import { assert } from 'chai';
 import Joi from 'joi';
 import uuid from '../../src/datatypes/uuid';
 
-describe('uuid datatype', function() {
-  it('asserts UUID value', function() {
+describe('uuid datatype', () => {
+  it('asserts UUID value', () => {
     const dt = uuid();
     const schema = dt.toJoi();
 
@@ -19,7 +19,7 @@ describe('uuid datatype', function() {
     assert.throws(() => Joi.assert(new Date(), schema));
   });
 
-  it('respects nullable property', function() {
+  it('respects nullable property', () => {
     const dt = uuid();
     dt.nullable(true);
     const schema = dt.toJoi();
@@ -28,7 +28,7 @@ describe('uuid datatype', function() {
     assert.doesNotThrow(() => Joi.assert(undefined, schema));
   });
 
-  it('respects default property', function() {
+  it('respects default property', () => {
     const dt = uuid();
     dt.default('78c332a8-5c2a-458c-a1a7-33fb7af84e1a');
     const schema = dt.toJoi();
@@ -36,8 +36,8 @@ describe('uuid datatype', function() {
     assert.strictEqual(Joi.attempt(undefined, schema), '78c332a8-5c2a-458c-a1a7-33fb7af84e1a');
   });
 
-  describe('#nullable()', function() {
-    it('accepts boolean value', function() {
+  describe('#nullable()', () => {
+    it('accepts boolean value', () => {
       assert.doesNotThrow(() => uuid().nullable(true));
       assert.doesNotThrow(() => uuid().nullable(false));
       assert.throws(() => uuid().nullable('abc'));
