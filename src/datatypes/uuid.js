@@ -21,7 +21,7 @@ function constructUUID(props = {}) {
   function toJSON() {
     return _.chain(props)
       .clone()
-      .assign({type: 'uuid'})
+      .assign({ type: 'uuid' })
       .value();
   }
 

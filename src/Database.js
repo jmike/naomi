@@ -1,4 +1,4 @@
-import {EventEmitter} from 'events';
+import { EventEmitter } from 'events';
 import Promise from 'bluebird';
 import _ from 'lodash';
 import type from 'type-of';
@@ -7,13 +7,7 @@ import Schema from './Schema'; // eslint-disable-line
 
 class Database extends EventEmitter {
 
-  /**
-   * Creates a new Database instance with the designated properties.
-   * @param {Object} connectionProperties connection properties
-   * @throws {TypeError} if arguments are of invalid type
-   * @constructor
-   */
-  constructor(connectionProperties: Object) {
+  constructor(connectionProperties) {
     // setup event emitter
     super();
     this.setMaxListeners(999);
@@ -22,17 +16,10 @@ class Database extends EventEmitter {
     this.isConnected = false;
   }
 
-  /**
-   * Connects to the database using the connection properties specified at construction time.
-   * @param {Function<err>} [callback] an optional callback function.
-   * @returns {Promise} a bluebird promise
-   * @throws {TypeError} if arguments are of invalid type
-   * @emits Database#connect
-   */
   connect(callback) {
     // make sure callback is valid
     if (!_.isFunction(callback) && !_.isUndefined(callback)) {
-      throw new TypeError(`Invalid callback argument; expected Function, received ${type(callback)}`);
+      throw new TypeError(`Invalid "callback" argument; expected Function, received ${type(callback)}`);
     }
 
     // check if already connected
@@ -49,18 +36,10 @@ class Database extends EventEmitter {
       .nodeify(callback);
   }
 
-  /**
-   * Disconnects from the database.
-   * Please note: the database instance will become practically useless after calling this method.
-   * @param {Function<Error>} [callback] an optional callback function.
-   * @returns {Promise} a bluebird promise
-   * @throws {TypeError} if arguments are of invalid type
-   * @emits Database#disconnect
-   */
   disconnect(callback) {
     // make sure callback is valid
     if (!_.isFunction(callback) && !_.isUndefined(callback)) {
-      throw new TypeError(`Invalid callback argument; expected Function, received ${type(callback)}`);
+      throw new TypeError(`Invalid "callback" argument; expected Function, received ${type(callback)}`);
     }
 
     // check if already disconnected
@@ -77,14 +56,10 @@ class Database extends EventEmitter {
       .nodeify(callback);
   }
 
-  /**
-   * Awaits for the db to connect.
-   * @param {number} [timeout=60000] optional maximum number of milliseconds to wait for connection - 1 min by default.
-   * @return {Promise}
-   * @private
-   */
-  _awaitConnect(timeout: ?number): Promise {
-    timeout = timeout || 60000; // 1 min
+  _awaitConnect(timeout = 60000) {
+    if (!_.isInteger(timeout)) {
+      throw new TypeError(`Invalid "timeout" argument; expected integer, received ${type(timeout)}`);
+    }
 
     return new Promise((resolve) => {
       if (this.isConnected) {
@@ -95,13 +70,15 @@ class Database extends EventEmitter {
     });
   }
 
-  /**
-   * Creates and returns a new Collection with the specified properties.
-   * @param {string} name the name of the collection.
-   * @param {(Object, Schema)} [schema] optional collection schema.
-   * @type {Collection}
-   */
-  collection(name: string, schema: Schema | ?Object): Collection {
+  collection(name, schema) {
+    if (!_.isString(name)) {
+      throw new TypeError(`Invalid "name" argument; expected string, received ${type(name)}`);
+    }
+
+    if (!(schema instanceof Schema || _.isObject(schema))) {
+      throw new TypeError(`Invalid "schema" argument; expected Object or Schema, received ${type(schema)}`);
+    }
+
     return new Collection(this, name, schema);
   }
 

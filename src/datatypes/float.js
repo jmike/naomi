@@ -9,7 +9,7 @@ import number from './number';
  * @return {number}
  * @private
  */
-function calculateMaxValue(precision: number, scale: ?number): number {
+function calculateMaxValue(precision, scale) {
   const arr = _.fill(Array(precision), '9');
 
   if (scale) {
@@ -72,7 +72,7 @@ function constructFloat(props = {}) {
   function toJSON() {
     return _.chain(props)
       .clone()
-      .assign({type: 'float'})
+      .assign({ type: 'float' })
       .value();
   }
 

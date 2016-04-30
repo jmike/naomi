@@ -11,7 +11,7 @@ function constructBinary(props = {}) {
   let minLength;
   let length;
 
-  ({nullable, minLength, maxLength, length, isDatatype, 'default': defaults} = string(props));
+  ({ nullable, minLength, maxLength, length, isDatatype, 'default': defaults } = string(props));
 
   function encoding(v) {
     if (!_.isString(v)) {
@@ -37,7 +37,7 @@ function constructBinary(props = {}) {
   function toJSON() {
     return _.chain(this.props)
       .clone()
-      .assign({type: 'binary'})
+      .assign({ type: 'binary' })
       .value();
   }
 

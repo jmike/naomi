@@ -41,7 +41,7 @@ function constructEnum(props = {}) {
   function toJSON() {
     return _.chain(props)
       .clone()
-      .assign({type: 'enum'})
+      .assign({ type: 'enum' })
       .value();
   }
 

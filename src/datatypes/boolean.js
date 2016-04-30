@@ -21,7 +21,7 @@ function constructBoolean(props = {}) {
   function toJSON() {
     return _.chain(props)
       .clone()
-      .assign({type: 'boolean'})
+      .assign({ type: 'boolean' })
       .value();
   }
 

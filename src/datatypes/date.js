@@ -49,7 +49,7 @@ function constructDate(props = {}) {
   function toJSON() {
     return _.chain(props)
       .clone()
-      .assign({type: 'date'})
+      .assign({ type: 'date' })
       .value();
   }
 

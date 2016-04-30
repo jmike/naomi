@@ -1,62 +1,46 @@
 import _ from 'lodash';
 import type from 'type-of';
-import Database from './Database';
 
 function constructNaomi() {
-  let engines = [];
+  const engines = [];
 
-  /**
-   * Registers the supplied database engine under the designated identifier.
-   * @param {String} id database engine identifier, e.g. "mysql", "postgres"
-   * @param {Database} engine the database engine itself.
-   * @throws {TypeError} if params are invalid or unspecified.
-   */
-  function register(id, engine) {
-    if (!_.isString(id)) {
-      throw new TypeError(`Invalid id variable; expected string, received ${type(id)}`);
+  function register(identifier, engine) {
+    if (!_.isString(identifier)) {
+      throw new TypeError(`Invalid identifier argument; expected string, received ${type(identifier)}`);
     }
 
     engines.push({
-      id: id,
-      re: new RegExp(id, 'i'),
+      re: new RegExp(identifier, 'i'),
       Database: engine
     });
   }
 
-  /**
-   * Creates and returns a new Database of the designated type.
-   * Please note: connection properties may vary depending on the database type.
-   * @param {String} id database engine identifier, e.g. "mysql", "postgres"
-   * @param {Object} [connectionProperties={}] connection properties
-   * @throws {TypeError} if params are invalid or unspecified.
-   * @throws {UnknownDatabaseEngine} if the specified engine identifier is unknown to Naomi.
-   * @returns {Database}
-   */
-  function create(id, connectionProperties = {}) {
-    if (!_.isString(id)) {
-      throw new TypeError(`Invalid id variable; expected string, received ${type(id)}`);
+  function create(identifier, connectionProperties = {}) {
+    if (!_.isString(identifier)) {
+      throw new TypeError(`Invalid identifier argument; expected string, received ${type(identifier)}`);
     }
 
     if (!_.isPlainObject(connectionProperties)) {
-      throw new TypeError(`Invalid connectionProperties variable; expected plain Object, received ${type(id)}`);
+      throw new TypeError('Invalid connectionProperties argument; ' +
+        `expected object, received ${type(connectionProperties)}`);
     }
 
     // find engine by id
-    const engine = _.find(engines, (e) => e.re.test(id));
+    const engine = _.find(engines, (e) => e.re.test(identifier));
 
     // create + return new db
     if (engine) {
       return new engine.Database(connectionProperties);
     }
 
-    throw new Error(`Unknown database engine "${id}"`);
+    throw new Error(`Unknown database engine "${identifier}"`);
   }
 
   // expose public API
   return Object.freeze({
     register,
     create,
-    database: create,
+    database: create, // alias of create
   });
 }
 

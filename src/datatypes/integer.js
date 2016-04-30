@@ -29,7 +29,7 @@ function constructInteger(props = {}) {
   function toJSON() {
     return _.chain(props)
       .clone()
-      .assign({type: 'integer'})
+      .assign({ type: 'integer' })
       .value();
   }
 

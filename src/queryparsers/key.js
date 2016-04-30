@@ -1,20 +1,15 @@
 import _ from 'lodash';
 import type from 'type-of';
 
-/**
- * Parses the supplied key expression and returns an abstract syntax tree (ast).
- * @param {string} expression.
- * @return {Array}
- */
-function parse(expression: string): Array {
+function parse(key) {
   const ast = ['KEY'];
 
-  if (expression === '$id') {
+  if (key === '$id') {
     ast[0] = 'ID'; // replace completely
-  } else if (_.isString(expression)) {
-    ast.push(expression);
+  } else if (_.isString(key)) {
+    ast.push(key);
   } else {
-    throw new TypeError(`Invalid key expression; expected string, received ${type(expression)}`);
+    throw new TypeError(`Invalid "key" argument; expected string, received ${type(key)}`);
   }
 
   return ast;

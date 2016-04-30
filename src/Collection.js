@@ -11,15 +11,7 @@ import parseOffset from './queryparsers/offset';
 
 class Collection {
 
-  /**
-   * Constructs a new Collection instance.
-   * @param {Database} db reference to the parent database.
-   * @param {string} name the name of the collection.
-   * @param {(Object, Schema)} [schema] the schema definition of the collection.
-   * @throws {TypeError} if arguments are of invalid type
-   * @constructor
-   */
-  constructor(db: Database, name: string, schema: Schema | ?Object) {
+  constructor(db, name, schema) {
     this.db = db;
     this.name = name;
 
@@ -30,7 +22,7 @@ class Collection {
     } else if (_.isUndefined(schema)) {
       this.schema = new Schema({});
     } else {
-      throw new TypeError(`Invalid schema argument; expected object or Schema, received ${type(schema)}`);
+      throw new TypeError(`Invalid schema argument; expected Object or Schema, received ${type(schema)}`);
     }
 
     this.parseSelection = parseSelection;
@@ -40,16 +32,7 @@ class Collection {
     this.parseOffset = parseOffset;
   }
 
-  /**
-   * Creates the specified index in the collection.
-   * @param {Object} payload key-value pairs, where key represent some keys of this schema and value describes the type of the index, i.e. 1 for ASC, -1 for DESC.
-   * @param {Object} [options] index options.
-   * @param {string} [options.name] the name of the index.
-   * @param {string} [options.type="index"] the type of the index, i.e. "primary", "unique" or "index".
-   * @throws {TypeError} if arguments are invalid.
-   * @returns {Collection} this collection to allow method chaining.
-   */
-  index(payload: Object, options: ?{name: ?string, type: ?string}): Collection {
+  index(payload, options = {}) {
     this.schema.index(payload, options);
     return this;
   }
@@ -59,7 +42,7 @@ class Collection {
    * @param {Array} ast
    * @returns {Array<string>}
    */
-  extractKeysFromAST(ast: Array): Array<string> {
+  extractKeysFromAST(ast) {
     let keys = [];
 
     if (ast[0] === 'KEY') {
@@ -85,7 +68,7 @@ class Collection {
    * @return {Array}
    * @throws {UnknownKey} if key does not exist in the collection schema.
    */
-  validateKeysInAST(ast: Array): Array {
+  validateKeysInAST(ast) {
     const keys = this.extractKeysFromAST(ast);
 
     // make sure selection keys exist in schema

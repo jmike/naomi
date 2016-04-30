@@ -11,7 +11,8 @@ function parseEqual(k, v) {
     !Buffer.isBuffer(v) &&
     !_.isNull(v)
   ) {
-    throw new TypeError(`Invalid $eq expression; expected number, string, boolean, date, buffer or null, received ${type(v)}`);
+    throw new TypeError('Invalid $eq argument; ' +
+      `expected number, string, boolean, date, buffer or null, received ${type(v)}`);
   }
 
   return ['EQ', parseKey(k), ['VALUE', v]];
@@ -26,13 +27,14 @@ function parseNotEqual(k, v) {
     !Buffer.isBuffer(v) &&
     !_.isNull(v)
   ) {
-    throw new TypeError(`Invalid $ne expression; expected number, string, boolean, date, buffer or null, received ${type(v)}`);
+    throw new TypeError('Invalid $ne argument; ' +
+      `expected number, string, boolean, date, buffer or null, received ${type(v)}`);
   }
 
   return ['NE', parseKey(k), ['VALUE', v]];
 }
 
-function parseGreaterThan(k, v): Array {
+function parseGreaterThan(k, v) {
   if (
     !_.isNumber(v) &&
     !_.isString(v) &&
@@ -40,7 +42,8 @@ function parseGreaterThan(k, v): Array {
     !_.isDate(v) &&
     !Buffer.isBuffer(v)
   ) {
-    throw new TypeError(`Invalid $gt expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+    throw new TypeError('Invalid $gt argument; ' +
+      `expected number, string, boolean, date or buffer, received ${type(v)}`);
   }
 
   return ['GT', parseKey(k), ['VALUE', v]];
@@ -54,7 +57,8 @@ function parseGreaterThanOrEqual(k, v) {
     !_.isDate(v) &&
     !Buffer.isBuffer(v)
   ) {
-    throw new TypeError(`Invalid $gte expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+    throw new TypeError('Invalid $gte argument; ' +
+      `expected number, string, boolean, date or buffer, received ${type(v)}`);
   }
 
   return ['GTE', parseKey(k), ['VALUE', v]];
@@ -68,7 +72,8 @@ function parseLessThan(k, v) {
     !_.isDate(v) &&
     !Buffer.isBuffer(v)
   ) {
-    throw new TypeError(`Invalid $lt expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+    throw new TypeError('Invalid $lt argument; ' +
+      `expected number, string, boolean, date or buffer, received ${type(v)}`);
   }
 
   return ['LT', parseKey(k), ['VALUE', v]];
@@ -82,7 +87,8 @@ function parseLessThanOrEqual(k, v) {
     !_.isDate(v) &&
     !Buffer.isBuffer(v)
   ) {
-    throw new TypeError(`Invalid $lte expression; expected number, string, boolean, date or buffer, received ${type(v)}`);
+    throw new TypeError('Invalid $lte argument; ' +
+      `expected number, string, boolean, date or buffer, received ${type(v)}`);
   }
 
   return ['LTE', parseKey(k), ['VALUE', v]];
@@ -90,7 +96,8 @@ function parseLessThanOrEqual(k, v) {
 
 function parseLike(k, v) {
   if (!_.isString(v)) {
-    throw new TypeError(`Invalid $like expression; expected string, received ${type(v)}`);
+    throw new TypeError('Invalid $like argument; ' +
+      `expected string, received ${type(v)}`);
   }
 
   return ['LIKE', parseKey(k), ['VALUE', v]];
@@ -98,7 +105,8 @@ function parseLike(k, v) {
 
 function parseNotLike(k, v) {
   if (!_.isString(v)) {
-    throw new TypeError(`Invalid $nlike expression; expected string, received ${type(v)}`);
+    throw new TypeError('Invalid $nlike argument; ' +
+      `expected string, received ${type(v)}`);
   }
 
   return ['NLIKE', parseKey(k), ['VALUE', v]];
@@ -106,11 +114,12 @@ function parseNotLike(k, v) {
 
 function parseIn(k, v) {
   if (!_.isArray(v)) {
-    throw new TypeError(`Invalid $in expression; expected array, received ${type(v)}`);
+    throw new TypeError('Invalid $in argument; ' +
+      `expected array, received ${type(v)}`);
   }
 
   if (v.length === 0) {
-    throw new TypeError(`Invalid $in expression; array cannot be empty`);
+    throw new TypeError('Invalid $in argument; array cannot be empty');
   }
 
   return ['IN', parseKey(k), ['VALUES'].concat(v)];
@@ -118,11 +127,12 @@ function parseIn(k, v) {
 
 function parseNotIn(k, v) {
   if (!_.isArray(v)) {
-    throw new TypeError(`Invalid $nin expression; expected array, received ${type(v)}`);
+    throw new TypeError('Invalid $nin argument; ' +
+      `expected array, received ${type(v)}`);
   }
 
   if (v.length === 0) {
-    throw new TypeError(`Invalid $nin expression; array cannot be empty`);
+    throw new TypeError('Invalid $nin argument; array cannot be empty');
   }
 
   return ['NIN', parseKey(k), ['VALUES'].concat(v)];
@@ -130,11 +140,12 @@ function parseNotIn(k, v) {
 
 function parseAnd(v) {
   if (!_.isArray(v)) {
-    throw new TypeError(`Invalid $and expression; expected array, received ${type(v)}`);
+    throw new TypeError('Invalid $and argument; ' +
+      `expected array, received ${type(v)}`);
   }
 
   if (v.length === 0) {
-    throw new TypeError(`Invalid $and expression; array cannot be empty`);
+    throw new TypeError('Invalid $and argument; array cannot be empty');
   }
 
   return ['AND'].concat(v.map((e) => {
@@ -145,11 +156,12 @@ function parseAnd(v) {
 
 function parseOr(v) {
   if (!_.isArray(v)) {
-    throw new TypeError(`Invalid $or expression; expected array, received ${type(v)}`);
+    throw new TypeError('Invalid $or argument; ' +
+      `expected array, received ${type(v)}`);
   }
 
   if (v.length === 0) {
-    throw new TypeError(`Invalid $or expression; array cannot be empty`);
+    throw new TypeError('Invalid $or argument; array cannot be empty');
   }
 
   return ['OR'].concat(v.map((e) => {
@@ -172,11 +184,12 @@ function parse(expression, _mem) {
     _.isDate(expression) ||
     _.isBoolean(expression) ||
     Buffer.isBuffer(expression)) {
-    expression = {'$id': {'$eq': expression}};
+    expression = { $id: { $eq: expression } };
   } else if (_.isArray(expression)) {
-    expression = {'$or': expression};
+    expression = { $or: expression };
   } else if (!_.isPlainObject(expression)) {
-    throw new TypeError(`Invalid selection expression; expected number, string, date, boolean, buffer, array or plain object, received ${type(expression)}`);
+    throw new TypeError('Invalid selection argument; ' +
+      `expected number, string, date, boolean, buffer, array or plain object, received ${type(expression)}`);
   }
 
   // extract object keys
@@ -191,10 +204,10 @@ function parse(expression, _mem) {
   if (keys.length > 1) {
     // split in key-value pairs, e.g. {a: 1, b: 2} => [{a: 1}, {b: 2}]
     const arr = keys.map((k) => {
-      return {[k]: expression[k]};
+      return { [k]: expression[k] };
     });
 
-    return parse({'$and': arr});
+    return parse({ $and: arr });
   }
 
   // check if expression has exactly 1 key
@@ -203,42 +216,42 @@ function parse(expression, _mem) {
     const v = expression[k];
 
     switch (k) {
-    case '$eq':
-      return ['SELECTION', parseEqual(_mem, v)];
-    case '$ne':
-      return ['SELECTION', parseNotEqual(_mem, v)];
-    case '$gt':
-      return ['SELECTION', parseGreaterThan(_mem, v)];
-    case '$gte':
-      return ['SELECTION', parseGreaterThanOrEqual(_mem, v)];
-    case '$lt':
-      return ['SELECTION', parseLessThan(_mem, v)];
-    case '$lte':
-      return ['SELECTION', parseLessThanOrEqual(_mem, v)];
-    case '$like':
-      return ['SELECTION', parseLike(_mem, v)];
-    case '$nlike':
-      return ['SELECTION', parseNotLike(_mem, v)];
-    case '$in':
-      return ['SELECTION', parseIn(_mem, v)];
-    case '$nin':
-      return ['SELECTION', parseNotIn(_mem, v)];
-    case '$and':
-      return ['SELECTION', parseAnd(v)];
-    case '$or':
-      return ['SELECTION', parseOr(v)];
-    default:
-      // check if value is a nested object
-      if (_.isPlainObject(v)) {
-        return parse(v, k);
-      }
+      case '$eq':
+        return ['SELECTION', parseEqual(_mem, v)];
+      case '$ne':
+        return ['SELECTION', parseNotEqual(_mem, v)];
+      case '$gt':
+        return ['SELECTION', parseGreaterThan(_mem, v)];
+      case '$gte':
+        return ['SELECTION', parseGreaterThanOrEqual(_mem, v)];
+      case '$lt':
+        return ['SELECTION', parseLessThan(_mem, v)];
+      case '$lte':
+        return ['SELECTION', parseLessThanOrEqual(_mem, v)];
+      case '$like':
+        return ['SELECTION', parseLike(_mem, v)];
+      case '$nlike':
+        return ['SELECTION', parseNotLike(_mem, v)];
+      case '$in':
+        return ['SELECTION', parseIn(_mem, v)];
+      case '$nin':
+        return ['SELECTION', parseNotIn(_mem, v)];
+      case '$and':
+        return ['SELECTION', parseAnd(v)];
+      case '$or':
+        return ['SELECTION', parseOr(v)];
+      default:
+        // check if value is a nested object
+        if (_.isPlainObject(v)) {
+          return parse(v, k);
+        }
 
-      // handle simple key-value assignment
-      return parse({[k]: {$eq: v}});
+        // handle simple key-value assignment
+        return parse({ [k]: { $eq: v } });
     }
   }
 
-  throw new TypeError(`Invalid selection expression; object must have at least 1 property`);
+  throw new TypeError('Invalid selection argument; object must have at least 1 property');
 }
 
 export default parse;

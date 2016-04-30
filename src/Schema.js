@@ -7,12 +7,6 @@ import datatypes from './datatypes';
 
 class Schema {
 
-  /**
-   * Creates a new Schema based on the supplied spec object.
-   * @param {Object} spec a schema spec object.
-   * @constructor
-   * @throws {TypeError} if spec object is invalid or unspecified.
-   */
   constructor(spec) {
     // make sure spec is plain object
     if (!_.isPlainObject(spec)) {
@@ -28,12 +22,6 @@ class Schema {
     this.extend(spec);
   }
 
-  /**
-   * Extends schema with the supplied spec object.
-   * @param {Object} spec a schema spec object.
-   * @throws {TypeError} if spec object is invalid or unspecified.
-   * @returns {Schema} this schema to allow method chaining.
-   */
   extend(spec) {
     if (!_.isPlainObject(spec)) {
       throw new TypeError(`Invalid schema spec; expected plain object, received ${type(spec)}`);
@@ -42,7 +30,8 @@ class Schema {
     _.forOwn(spec, (value, key) => {
       // make sure value is object
       if (!_.isPlainObject(value)) {
-        throw new TypeError(`Invalid value for key "${key}" in schema spec; expected plain object, received ${type(value)}`);
+        throw new TypeError(`Invalid value for key "${key}" in schema spec; ` +
+          `expected plain object, received ${type(value)}`);
       }
 
       // make sure value type is valid
@@ -66,24 +55,15 @@ class Schema {
     return this;
   }
 
-  /**
-   * Creates the specified index in schema.
-   * @param {Object} payload key-value pairs, where key represent some keys of this schema and value describes the type of the index, i.e. 1 for ASC, -1 for DESC.
-   * @param {Object} [options] index options.
-   * @param {string} [options.name] the name of the index.
-   * @param {string} [options.type="index"] the type of the index, i.e. "primary", "unique" or "index".
-   * @throws {TypeError} if arguments are invalid.
-   * @returns {Schema} this schema to allow method chaining.
-   */
   index(payload, options) {
     // make sure payload is plain object
     if (!_.isPlainObject(payload)) {
-      throw new TypeError(`Invalid index payload; expected plain object, received ${type(payload)}`);
+      throw new TypeError(`Invalid "payload" argument; expected plain object, received ${type(payload)}`);
     }
 
     // make sure payload is not empty
     if (_.isEmpty(payload)) {
-      throw new TypeError(`Invalid index payload; object must not be empty`);
+      throw new TypeError('Invalid "payload" argument; object must not be empty');
     }
 
     // validate payload
@@ -100,57 +80,53 @@ class Schema {
 
       // make sure order is specifically one of 1 or -1
       if (order !== 1 && order !== -1) {
-        throw new TypeError(`Invalid order for key "${key}"; expected 1 (i.e. ASC) or -1 (i.e. DESC), received ${order}`);
+        throw new TypeError(`Invalid order for key "${key}"; ` +
+          `expected 1 (i.e. ASC) or -1 (i.e. DESC), received ${order}`);
       }
     });
 
     // handle optional arguments
-    options = _.defaults(options, {type: 'index'});
+    options = _.defaults(options, { type: 'index' });
 
     switch (options.type) {
-    case 'index':
-      if (_.isNil(options.name)) {
-        options.name = 'idx' + (_.size(this._indexKeys) + 1);
-      }
+      case 'index':
+        if (_.isNil(options.name)) {
+          options.name = `idx${_.size(this._indexKeys) + 1}`;
+        }
 
-      // make sure index is not already defined in unique indices
-      if (_.has(this._uniqueKeys, options.name)) {
-        throw new Error(`Index ${options.name} is already set as unique index in schema`);
-      }
+        // make sure index is not already defined in unique indices
+        if (_.has(this._uniqueKeys, options.name)) {
+          throw new Error(`Index ${options.name} is already set as unique index in schema`);
+        }
 
-      this._indexKeys[options.name] = payload;
-      break;
+        this._indexKeys[options.name] = payload;
+        break;
 
-    case 'unique':
-      if (_.isNil(options.name)) {
-        options.name = 'uidx' + (_.size(this._uniqueKeys) + 1);
-      }
+      case 'unique':
+        if (_.isNil(options.name)) {
+          options.name = `uidx${_.size(this._uniqueKeys) + 1}`;
+        }
 
-      // make sure index is not already defined in plain indices
-      if (_.has(this._indexKeys, options.name)) {
-        throw new Error(`Unique index ${options.name} is already set as plain index in schema`);
-      }
+        // make sure index is not already defined in plain indices
+        if (_.has(this._indexKeys, options.name)) {
+          throw new Error(`Unique index ${options.name} is already set as plain index in schema`);
+        }
 
-      this._uniqueKeys[options.name] = payload;
-      break;
+        this._uniqueKeys[options.name] = payload;
+        break;
 
-    case 'primary':
-      this._primaryKey = payload;
-      break;
+      case 'primary':
+        this._primaryKey = payload;
+        break;
 
-    default:
-      throw new TypeError(`Invalid type option; expected "index", "unique" or "primary", received "${options.type}"`);
+      default:
+        throw new TypeError(`Invalid type option; expected "index", "unique" or "primary", received "${options.type}"`);
     }
 
     // allow method chaining
     return this;
   }
 
-  /**
-   * Indicates whether the specified key exists in schema.
-   * @param {string} key the name of the key.
-   * @returns {boolean}
-   */
   hasKey(key) {
     if (!_.isString(key)) {
       throw new TypeError(`Invalid key variable; expected string, received ${type(key)}`);
@@ -159,27 +135,14 @@ class Schema {
     return _.has(this._keys, key);
   }
 
-  /**
-   * Returns an array of keys specified in this schema.
-   * @return {Array<string>}
-   */
   getKeys() {
     return _.keys(this._keys);
   }
 
-  /**
-   * Returns an array of keys that compose the primary key.
-   * @return {Array<string>}
-   */
   getPrimaryKey() {
     return _.keys(this._primaryKey);
   }
 
-  /**
-   * Returns an array of keys that compose the designate unique key.
-   * @param {string} name: the name of the unique key index.
-   * @return {Array<string>}
-   */
   getUniqueKey(name) {
     if (!_.isString(name)) {
       throw new TypeError(`Invalid name variable; expected string, received ${type(name)}`);
@@ -194,12 +157,7 @@ class Schema {
     return _.keys(obj);
   }
 
-  /**
-   * Returns an array of keys that compose the designate index key.
-   * @param {string} name: the name of the index key index.
-   * @return {Array<string>}
-   */
-  getIndexKey(name: string) {
+  getIndexKey(name) {
     if (!_.isString(name)) {
       throw new TypeError(`Invalid name variable; expected string, received ${type(name)}`);
     }
@@ -213,12 +171,6 @@ class Schema {
     return _.keys(obj);
   }
 
-  /**
-   * Indicates whether the specified key is automatically incremented.
-   * @param {string} key the name of the key.
-   * @returns {boolean}
-   * @throws {Error} If key does not exist in schema.
-   */
   isKeyAutoInc(key) {
     if (!_.isString(key)) {
       throw new TypeError(`Invalid key variable; expected string, received ${type(key)}`);
@@ -231,12 +183,6 @@ class Schema {
     return _.get(this._keys, key).toJSON().autoinc === true;
   }
 
-  /**
-   * Indicates whether the specified key(s) compose the primary key of this schema.
-   * Primary keys may be compound, i.e. composed of multiple keys. Hence the acceptance of multiple params in this function.
-   * @param {...string} keys the name of the keys.
-   * @returns {boolean}
-   */
   isPrimaryKey(...keys) {
     if (keys.length === 0) {
       throw new TypeError('You must specify at least 1 key argument');
@@ -245,12 +191,6 @@ class Schema {
     return _.chain(this._primaryKey).keys().xor(keys).size().value() === 0;
   }
 
-  /*
-   * Indicates whether the specified keys(s) represent a unique key in this schema.
-   * Unique keys may be compound, i.e. composed of multiple keys, hence the acceptance of multiple params.
-   * @param {...string} keys the name of the keys.
-   * @returns {boolean}
-   */
   isUniqueKey(...keys) {
     if (keys.length === 0) {
       throw new TypeError('You must specify at least 1 key argument');
@@ -261,35 +201,21 @@ class Schema {
     });
   }
 
-  /*
-   * Indicates whether the specified key(s) represent an index key.
-   * Index keys may be compound, i.e. composed of multiple keys, hence the acceptance of multiple params.
-   * @param {...string} keys the name of the keys.
-   * @returns {boolean}
-   */
   isIndexKey(...keys) {
     if (keys.length === 0) {
       throw new TypeError('You must specify at least 1 key argument');
     }
 
-    return _.some(this._indexKeys, function (obj) {
+    return _.some(this._indexKeys, (obj) => {
       return _.xor(_.keys(obj), keys).length === 0;
     });
   }
 
-  /**
-   * Indicates whether the table has an atomic (i.e. consisted of a single key) primary key.
-   * @returns {boolean}
-   */
   hasAtomicPrimaryKey() {
     const keys = this.getPrimaryKey();
     return keys.length === 1;
   }
 
-  /**
-   * Indicates whether the table has an atomic (i.e. consisted of a single key) auto-incremented primary key.
-   * @returns {boolean}
-   */
   hasAutoIncPrimaryKey() {
     const keys = this.getPrimaryKey();
     return keys.length === 1 && this.isKeyAutoInc(keys[0]);
@@ -305,13 +231,6 @@ class Schema {
       }));
   }
 
-  /**
-   * Validates the designated record against this schema.
-   * @param {Object} record the record to validate.
-   * @param {Array<string>} [keys] optional array of keys to include in validation.
-   * @param {Function<Error, Object>} [callback] an optional callback function.
-   * @return {Promise<Object>}
-   */
   validate(record, keys, callback) {
     if (!_.isObject(record)) {
       throw new TypeError(`Invalid record variable; expected object, received ${type(record)}`);
@@ -331,8 +250,12 @@ class Schema {
     const joi = this._createJoi(keys);
 
     return new Promise((resolve, reject) => {
-      Joi.validate(record, joi, {convert: false}, (err, value) => {
-        if (err) return reject(new CustomError(err, 'ValidationError'));
+      Joi.validate(record, joi, { convert: false }, (err, value) => {
+        if (err) {
+          reject(new CustomError(err, 'ValidationError'));
+          return; // exit
+        }
+
         resolve(value);
       });
     }).nodeify(callback);
@@ -342,7 +265,7 @@ class Schema {
     return this._createJoi(this._keys);
   }
 
-  toJSON(): Object {
+  toJSON() {
     return _.mapValues(this._keys, (datatype) => datatype.toJSON());
   }
 }

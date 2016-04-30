@@ -87,7 +87,7 @@ function constructString(props = {}) {
   function toJSON() {
     return _.chain(props)
       .clone()
-      .assign({type: 'string'})
+      .assign({ type: 'string' })
       .tap((json) => {
         if (json.regex) {
           json.regex = json.regex.toString();

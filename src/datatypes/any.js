@@ -31,7 +31,7 @@ function constructAny(props = {}) {
   function toJSON() {
     return _.chain(props)
       .clone()
-      .assign({type: 'any'})
+      .assign({ type: 'any' })
       .value();
   }
 

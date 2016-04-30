@@ -33,7 +33,7 @@ function constructEmail(props = {}) {
   function toJSON() {
     return _.chain(props)
       .clone()
-      .assign({type: 'email'})
+      .assign({ type: 'email' })
       .value();
   }
 

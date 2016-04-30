@@ -58,7 +58,7 @@ function constructNumber(props = {}) {
   function toJSON() {
     return _.chain(props)
       .clone()
-      .assign({type: 'number'})
+      .assign({ type: 'number' })
       .value();
   }
 
