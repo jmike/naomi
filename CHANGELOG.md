@@ -1,3 +1,10 @@
+## 2.2.0 - 2016-05-02
+
+* Implement missing Database#schema() method.
+* Implement Database#query and Database#execute placeholder methods.
+* Remove unecessary validation check in Database#collection() method.
+* Optimize _createJoi() and fix validation issue with complex objects.
+
 ## 2.1.0 - 2016-05-02
 
 * Edit babel settings to produce node v.4+ compatible code.
