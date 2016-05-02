@@ -7,10 +7,10 @@ import datatypes from './datatypes';
 
 class Schema {
 
-  constructor(spec) {
-    // make sure spec is plain object
-    if (!_.isPlainObject(spec)) {
-      throw new TypeError(`Invalid spec variable; expected plain object, received ${type(spec)}`);
+  constructor(definition) {
+    // make sure definition is plain object
+    if (!_.isPlainObject(definition)) {
+      throw new TypeError(`Invalid "definition" argument; expected plain object, received ${type(definition)}`);
     }
 
     this._keys = {};
@@ -19,24 +19,24 @@ class Schema {
     this._uniqueKeys = {};
 
     // eat your own dog food
-    this.extend(spec);
+    this.extend(definition);
   }
 
-  extend(spec) {
-    if (!_.isPlainObject(spec)) {
-      throw new TypeError(`Invalid schema spec; expected plain object, received ${type(spec)}`);
+  extend(definition) {
+    if (!_.isPlainObject(definition)) {
+      throw new TypeError(`Invalid "definition" argument; expected plain object, received ${type(definition)}`);
     }
 
-    _.forOwn(spec, (value, key) => {
+    _.forOwn(definition, (value, key) => {
       // make sure value is object
       if (!_.isPlainObject(value)) {
-        throw new TypeError(`Invalid value for key "${key}" in schema spec; ` +
+        throw new TypeError(`Invalid value for key "${key}" in schema definition; ` +
           `expected plain object, received ${type(value)}`);
       }
 
       // make sure value type is valid
       if (!datatypes.hasOwnProperty(value.type)) {
-        throw new TypeError(`Unknown datatype "${value.type}" for key "${key}" in schema spec`);
+        throw new TypeError(`Unknown datatype "${value.type}" for key "${key}" in schema definition`);
       }
 
       // create datatype
@@ -81,7 +81,7 @@ class Schema {
       // make sure order is specifically one of 1 or -1
       if (order !== 1 && order !== -1) {
         throw new TypeError(`Invalid order for key "${key}"; ` +
-          `expected 1 (i.e. ASC) or -1 (i.e. DESC), received ${order}`);
+          `expected 1 or true for "ASC", -1 or false for "DESC", received ${order}`);
       }
     });
 
@@ -129,7 +129,7 @@ class Schema {
 
   hasKey(key) {
     if (!_.isString(key)) {
-      throw new TypeError(`Invalid key variable; expected string, received ${type(key)}`);
+      throw new TypeError(`Invalid "key" argument; expected string, received ${type(key)}`);
     }
 
     return _.has(this._keys, key);
@@ -145,7 +145,7 @@ class Schema {
 
   getUniqueKey(name) {
     if (!_.isString(name)) {
-      throw new TypeError(`Invalid name variable; expected string, received ${type(name)}`);
+      throw new TypeError(`Invalid "name" argument; expected string, received ${type(name)}`);
     }
 
     const obj = this._uniqueKeys[name];
@@ -159,7 +159,7 @@ class Schema {
 
   getIndexKey(name) {
     if (!_.isString(name)) {
-      throw new TypeError(`Invalid name variable; expected string, received ${type(name)}`);
+      throw new TypeError(`Invalid "name" argument; expected string, received ${type(name)}`);
     }
 
     const obj = this._indexKeys[name];
@@ -173,7 +173,7 @@ class Schema {
 
   isKeyAutoInc(key) {
     if (!_.isString(key)) {
-      throw new TypeError(`Invalid key variable; expected string, received ${type(key)}`);
+      throw new TypeError(`Invalid "key" argument; expected string, received ${type(key)}`);
     }
 
     if (!this.hasKey(key)) {

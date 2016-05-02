@@ -4,6 +4,7 @@ import { assert } from 'chai';
 import Promise from 'bluebird';
 import Database from '../src/Database';
 import Collection from '../src/Collection';
+import Schema from '../src/Schema';
 
 describe('Database', () => {
   describe('#constructor()', () => {
@@ -83,11 +84,19 @@ describe('Database', () => {
   });
 
   describe('#collection()', () => {
-    it('returns a new Collection instance bound to this database', () => {
+    it('returns a new Collection bound to this database', () => {
       const db = new Database({});
       const employees = db.collection('employees');
       assert.instanceOf(employees, Collection);
       assert.strictEqual(employees.db, db);
+    });
+  });
+
+  describe('#schema()', () => {
+    it('returns a new Schema', () => {
+      const db = new Database({});
+      const schema = db.schema({ a: { type: 'integer' } });
+      assert.instanceOf(schema, Schema);
     });
   });
 });

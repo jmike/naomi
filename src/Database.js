@@ -4,7 +4,7 @@ import _ from 'lodash';
 import type from 'type-of';
 import CustomError from 'customerror';
 import Collection from './Collection';
-import Schema from './Schema'; // eslint-disable-line
+import Schema from './Schema';
 
 class Database extends EventEmitter {
 
@@ -83,6 +83,10 @@ class Database extends EventEmitter {
 
   query(query, options, callback) {
     return this.execute(query, options, callback);
+  }
+
+  schema(definition) {
+    return new Schema(definition);
   }
 
   collection(name, schema = {}) {
