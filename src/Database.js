@@ -86,11 +86,6 @@ class Database extends EventEmitter {
   }
 
   collection(name, schema = {}) {
-    // make sure name is string
-    if (!_.isString(name)) {
-      throw new TypeError(`Invalid "name" argument; expected string, received ${type(name)}`);
-    }
-
     return new Collection(this, name, schema);
   }
 
