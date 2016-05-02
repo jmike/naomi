@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import Promise from 'bluebird';
 import _ from 'lodash';
 import type from 'type-of';
+import CustomError from 'customerror';
 import Collection from './Collection';
 import Schema from './Schema'; // eslint-disable-line
 
@@ -73,6 +74,15 @@ class Database extends EventEmitter {
         this.once('connect', () => resolve());
       }
     });
+  }
+
+  execute(query, options, callback) {
+    console.log(query, options, callback);
+    throw new CustomError('Method not implemented', 'MethodNotImplemented');
+  }
+
+  query(query, options, callback) {
+    return this.execute(query, options, callback);
   }
 
   collection(name, schema = {}) {
