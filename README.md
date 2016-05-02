@@ -134,7 +134,10 @@ Additional collection methods may exist depending on the database connector.
 
 ## API Docs
 
-For further info please refer to the [API docs](jmike/naomi-docs).
+* [Naomi singleton](https:/github.com//jmike/naomi-docs/naomi.md)
+* [Database](https://github.com/jmike/naomi-docs/database.md)
+* [Schema](https://github.com/jmike/naomi-docs/schema.md)
+* [Collection](https://github.com/jmike/naomi-docs/collection.md)
 
 ## Philosophy
 
