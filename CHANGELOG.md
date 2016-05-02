@@ -1,3 +1,11 @@
+## 2.1.0 - 2016-05-02
+
+* Edit babel settings to produce node v.4+ compatible code.
+* Update eslint settings - use latest airbnb styleguide.
+* Remove gulpfile in favour of npm scripts.
+* Projection should also accept true / false values.
+* Rewrite datatypes using es2015 classes.
+
 ## 2.0.1 - 2016-03-24
 
 * Augment validate method with optional keys array.
