@@ -2,11 +2,11 @@
 
 import { assert } from 'chai';
 import Joi from 'joi';
-import boolean from '../../src/datatypes/boolean';
+import BooleanType from '../../src/datatypes/Boolean';
 
-describe('boolean datatype', () => {
+describe('Boolean datatype', () => {
   it('asserts boolean value', () => {
-    const dt = boolean();
+    const dt = new BooleanType();
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert(true, schema));
@@ -20,7 +20,7 @@ describe('boolean datatype', () => {
   });
 
   it('respects nullable property', () => {
-    const dt = boolean();
+    const dt = new BooleanType();
     dt.nullable(true);
     const schema = dt.toJoi();
 
@@ -29,7 +29,7 @@ describe('boolean datatype', () => {
   });
 
   it('respects default property', () => {
-    const dt = boolean();
+    const dt = new BooleanType();
     dt.default(true);
     const schema = dt.toJoi();
 
@@ -37,7 +37,7 @@ describe('boolean datatype', () => {
   });
 
   it('respects default property even when it\'s falsy', () => {
-    const dt = boolean();
+    const dt = new BooleanType();
     dt.default(false);
     const schema = dt.toJoi();
 
@@ -45,7 +45,7 @@ describe('boolean datatype', () => {
   });
 
   // it('accepts strings "true", "false", "yes", "no", "on" or "off"', () => {
-  //   const dt = boolean();
+  //   const dt = new BooleanType();
   //   const schema = dt.toJoi();
 
   //   assert.doesNotThrow(() => Joi.assert('true', schema));
@@ -58,13 +58,13 @@ describe('boolean datatype', () => {
 
   describe('#nullable()', () => {
     it('accepts boolean value', () => {
-      assert.doesNotThrow(() => boolean().nullable(true));
-      assert.doesNotThrow(() => boolean().nullable(false));
-      assert.throws(() => boolean().nullable('abc'));
-      assert.throws(() => boolean().nullable(123));
-      assert.throws(() => boolean().nullable(null));
-      assert.throws(() => boolean().nullable({}));
-      assert.throws(() => boolean().nullable());
+      assert.doesNotThrow(() => new BooleanType().nullable(true));
+      assert.doesNotThrow(() => new BooleanType().nullable(false));
+      assert.throws(() => new BooleanType().nullable('abc'));
+      assert.throws(() => new BooleanType().nullable(123));
+      assert.throws(() => new BooleanType().nullable(null));
+      assert.throws(() => new BooleanType().nullable({}));
+      assert.throws(() => new BooleanType().nullable());
     });
   });
 });

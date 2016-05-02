@@ -40,7 +40,7 @@ class Schema {
       }
 
       // create datatype
-      const datatype = datatypes[value.type]();
+      const datatype = new datatypes[value.type]();
 
       // set datatype properties
       _.forOwn(value, (v, k) => {

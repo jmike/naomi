@@ -2,11 +2,11 @@
 
 import { assert } from 'chai';
 import Joi from 'joi';
-import string from '../../src/datatypes/string';
+import StringType from '../../src/datatypes/String';
 
-describe('string datatype', () => {
+describe('String datatype', () => {
   it('asserts string value', () => {
-    const dt = string();
+    const dt = new StringType();
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert('abc', schema));
@@ -19,7 +19,7 @@ describe('string datatype', () => {
   });
 
   it('respects length property', () => {
-    const dt = string();
+    const dt = new StringType();
     dt.length(3);
     const schema = dt.toJoi();
 
@@ -29,7 +29,7 @@ describe('string datatype', () => {
   });
 
   it('respects maxLength property', () => {
-    const dt = string();
+    const dt = new StringType();
     dt.maxLength(3);
     const schema = dt.toJoi();
 
@@ -39,7 +39,7 @@ describe('string datatype', () => {
   });
 
   it('respects minLength property', () => {
-    const dt = string();
+    const dt = new StringType();
     dt.minLength(3);
     const schema = dt.toJoi();
 
@@ -49,7 +49,7 @@ describe('string datatype', () => {
   });
 
   it('respects lowercase property', () => {
-    const dt = string();
+    const dt = new StringType();
     dt.lowercase(true);
     const schema = dt.toJoi();
 
@@ -58,7 +58,7 @@ describe('string datatype', () => {
   });
 
   it('respects uppercase property', () => {
-    const dt = string();
+    const dt = new StringType();
     dt.uppercase(true);
     const schema = dt.toJoi();
 
@@ -67,7 +67,7 @@ describe('string datatype', () => {
   });
 
   it('respects trim property', () => {
-    const dt = string();
+    const dt = new StringType();
     dt.trim(true);
     const schema = dt.toJoi();
 
@@ -77,7 +77,7 @@ describe('string datatype', () => {
   });
 
   it('respects regex property', () => {
-    const dt = string();
+    const dt = new StringType();
     dt.regex(/^\d+$/);
     const schema = dt.toJoi();
 
@@ -86,7 +86,7 @@ describe('string datatype', () => {
   });
 
   it('respects nullable property', () => {
-    const dt = string();
+    const dt = new StringType();
     dt.nullable(true);
     const schema = dt.toJoi();
 
@@ -95,7 +95,7 @@ describe('string datatype', () => {
   });
 
   it('respects default property', () => {
-    const dt = string();
+    const dt = new StringType();
     dt.default('abc');
     const schema = dt.toJoi();
 
@@ -104,97 +104,97 @@ describe('string datatype', () => {
 
   describe('#length()', () => {
     it('accepts integer value', () => {
-      assert.doesNotThrow(() => string().length(10));
-      assert.throws(() => string().length('abc'));
-      assert.throws(() => string().length(1.1));
-      assert.throws(() => string().length(null));
-      assert.throws(() => string().length(true));
-      assert.throws(() => string().length({}));
-      assert.throws(() => string().length());
+      assert.doesNotThrow(() => new StringType().length(10));
+      assert.throws(() => new StringType().length('abc'));
+      assert.throws(() => new StringType().length(1.1));
+      assert.throws(() => new StringType().length(null));
+      assert.throws(() => new StringType().length(true));
+      assert.throws(() => new StringType().length({}));
+      assert.throws(() => new StringType().length());
     });
   });
 
   describe('#maxLength()', () => {
     it('accepts integer value', () => {
-      assert.doesNotThrow(() => string().maxLength(10));
-      assert.throws(() => string().maxLength('abc'));
-      assert.throws(() => string().maxLength(1.1));
-      assert.throws(() => string().maxLength(null));
-      assert.throws(() => string().maxLength(true));
-      assert.throws(() => string().maxLength({}));
-      assert.throws(() => string().maxLength());
+      assert.doesNotThrow(() => new StringType().maxLength(10));
+      assert.throws(() => new StringType().maxLength('abc'));
+      assert.throws(() => new StringType().maxLength(1.1));
+      assert.throws(() => new StringType().maxLength(null));
+      assert.throws(() => new StringType().maxLength(true));
+      assert.throws(() => new StringType().maxLength({}));
+      assert.throws(() => new StringType().maxLength());
     });
   });
 
   describe('#minLength()', () => {
     it('accepts integer value', () => {
-      assert.doesNotThrow(() => string().minLength(10));
-      assert.throws(() => string().minLength('abc'));
-      assert.throws(() => string().minLength(1.1));
-      assert.throws(() => string().minLength(null));
-      assert.throws(() => string().minLength(true));
-      assert.throws(() => string().minLength({}));
-      assert.throws(() => string().minLength());
+      assert.doesNotThrow(() => new StringType().minLength(10));
+      assert.throws(() => new StringType().minLength('abc'));
+      assert.throws(() => new StringType().minLength(1.1));
+      assert.throws(() => new StringType().minLength(null));
+      assert.throws(() => new StringType().minLength(true));
+      assert.throws(() => new StringType().minLength({}));
+      assert.throws(() => new StringType().minLength());
     });
   });
 
   describe('#lowercase()', () => {
     it('accepts boolean value', () => {
-      assert.doesNotThrow(() => string().lowercase(true));
-      assert.doesNotThrow(() => string().lowercase(false));
-      assert.throws(() => string().lowercase('abc'));
-      assert.throws(() => string().lowercase(123));
-      assert.throws(() => string().lowercase(null));
-      assert.throws(() => string().lowercase({}));
-      assert.throws(() => string().lowercase());
+      assert.doesNotThrow(() => new StringType().lowercase(true));
+      assert.doesNotThrow(() => new StringType().lowercase(false));
+      assert.throws(() => new StringType().lowercase('abc'));
+      assert.throws(() => new StringType().lowercase(123));
+      assert.throws(() => new StringType().lowercase(null));
+      assert.throws(() => new StringType().lowercase({}));
+      assert.throws(() => new StringType().lowercase());
     });
   });
 
   describe('#uppercase()', () => {
     it('accepts boolean value', () => {
-      assert.doesNotThrow(() => string().uppercase(true));
-      assert.doesNotThrow(() => string().uppercase(false));
-      assert.throws(() => string().uppercase('abc'));
-      assert.throws(() => string().uppercase(123));
-      assert.throws(() => string().uppercase(null));
-      assert.throws(() => string().uppercase({}));
-      assert.throws(() => string().uppercase());
+      assert.doesNotThrow(() => new StringType().uppercase(true));
+      assert.doesNotThrow(() => new StringType().uppercase(false));
+      assert.throws(() => new StringType().uppercase('abc'));
+      assert.throws(() => new StringType().uppercase(123));
+      assert.throws(() => new StringType().uppercase(null));
+      assert.throws(() => new StringType().uppercase({}));
+      assert.throws(() => new StringType().uppercase());
     });
   });
 
   describe('#trim()', () => {
     it('accepts boolean value', () => {
-      assert.doesNotThrow(() => string().trim(true));
-      assert.doesNotThrow(() => string().trim(false));
-      assert.throws(() => string().trim('abc'));
-      assert.throws(() => string().trim(123));
-      assert.throws(() => string().trim(null));
-      assert.throws(() => string().trim({}));
-      assert.throws(() => string().trim());
+      assert.doesNotThrow(() => new StringType().trim(true));
+      assert.doesNotThrow(() => new StringType().trim(false));
+      assert.throws(() => new StringType().trim('abc'));
+      assert.throws(() => new StringType().trim(123));
+      assert.throws(() => new StringType().trim(null));
+      assert.throws(() => new StringType().trim({}));
+      assert.throws(() => new StringType().trim());
     });
   });
 
   describe('#regex()', () => {
     it('accepts string and regex value', () => {
-      assert.doesNotThrow(() => string().regex('abc'));
-      assert.doesNotThrow(() => string().regex(/abc/i));
-      assert.throws(() => string().regex(true));
-      assert.throws(() => string().regex(123));
-      assert.throws(() => string().regex(null));
-      assert.throws(() => string().regex({}));
-      assert.throws(() => string().regex());
+      assert.doesNotThrow(() => new StringType().regex('abc'));
+      assert.doesNotThrow(() => new StringType().regex(/abc/i));
+      assert.throws(() => new StringType().regex(true));
+      assert.throws(() => new StringType().regex(123));
+      assert.throws(() => new StringType().regex(null));
+      assert.throws(() => new StringType().regex({}));
+      assert.throws(() => new StringType().regex());
     });
   });
 
   describe('#nullable()', () => {
     it('accepts boolean value', () => {
-      assert.doesNotThrow(() => string().nullable(true));
-      assert.doesNotThrow(() => string().nullable(false));
-      assert.throws(() => string().nullable('abc'));
-      assert.throws(() => string().nullable(123));
-      assert.throws(() => string().nullable(null));
-      assert.throws(() => string().nullable({}));
-      assert.throws(() => string().nullable());
+      assert.doesNotThrow(() => new StringType().nullable(true));
+      assert.doesNotThrow(() => new StringType().nullable(false));
+      assert.throws(() => new StringType().nullable('abc'));
+      assert.throws(() => new StringType().nullable(123));
+      assert.throws(() => new StringType().nullable(null));
+      assert.throws(() => new StringType().nullable({}));
+      assert.throws(() => new StringType().nullable());
     });
   });
 });

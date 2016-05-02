@@ -2,11 +2,11 @@
 
 import { assert } from 'chai';
 import Joi from 'joi';
-import date from '../../src/datatypes/date';
+import DateType from '../../src/datatypes/Date';
 
-describe('date datatype', () => {
+describe('Date datatype', () => {
   it('asserts date, string and numeric values', () => {
-    const dt = date();
+    const dt = new DateType();
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert(new Date(), schema));
@@ -19,7 +19,7 @@ describe('date datatype', () => {
   });
 
   it('respects format property', () => {
-    const dt = date();
+    const dt = new DateType();
     dt.format('YYYY.MM.DD');
     const schema = dt.toJoi();
 
@@ -30,7 +30,7 @@ describe('date datatype', () => {
   });
 
   it('respects min property', () => {
-    const dt = date();
+    const dt = new DateType();
     dt.min('2016-03-01');
     const schema = dt.toJoi();
 
@@ -40,7 +40,7 @@ describe('date datatype', () => {
   });
 
   it('respects max property', () => {
-    const dt = date();
+    const dt = new DateType();
     dt.max('2016-03-25');
     const schema = dt.toJoi();
 
@@ -50,7 +50,7 @@ describe('date datatype', () => {
   });
 
   it('respects nullable property', () => {
-    const dt = date();
+    const dt = new DateType();
     dt.nullable(true);
     const schema = dt.toJoi();
 
@@ -59,7 +59,7 @@ describe('date datatype', () => {
   });
 
   it('respects default property', () => {
-    const dt = date();
+    const dt = new DateType();
     dt.default('2015-03-25');
     const schema = dt.toJoi();
 
@@ -67,7 +67,7 @@ describe('date datatype', () => {
   });
 
   it('accepts function as default value', () => {
-    const dt = date();
+    const dt = new DateType();
     dt.default(Date.now);
     const schema = dt.toJoi();
 

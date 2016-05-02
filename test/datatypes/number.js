@@ -2,11 +2,11 @@
 
 import { assert } from 'chai';
 import Joi from 'joi';
-import number from '../../src/datatypes/number';
+import NumberType from '../../src/datatypes/Number';
 
-describe('number datatype', () => {
+describe('Number datatype', () => {
   it('asserts numeric value', () => {
-    const dt = number();
+    const dt = new NumberType();
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert(123, schema));
@@ -19,7 +19,7 @@ describe('number datatype', () => {
   });
 
   it('respects min property', () => {
-    const dt = number();
+    const dt = new NumberType();
     dt.min(100);
     const schema = dt.toJoi();
 
@@ -28,7 +28,7 @@ describe('number datatype', () => {
   });
 
   it('respects max property', () => {
-    const dt = number();
+    const dt = new NumberType();
     dt.max(100);
     const schema = dt.toJoi();
 
@@ -37,7 +37,7 @@ describe('number datatype', () => {
   });
 
   it('respects negative property', () => {
-    const dt = number();
+    const dt = new NumberType();
     dt.negative(true);
     const schema = dt.toJoi();
 
@@ -47,7 +47,7 @@ describe('number datatype', () => {
   });
 
   it('respects positive property', () => {
-    const dt = number();
+    const dt = new NumberType();
     dt.positive(true);
     const schema = dt.toJoi();
 
@@ -57,7 +57,7 @@ describe('number datatype', () => {
   });
 
   it('respects nullable property', () => {
-    const dt = number();
+    const dt = new NumberType();
     dt.nullable(true);
     const schema = dt.toJoi();
 
@@ -66,7 +66,7 @@ describe('number datatype', () => {
   });
 
   it('respects default property', () => {
-    const dt = number();
+    const dt = new NumberType();
     dt.default(10);
     const schema = dt.toJoi();
 

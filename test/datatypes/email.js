@@ -1,12 +1,12 @@
 /* eslint-env node, mocha */
 
-import {assert} from 'chai';
+import { assert } from 'chai';
 import Joi from 'joi';
-import email from '../../src/datatypes/email';
+import EmailType from '../../src/datatypes/Email';
 
-describe('email datatype', () => {
+describe('Email datatype', () => {
   it('asserts email-formatted string value', () => {
-    const dt = email();
+    const dt = new EmailType();
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert('abc@acme.com', schema));
@@ -20,7 +20,7 @@ describe('email datatype', () => {
   });
 
   it('respects length property', () => {
-    const dt = email();
+    const dt = new EmailType();
     dt.length(12);
     const schema = dt.toJoi();
 
@@ -30,7 +30,7 @@ describe('email datatype', () => {
   });
 
   it('respects maxLength property', () => {
-    const dt = email();
+    const dt = new EmailType();
     dt.maxLength(12);
     const schema = dt.toJoi();
 
@@ -40,7 +40,7 @@ describe('email datatype', () => {
   });
 
   it('respects minLength property', () => {
-    const dt = email();
+    const dt = new EmailType();
     dt.minLength(12);
     const schema = dt.toJoi();
 
@@ -50,7 +50,7 @@ describe('email datatype', () => {
   });
 
   it('respects lowercase property', () => {
-    const dt = email();
+    const dt = new EmailType();
     dt.lowercase(true);
     const schema = dt.toJoi();
 
@@ -59,7 +59,7 @@ describe('email datatype', () => {
   });
 
   it('respects uppercase property', () => {
-    const dt = email();
+    const dt = new EmailType();
     dt.uppercase(true);
     const schema = dt.toJoi();
 
@@ -68,7 +68,7 @@ describe('email datatype', () => {
   });
 
   it('respects nullable property', () => {
-    const dt = email();
+    const dt = new EmailType();
     dt.nullable(true);
     const schema = dt.toJoi();
 
@@ -77,7 +77,7 @@ describe('email datatype', () => {
   });
 
   it('respects trim property', () => {
-    const dt = email();
+    const dt = new EmailType();
     dt.trim(true);
     const schema = dt.toJoi();
 
@@ -87,7 +87,7 @@ describe('email datatype', () => {
   });
 
   it('respects default property', () => {
-    const dt = email();
+    const dt = new EmailType();
     dt.default('abc@acme.com');
     const schema = dt.toJoi();
 
@@ -96,85 +96,85 @@ describe('email datatype', () => {
 
   describe('#length()', () => {
     it('accepts integer value', () => {
-      assert.doesNotThrow(() => email().length(10));
-      assert.throws(() => email().length('abc'));
-      assert.throws(() => email().length(1.1));
-      assert.throws(() => email().length(null));
-      assert.throws(() => email().length(true));
-      assert.throws(() => email().length({}));
-      assert.throws(() => email().length());
+      assert.doesNotThrow(() => new EmailType().length(10));
+      assert.throws(() => new EmailType().length('abc'));
+      assert.throws(() => new EmailType().length(1.1));
+      assert.throws(() => new EmailType().length(null));
+      assert.throws(() => new EmailType().length(true));
+      assert.throws(() => new EmailType().length({}));
+      assert.throws(() => new EmailType().length());
     });
   });
 
   describe('#maxLength()', () => {
     it('accepts integer value', () => {
-      assert.doesNotThrow(() => email().maxLength(10));
-      assert.throws(() => email().maxLength('abc'));
-      assert.throws(() => email().maxLength(1.1));
-      assert.throws(() => email().maxLength(null));
-      assert.throws(() => email().maxLength(true));
-      assert.throws(() => email().maxLength({}));
-      assert.throws(() => email().maxLength());
+      assert.doesNotThrow(() => new EmailType().maxLength(10));
+      assert.throws(() => new EmailType().maxLength('abc'));
+      assert.throws(() => new EmailType().maxLength(1.1));
+      assert.throws(() => new EmailType().maxLength(null));
+      assert.throws(() => new EmailType().maxLength(true));
+      assert.throws(() => new EmailType().maxLength({}));
+      assert.throws(() => new EmailType().maxLength());
     });
   });
 
   describe('#minLength()', () => {
     it('accepts integer value', () => {
-      assert.doesNotThrow(() => email().minLength(10));
-      assert.throws(() => email().minLength('abc'));
-      assert.throws(() => email().minLength(1.1));
-      assert.throws(() => email().minLength(null));
-      assert.throws(() => email().minLength(true));
-      assert.throws(() => email().minLength({}));
-      assert.throws(() => email().minLength());
+      assert.doesNotThrow(() => new EmailType().minLength(10));
+      assert.throws(() => new EmailType().minLength('abc'));
+      assert.throws(() => new EmailType().minLength(1.1));
+      assert.throws(() => new EmailType().minLength(null));
+      assert.throws(() => new EmailType().minLength(true));
+      assert.throws(() => new EmailType().minLength({}));
+      assert.throws(() => new EmailType().minLength());
     });
   });
 
   describe('#lowercase()', () => {
     it('accepts boolean value', () => {
-      assert.doesNotThrow(() => email().lowercase(true));
-      assert.doesNotThrow(() => email().lowercase(false));
-      assert.throws(() => email().lowercase('abc'));
-      assert.throws(() => email().lowercase(123));
-      assert.throws(() => email().lowercase(null));
-      assert.throws(() => email().lowercase({}));
-      assert.throws(() => email().lowercase());
+      assert.doesNotThrow(() => new EmailType().lowercase(true));
+      assert.doesNotThrow(() => new EmailType().lowercase(false));
+      assert.throws(() => new EmailType().lowercase('abc'));
+      assert.throws(() => new EmailType().lowercase(123));
+      assert.throws(() => new EmailType().lowercase(null));
+      assert.throws(() => new EmailType().lowercase({}));
+      assert.throws(() => new EmailType().lowercase());
     });
   });
 
   describe('#uppercase()', () => {
     it('accepts boolean value', () => {
-      assert.doesNotThrow(() => email().uppercase(true));
-      assert.doesNotThrow(() => email().uppercase(false));
-      assert.throws(() => email().uppercase('abc'));
-      assert.throws(() => email().uppercase(123));
-      assert.throws(() => email().uppercase(null));
-      assert.throws(() => email().uppercase({}));
-      assert.throws(() => email().uppercase());
+      assert.doesNotThrow(() => new EmailType().uppercase(true));
+      assert.doesNotThrow(() => new EmailType().uppercase(false));
+      assert.throws(() => new EmailType().uppercase('abc'));
+      assert.throws(() => new EmailType().uppercase(123));
+      assert.throws(() => new EmailType().uppercase(null));
+      assert.throws(() => new EmailType().uppercase({}));
+      assert.throws(() => new EmailType().uppercase());
     });
   });
 
   describe('#trim()', () => {
     it('accepts boolean value', () => {
-      assert.doesNotThrow(() => email().trim(true));
-      assert.doesNotThrow(() => email().trim(false));
-      assert.throws(() => email().trim('abc'));
-      assert.throws(() => email().trim(123));
-      assert.throws(() => email().trim(null));
-      assert.throws(() => email().trim({}));
-      assert.throws(() => email().trim());
+      assert.doesNotThrow(() => new EmailType().trim(true));
+      assert.doesNotThrow(() => new EmailType().trim(false));
+      assert.throws(() => new EmailType().trim('abc'));
+      assert.throws(() => new EmailType().trim(123));
+      assert.throws(() => new EmailType().trim(null));
+      assert.throws(() => new EmailType().trim({}));
+      assert.throws(() => new EmailType().trim());
     });
   });
 
   describe('#nullable()', () => {
     it('accepts boolean value', () => {
-      assert.doesNotThrow(() => email().nullable(true));
-      assert.doesNotThrow(() => email().nullable(false));
-      assert.throws(() => email().nullable('abc'));
-      assert.throws(() => email().nullable(123));
-      assert.throws(() => email().nullable(null));
-      assert.throws(() => email().nullable({}));
-      assert.throws(() => email().nullable());
+      assert.doesNotThrow(() => new EmailType().nullable(true));
+      assert.doesNotThrow(() => new EmailType().nullable(false));
+      assert.throws(() => new EmailType().nullable('abc'));
+      assert.throws(() => new EmailType().nullable(123));
+      assert.throws(() => new EmailType().nullable(null));
+      assert.throws(() => new EmailType().nullable({}));
+      assert.throws(() => new EmailType().nullable());
     });
   });
 });

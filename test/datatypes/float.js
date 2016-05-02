@@ -2,11 +2,11 @@
 
 import { assert } from 'chai';
 import Joi from 'joi';
-import float from '../../src/datatypes/float';
+import FloatType from '../../src/datatypes/Float';
 
-describe('float datatype', () => {
+describe('Float datatype', () => {
   it('accepts numeric values', () => {
-    const dt = float();
+    const dt = new FloatType();
     const schema = dt.toJoi();
 
     assert.doesNotThrow(() => Joi.assert(123, schema));
@@ -19,7 +19,7 @@ describe('float datatype', () => {
   });
 
   it('respects min property', () => {
-    const dt = float();
+    const dt = new FloatType();
     dt.min(100);
     const schema = dt.toJoi();
 
@@ -28,7 +28,7 @@ describe('float datatype', () => {
   });
 
   it('respects max property', () => {
-    const dt = float();
+    const dt = new FloatType();
     dt.max(100);
     const schema = dt.toJoi();
 
@@ -37,7 +37,7 @@ describe('float datatype', () => {
   });
 
   it('respects negative property', () => {
-    const dt = float();
+    const dt = new FloatType();
     dt.negative(true);
     const schema = dt.toJoi();
 
@@ -47,7 +47,7 @@ describe('float datatype', () => {
   });
 
   it('respects positive property', () => {
-    const dt = float();
+    const dt = new FloatType();
     dt.positive(true);
     const schema = dt.toJoi();
 
@@ -57,7 +57,7 @@ describe('float datatype', () => {
   });
 
   it('respects nullable property', () => {
-    const dt = float();
+    const dt = new FloatType();
     dt.nullable(true);
     const schema = dt.toJoi();
 
@@ -66,7 +66,7 @@ describe('float datatype', () => {
   });
 
   it('respects default property', () => {
-    const dt = float();
+    const dt = new FloatType();
     dt.default(10);
     const schema = dt.toJoi();
 
@@ -74,7 +74,7 @@ describe('float datatype', () => {
   });
 
   it('respects precision property', () => {
-    const dt = float();
+    const dt = new FloatType();
     dt.precision(3);
     const schema = dt.toJoi();
 
@@ -85,7 +85,7 @@ describe('float datatype', () => {
   });
 
   it('respects scale property', () => {
-    const dt = float();
+    const dt = new FloatType();
     dt.scale(2);
     const schema = dt.toJoi();
 
@@ -96,7 +96,7 @@ describe('float datatype', () => {
   });
 
   it('respects precision + scale properties', () => {
-    const dt = float();
+    const dt = new FloatType();
     dt.precision(5);
     dt.scale(2);
     const schema = dt.toJoi();
