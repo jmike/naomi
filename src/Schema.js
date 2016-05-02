@@ -221,32 +221,33 @@ class Schema {
     return keys.length === 1 && this.isKeyAutoInc(keys[0]);
   }
 
-  _createJoi(...keys) {
-    const obj = _.pick(this._keys, keys);
+  _createJoi(keys) {
+    const source = _.isArray(keys) ? _.pick(this._keys, keys) : this._keys;
 
     return Joi.object()
       .strict(true)
-      .keys(_.mapValues(obj, (datatype) => {
+      .keys(_.mapValues(source, (datatype) => {
         return datatype.toJoi();
       }));
   }
 
   validate(record, keys, callback) {
+    // validate record argument
     if (!_.isObject(record)) {
-      throw new TypeError(`Invalid record variable; expected object, received ${type(record)}`);
+      throw new TypeError(`Invalid "record" argument; expected object, received ${type(record)}`);
     }
 
+    // validate keys argument
     if (_.isFunction(keys)) {
       callback = keys;
       keys = this.getKeys();
     } else if (_.isUndefined(keys)) {
       keys = this.getKeys();
+    } else if (!_.isArray(keys)) {
+      throw new TypeError(`Invalid "keys" argument; expected array, received ${type(keys)}`);
     }
 
-    if (!_.isArray(keys)) {
-      throw new TypeError(`Invalid keys variable; expected array, received ${type(keys)}`);
-    }
-
+    // create Joi
     const joi = this._createJoi(keys);
 
     return new Promise((resolve, reject) => {
@@ -262,7 +263,7 @@ class Schema {
   }
 
   toJoi() {
-    return this._createJoi(this._keys);
+    return this._createJoi();
   }
 
   toJSON() {

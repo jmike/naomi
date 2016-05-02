@@ -153,7 +153,7 @@ describe('Schema', () => {
       schema.validate({ id: 1 }, done);
     });
 
-    it('successfully validates number', () => {
+    it('validates number', () => {
       const schema = new Schema({
         x: { type: 'number', min: 0 }
       });
@@ -162,7 +162,7 @@ describe('Schema', () => {
       assert.isRejected(schema.validate({ x: '1' }));
     });
 
-    it('successfully validates string', () => {
+    it('validates string', () => {
       const schema = new Schema({
         x: { type: 'string', minLength: 2 }
       });
@@ -172,7 +172,7 @@ describe('Schema', () => {
       assert.isRejected(schema.validate({ x: 123 }));
     });
 
-    it('successfully validates date', () => {
+    it('validates date', () => {
       const schema = new Schema({
         x: { type: 'date', format: 'YYYY-MM-DD' }
       });
@@ -181,7 +181,7 @@ describe('Schema', () => {
       assert.isRejected(schema.validate({ x: 'a' }));
     });
 
-    it('successfully validates integer', () => {
+    it('validates integer', () => {
       const schema = new Schema({
         x: { type: 'integer' }
       });
@@ -190,7 +190,7 @@ describe('Schema', () => {
       assert.isRejected(schema.validate({ x: 123.52 }));
     });
 
-    it('successfully validates float', () => {
+    it('validates float', () => {
       const schema = new Schema({
         x: { type: 'float', precision: 5, scale: 2 }
       });
@@ -200,7 +200,7 @@ describe('Schema', () => {
       assert.isRejected(schema.validate({ x: 123.3342 }), Error);
     });
 
-    it('successfully validates uuid', () => {
+    it('validates uuid', () => {
       const schema = new Schema({
         x: { type: 'uuid' }
       });
@@ -210,7 +210,7 @@ describe('Schema', () => {
       assert.isRejected(schema.validate({ x: 123 }), Error);
     });
 
-    it('successfully validates enum', () => {
+    it('validates enum', () => {
       const schema = new Schema({
         x: { type: 'enum', values: ['a', 'b', 'c'] }
       });
@@ -218,6 +218,17 @@ describe('Schema', () => {
       assert.isFulfilled(schema.validate({ x: 'b' }));
       assert.isRejected(schema.validate({ x: 'd' }), Error);
       assert.isRejected(schema.validate({ x: 123 }), Error);
+    });
+
+    it('validates employees object', () => {
+      const schema = new Schema({
+        id: { type: 'integer', autoinc: true, min: 0 },
+        firstname: { type: 'string', maxLength: 45, nullable: true },
+        lastname: { type: 'string', maxLength: 45, nullable: true },
+        age: { type: 'integer', min: 18, max: 100 },
+      });
+
+      assert.isFulfilled(schema.validate({ firstname: 'Donnie', lastname: 'Azoff', age: 36 }));
     });
   });
 });
