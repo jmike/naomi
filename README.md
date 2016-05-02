@@ -2,6 +2,8 @@
 
 A simple ORM for Node.js that takes care of the repetitive CRUD tasks, while providing a handy interface for custom queries.
 
+[![Build Status](https://travis-ci.org/jmike/naomi.svg?branch=master)](https://travis-ci.org/jmike/naomi) [![npm version](https://badge.fury.io/js/naomi.svg)](https://badge.fury.io/js/naomi)
+
 #### Features
 
 * Accepts mongo-like query language to perform repretitive CRUD (+ count) tasks;
