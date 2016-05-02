@@ -122,24 +122,23 @@ employees.reverseEngineer()
 
 The Collection class exposes the following methods:
 
-1. [find()](collection.md#find) - retrieves records from the collection;
-2. [findOne()](collection.md#findOne) - retrieves a single record from the collection;
-3. [findStream()](collection.md#findStream) - retrieves records from the collection as a readable stream;
-4. [count()](collection.md#count) - counts records in the collection;
-5. [remove()](collection.md#remove) - removes records from the collection;
-6. [insert()](collection.md#insert) - inserts record(s) to the collection;
-7. [upsert()](collection.md#upsert) - upserts record(s) to the collection;
-8. [upsert()](collection.md#upsert) - upserts record(s) to the collection;
-9. [update()](https://github.com/jmike/naomi/blob/master/docs/table.md#set) - updates record(s) in the collection with the supplied payload.
+1. [find()](https://github.com/jmike/naomi-docs/blob/master/collection.md#find) - retrieves records from the collection;
+2. [findOne()](https://github.com/jmike/naomi-docs/blob/master/collection.md#findOne) - retrieves a single record from the collection;
+3. [findStream()](https://github.com/jmike/naomi-docs/blob/master/collection.md#findStream) - retrieves records from the collection as a readable stream;
+4. [count()](https://github.com/jmike/naomi-docs/blob/master/collection.md#count) - counts records in the collection;
+5. [remove()](https://github.com/jmike/naomi-docs/blob/master/collection.md#remove) - removes records from the collection;
+6. [insert()](https://github.com/jmike/naomi-docs/blob/master/collection.md#insert) - inserts record(s) to the collection;
+7. [upsert()](https://github.com/jmike/naomi-docs/blob/master/collection.md#upsert) - upserts record(s) to the collection;
+8. [update()](https://github.com/jmike/naomi-docs/blob/master/collection.md#update) - updates record(s) in the collection with the supplied payload.
 
 Additional collection methods may exist depending on the database connector.
 
 ## API Docs
 
-* [Naomi singleton](https:/github.com//jmike/naomi-docs/naomi.md)
-* [Database](https://github.com/jmike/naomi-docs/database.md)
-* [Schema](https://github.com/jmike/naomi-docs/schema.md)
-* [Collection](https://github.com/jmike/naomi-docs/collection.md)
+* [Naomi singleton](https://github.com/jmike/naomi-docs/blob/master/naomi.md)
+* [Database](https://github.com/jmike/naomi-docs/blob/master/database.md)
+* [Schema](https://github.com/jmike/naomi-docs/blob/master/schema.md)
+* [Collection](https://github.com/jmike/naomi-docs/blob/master/collection.md)
 
 ## Philosophy
 
