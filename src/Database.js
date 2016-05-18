@@ -25,7 +25,7 @@ class Database extends EventEmitter {
   connect(callback) {
     // make sure callback is valid
     if (!_.isFunction(callback) && !_.isUndefined(callback)) {
-      throw new TypeError(`Invalid "callback" argument; expected Function, received ${type(callback)}`);
+      throw new TypeError(`Invalid "callback" argument; expected function, received ${type(callback)}`);
     }
 
     // check if already connected
@@ -45,7 +45,7 @@ class Database extends EventEmitter {
   disconnect(callback) {
     // make sure callback is valid
     if (!_.isFunction(callback) && !_.isUndefined(callback)) {
-      throw new TypeError(`Invalid "callback" argument; expected Function, received ${type(callback)}`);
+      throw new TypeError(`Invalid "callback" argument; expected function, received ${type(callback)}`);
     }
 
     // check if already disconnected
