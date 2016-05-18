@@ -1,6 +1,6 @@
 {
   "name": "naomi",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Simple, productive ORM for Node.js that makes sense.",
   "repository": {
     "type": "git",

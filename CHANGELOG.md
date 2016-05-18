@@ -1,3 +1,7 @@
+## 2.2.1 - 2016-05-18
+
+* Make sure date datatype accepts millis timestamp when format is specified.
+
 ## 2.2.0 - 2016-05-02
 
 * Implement missing Database#schema() method.
