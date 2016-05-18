@@ -11,6 +11,7 @@ describe('Date datatype', () => {
 
     assert.doesNotThrow(() => Joi.assert(new Date(), schema));
     assert.doesNotThrow(() => Joi.assert(123, schema));
+    assert.doesNotThrow(() => Joi.assert(Date.now(), schema));
     assert.doesNotThrow(() => Joi.assert('2016-03-25', schema));
     assert.throws(() => Joi.assert(null, schema));
     assert.throws(() => Joi.assert(true, schema));
@@ -25,6 +26,7 @@ describe('Date datatype', () => {
 
     assert.doesNotThrow(() => Joi.assert('2016.03.25', schema));
     assert.doesNotThrow(() => Joi.assert(new Date(), schema));
+    assert.doesNotThrow(() => Joi.assert(Date.now(), schema));
     assert.throws(() => Joi.assert('2016-03-25', schema));
     assert.throws(() => Joi.assert('abc', schema));
   });
